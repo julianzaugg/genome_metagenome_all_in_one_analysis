@@ -56,7 +56,8 @@ build_bin_summary <- function(checkm2.df = NULL, checkm1.df = NULL, gtdb.df = NU
   summary.df$Short_ID <- sprintf(paste0("MAG%0", max(3, nchar(nrow(summary.df))), "d"), seq_len(nrow(summary.df)))
   classified.v <- !is.na(summary.df$Classification)
   taxon.v <- rep("Unassigned", nrow(summary.df))
-  taxon.v[classified.v] <- taxon_label(summary.df$Classification[classified.v])
+  resolved.v <- gsub(";[a-z]__(?=;|$)", "", summary.df$Classification[classified.v], perl = TRUE)
+  taxon.v[classified.v] <- taxon_label(resolved.v)
   summary.df$Label <- paste0(taxon.v, " | ", summary.df$Short_ID)
   summary.df
 }

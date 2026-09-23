@@ -14,10 +14,10 @@ palette_families <- function(){
 
 #' Fixed colours for special categories
 #'
-#' @return Named character vector for `"Other"`, `"Unassigned"` and missing values.
+#' @return Named character vector for `"Other"`, `"Unassigned"`, missing values and reference genomes.
 #' @export
 special_colours <- function(){
-  c(Other = "#D9D9D9", Unassigned = "#9E9E9E", Missing = "#EFEFEF")
+  c(Other = "#D9D9D9", Unassigned = "#9E9E9E", Missing = "#EFEFEF", Reference = "#4D4D4D")
 }
 
 #' Generate a qualitative palette of n colours

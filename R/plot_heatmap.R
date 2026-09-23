@@ -12,7 +12,8 @@
 #' @param column_split Optional metadata column splitting the columns.
 #' @param column_annotations Metadata columns shown as column annotations.
 #' @param row_annotation Optional feature column shown as a row annotation (e.g. `"Phylum"`).
-#' @param row_annotation_colours Named colours for `row_annotation` (defaults to the taxa palette).
+#' @param row_annotation_colours Named colours for `row_annotation` (defaults to the taxa palette
+#'   for rank columns, otherwise generated colours).
 #' @param row_split Optional feature column splitting the rows.
 #' @param cluster_rows,cluster_columns Cluster rows/columns (within splits).
 #' @param cell_size Cell size in centimetres.
@@ -58,14 +59,15 @@ plot_heatmap <- function(profile, metadata.df, palettes.l = list(), transform = 
   if (!is.null(row_annotation)){
     row_values.v <- profile$features[[row_annotation]][match(rownames(profile$values), profile$features$Feature_ID)]
     row_values.v[is.na(row_values.v)] <- "Unassigned"
-    colours.v <- row_annotation_colours %||% palettes.l$taxa
+    colours.v <- row_annotation_colours %||% if (row_annotation %in% rank_columns()) palettes.l$taxa
     colours.v <- if (is.null(colours.v)) assign_colours(row_values.v) else
       get_palette(list(taxa = colours.v), "taxa", row_values.v)
     left_annotation <- ComplexHeatmap::rowAnnotation(
       df = stats::setNames(data.frame(row_values.v), row_annotation),
       col = stats::setNames(list(colours.v), row_annotation), show_annotation_name = FALSE,
       simple_anno_size = grid::unit(0.3, "cm"),
-      annotation_legend_param = list(title_gp = grid::gpar(fontsize = 8, fontface = "bold"),
+      annotation_legend_param = list(title = variable_label(row_annotation),
+                                     title_gp = grid::gpar(fontsize = 8, fontface = "bold"),
                                      labels_gp = grid::gpar(fontsize = 7)))
   }
 

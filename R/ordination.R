@@ -200,3 +200,26 @@ plot_loadings <- function(ordination, axis = "PC1", n = 10){
     ggplot2::labs(x = paste(axis, "loading"), y = NULL) +
     theme_gmaio()
 }
+
+#' Principal coordinates of an existing distance matrix
+#'
+#' @param distance.d A `dist` object or symmetric matrix labelled by sample/genome ID.
+#' @param distance_label Label for the distance, shown as the plot subtitle.
+#' @param source Source label.
+#' @return A `gm_ordination` (see [run_ordination()]).
+#' @export
+ordinate_distance <- function(distance.d, distance_label, source = "distance"){
+  distance.d <- stats::as.dist(distance.d)
+  n.n <- attr(distance.d, "Size")
+  if (n.n < 3) cli::cli_abort("An ordination needs at least three samples")
+  pcoa <- vegan::wcmdscale(distance.d, k = min(4, n.n - 1), eig = TRUE)
+  eigen.v <- pcoa$eig[pcoa$eig > 0]
+  sites.m <- pcoa$points
+  colnames(sites.m) <- paste0("PCo", seq_len(ncol(sites.m)))
+  variance.v <- 100 * eigen.v / sum(eigen.v)
+  structure(list(method = "pcoa", distance_label = distance_label,
+                 sites = data.frame(Sample_ID = rownames(sites.m), sites.m, check.names = FALSE, row.names = NULL),
+                 loadings = NULL, variance = stats::setNames(variance.v[seq_len(ncol(sites.m))], colnames(sites.m)),
+                 distance = distance.d, source = source),
+            class = "gm_ordination")
+}

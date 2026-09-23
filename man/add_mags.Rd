@@ -13,7 +13,8 @@ add_mags(project.l)
 Updated \code{gm_project}.
 }
 \description{
-Builds the bin summary from CheckM2/CheckM1/GTDB-Tk and dereplication clusters, then,
-for each CoverM mapping set found, profiles named \verb{mags_<set>_<type>} where type is
-\code{relative_abundance}, \code{coverm_relative_abundance}, \code{coverage} or \code{read_count}.
+Builds the bin summary from CheckM2/CheckM1/GTDB-Tk and dereplication clusters, reads
+the per-bin DRAM distillate when present, then, for each CoverM mapping set found,
+builds profiles named \verb{mags_<set>_<type>} where type is \code{relative_abundance},
+\code{coverm_relative_abundance}, \code{coverage} or \code{read_count}.
 }

@@ -51,7 +51,7 @@ save_plot <- function(plot, path, width = NULL, height = NULL, ...){
   width_in.n <- width / 2.54
   height_in.n <- height / 2.54
   if (inherits(plot, c("gg", "ggplot", "patchwork"))){
-    device.x <- if (ext.s == "pdf") grDevices::cairo_pdf else NULL
+    device.x <- if (ext.s == "pdf") pdf_device() else NULL
     ggplot2::ggsave(path, plot, width = width, height = height, units = "cm", device = device.x,
                     dpi = 300, limitsize = FALSE)
     return(invisible(path))
@@ -81,7 +81,7 @@ measure_heatmap <- function(plot, ...){
 
 open_device <- function(path, ext.s, width_in.n, height_in.n){
   switch(ext.s,
-    pdf = grDevices::cairo_pdf(path, width = width_in.n, height = height_in.n),
+    pdf = pdf_device()(path, width = width_in.n, height = height_in.n),
     svg = {
       require_pkg("svglite", "to save svg figures")
       svglite::svglite(path, width = width_in.n, height = height_in.n)
@@ -134,3 +134,23 @@ ordered_levels <- function(values.v, colours.v = NULL){
 }
 
 plain_number <- function(x) format(x, scientific = FALSE, drop0trailing = TRUE, trim = TRUE)
+
+facet_by_group <- function(variable){
+  ggplot2::facet_grid(stats::as.formula(paste("~", variable)), scales = "free_x", space = "free_x")
+}
+
+gm_cache <- new.env(parent = emptyenv())
+
+# cairo_pdf embeds fonts and Unicode properly but needs a working Cairo (not always present on macOS)
+pdf_device <- function(){
+  if (is.null(gm_cache$cairo_works)){
+    probe.s <- tempfile(fileext = ".pdf")
+    gm_cache$cairo_works <- tryCatch({
+      grDevices::cairo_pdf(probe.s)
+      grDevices::dev.off()
+      TRUE
+    }, warning = function(w) FALSE, error = function(e) FALSE)
+    unlink(probe.s)
+  }
+  if (gm_cache$cairo_works) grDevices::cairo_pdf else grDevices::pdf
+}

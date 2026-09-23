@@ -1,0 +1,7 @@
+Genome	Taxon	Complete	Translation table	# Sequences	Size	GC	N ratio	N50	Coding ratio	tRNA	tmRNA	rRNA	ncRNA	ncRNA region	CRISPR	CDS	CDS hypothetical	CDS pseudogene	sORF	GAP	oriC	oriV	oriT
+ISO1	Escherichia coli	False	11	60	5e+06	0.51	0	150000	0.88	85	1	7	70	30	1	4701	100	20	5	0	1	0	0
+ISO2	Escherichia coli	False	11	60	5e+06	0.51	0	150000	0.88	85	1	7	70	30	0	4702	100	20	5	0	1	0	0
+ISO3	Escherichia coli	False	11	60	5e+06	0.51	0	150000	0.88	85	1	7	70	30	1	4703	100	20	5	0	1	0	0
+ISO4	Escherichia coli	False	11	60	5e+06	0.51	0	150000	0.88	85	1	7	70	30	0	4704	100	20	5	0	1	0	0
+ISO5	Escherichia coli	False	11	60	5e+06	0.51	0	150000	0.88	85	1	7	70	30	2	4705	100	20	5	0	1	0	0
+ISO6	Escherichia coli	False	11	60	5e+06	0.51	0	150000	0.88	85	1	7	70	30	0	4706	100	20	5	0	1	0	0

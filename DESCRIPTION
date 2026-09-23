@@ -34,7 +34,6 @@ Imports:
     scales,
     stats,
     tibble,
-    tidyr,
     utils,
     vegan,
     yaml
@@ -44,6 +43,7 @@ Suggests:
     maaslin3,
     MicrobiomeStat,
     mixOmics,
+    phangorn,
     Nonpareil,
     svglite,
     testthat (>= 3.0.0),

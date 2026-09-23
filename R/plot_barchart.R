@@ -37,8 +37,7 @@ plot_stacked_barchart <- function(profile, metadata.df, colours.v = NULL, top_n 
                    legend.key.size = grid::unit(0.3, "cm")) +
     ggplot2::guides(fill = ggplot2::guide_legend(ncol = if (length(legend_levels.v) > 25) 2 else 1))
   if (!is.null(facet_variable)){
-    barchart.gg <- barchart.gg + ggplot2::facet_grid(stats::as.formula(paste("~", facet_variable)),
-                                                     scales = "free_x", space = "free_x")
+    barchart.gg <- barchart.gg + facet_by_group(facet_variable)
   }
   size.v <- barchart_size(length(unique(long.df$Sample_ID)), length(legend_levels.v), max(nchar(legend_levels.v)))
   if (length(annotation_variables) == 0) return(with_size(barchart.gg, size.v[["width"]], size.v[["height"]]))
@@ -75,7 +74,7 @@ annotation_strip_plot <- function(metadata.df, variables.v, colours.l, facet_var
                    axis.ticks.y = ggplot2::element_blank(), strip.text = ggplot2::element_blank(),
                    strip.background = ggplot2::element_blank())
   if (!is.null(facet_variable)){
-    strip.gg <- strip.gg + ggplot2::facet_grid(stats::as.formula(paste("~", facet_variable)), scales = "free_x", space = "free_x")
+    strip.gg <- strip.gg + facet_by_group(facet_variable)
   }
   strip.gg
 }

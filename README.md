@@ -49,6 +49,51 @@ Rscript code/barcharts.R
 `main.R` writes the standard tables to `Result_tables/`, the colour assignments to `palettes.yml`, and the processed project to `Result_other/processed.rds`.
 Analysis scripts read that file, so they can be run in any order and rerun individually.
 
+## Analysis scripts
+
+Metagenome projects (`mode: metagenome`):
+
+| Script | What it does |
+|---|---|
+| `main.R` | Loads read statistics, sylph, SingleM, MAGs (CheckM, GTDB-Tk, CoverM, DRAM distillate), gene catalogue functions (DRAM + RPKM), Nonpareil, GenomeSPOT, geNomad/CheckV; writes the standard tables and palettes |
+| `barcharts.R` | Stacked barcharts of the top taxa per sample for each profile and rank |
+| `heatmaps.R` | Abundance heatmaps (log10 relative abundance) with phylum annotation |
+| `ordination.R` | rclr PCA and Jaccard PCoA of taxonomic, MAG and functional profiles, PERMANOVA, PERMDISP, loadings |
+| `diversity.R` | Alpha diversity (richness, Shannon, Simpson, Pielou) with group tests |
+| `differential_abundance.R` | MaAsLin3, LinDA and sPLS-DA with a consensus table, effect plots and boxplots |
+| `nonpareil.R` | Nonpareil coverage curves and metrics by group |
+| `genomespot.R` | GenomeSPOT trait predictions for HQ MAGs and abundance-weighted community traits |
+| `mag_summary.R` | MAG quality, yield per sample, representative taxonomy, DRAM module heatmaps |
+| `functional_profiles.R` | KEGG, CAZy and peptidase heatmaps, CAZy substrate barcharts |
+| `mobile_elements.R` | Viral and plasmid cluster prevalence, richness, richness against depth, Jaccard PCoA, virus taxonomy |
+
+Isolate projects (`mode: isolate`):
+
+| Script | What it does |
+|---|---|
+| `main.R` | Loads CheckM2, GTDB-Tk, Bakta, MLST, AMRFinderPlus, ISEScan, comparison groups (Panaroo, fastANI, chewBBACA, IQ-TREE), geNomad/CheckV; writes the genome summary and comparison tables |
+| `genome_summary.R` | Assembly, quality and annotation summary figure |
+| `ani.R` | ANI heatmaps and PCoA per comparison group |
+| `pangenome.R` | Gene categories, accessory gene heatmap and PCoA, gene associations with the group variable |
+| `amr_mobile_elements.R` | AMR gene presence, AMR class and IS family counts, virus taxonomy, AMR gene associations |
+| `cgmlst.R` | cgMLST allele distance heatmaps |
+| `phylogeny.R` | Trees with tips coloured by the group variable |
+
+Each script has a short parameter block at the top (profiles, ranks, thresholds) that can be edited per project.
+
+## Working with the package directly
+
+```r
+project.l <- gmaio::load_processed()
+genus.p <- gmaio::aggregate_profile(gmaio::get_profile(project.l, "singlem_relative"), rank = "genus")
+genus.p <- gmaio::filter_profile(genus.p, min_abundance = 0.5, min_prevalence = 3)
+ordination <- gmaio::run_ordination(genus.p, "pca_rclr")
+gmaio::run_permanova(ordination$distance, gmaio::analysis_metadata(project.l), "Treatment")
+```
+
+Every abundance or function table is a `gm_profile`: a features x samples matrix plus feature annotations, so the same functions work for sylph, SingleM, MAGs, DRAM functions, AMR genes and pangenomes.
+`names(project.l$profiles)` lists what was loaded.
+
 ## Metadata and sample linking
 
 The metadata must have one row per sample, with a column matching the pipeline samplesheet `sample` column (`metadata: sample_id_column`).

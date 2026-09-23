@@ -1,0 +1,9 @@
+Genome_ID	seqID	family	cluster	isBegin	isEnd	isLen	ncopy4is	type
+ISO1	contig_1	IS3	c1	100	1400	1300	1	c
+ISO1	contig_1	IS1	c1	100	1400	1300	1	c
+ISO2	contig_1	IS3	c1	100	1400	1300	1	c
+ISO3	contig_1	IS3	c1	100	1400	1300	1	c
+ISO4	contig_1	IS30	c1	100	1400	1300	1	c
+ISO5	contig_1	IS1	c1	100	1400	1300	1	c
+ISO5	contig_1	IS30	c1	100	1400	1300	1	c
+ISO6	contig_1	IS3	c1	100	1400	1300	1	c

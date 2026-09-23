@@ -1,0 +1,1 @@
+((ISO1.fasta:0.01,(ISO2.fasta:0.005,ISO3.fasta:0.004):0.003):0.02,((ISO4.fasta:0.002,ISO5.fasta:0.003):0.01,ISO6.fasta:0.006):0.015,GCF_000005845.2.fasta.ref:0.05);

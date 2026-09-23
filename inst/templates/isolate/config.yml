@@ -1,0 +1,40 @@
+# gmaio project configuration (isolate)
+# Relative paths are resolved from the directory containing this file.
+
+project_name: My isolate project
+mode: isolate
+
+# genome_metagenome_all_in_one output directory (the pipeline --outdir)
+pipeline_results: /path/to/pipeline/results
+
+# Optional per-output overrides (file, glob or directory); keys are listed by gmaio::pipeline_registry()
+files: {}
+#  amrfinder: data/amrfinder_all.tsv
+#  panaroo: data/panaroo
+
+metadata:
+  file: data/metadata.xlsx
+  sheet: 1
+  sample_id_column: Sample_ID      # must match the pipeline samplesheet `sample` column
+  label_column: null               # display labels for figures (optional)
+  exclude_column: null             # yes/no column marking samples to leave out of analyses (optional)
+  exclude_samples: []              # or list sample IDs here
+  sample_order: []                 # columns used to order samples, e.g. [Group, Sample_ID]
+  colour_variables: []             # extra metadata columns to give fixed colours
+
+analysis:
+  group_variables: []              # e.g. [Source]; first is used for colours, tests and associations
+  reference_levels: {}             # e.g. {Treatment: Control}
+  covariates: []                   # extra model terms for differential abundance
+  permutations: 999
+  seed: 1234
+
+outputs:
+  tables: Result_tables
+  figures: Result_figures
+  other: Result_other
+  figure_format: pdf               # pdf, svg or png
+
+# Fixed colours; these override generated colours saved in palettes.yml
+colours: {}
+#  Treatment: {Control: "#4E79A7", Treated: "#E15759"}

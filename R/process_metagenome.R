@@ -68,9 +68,10 @@ mag_sets <- function(){
 
 #' Add MAG quality, taxonomy and abundance profiles
 #'
-#' Builds the bin summary from CheckM2/CheckM1/GTDB-Tk and dereplication clusters, then,
-#' for each CoverM mapping set found, profiles named `mags_<set>_<type>` where type is
-#' `relative_abundance`, `coverm_relative_abundance`, `coverage` or `read_count`.
+#' Builds the bin summary from CheckM2/CheckM1/GTDB-Tk and dereplication clusters, reads
+#' the per-bin DRAM distillate when present, then, for each CoverM mapping set found,
+#' builds profiles named `mags_<set>_<type>` where type is `relative_abundance`,
+#' `coverm_relative_abundance`, `coverage` or `read_count`.
 #'
 #' @param project.l A `gm_project`.
 #' @return Updated `gm_project`.
@@ -99,6 +100,10 @@ add_mags <- function(project.l){
   project.l$tables$bin_summary <- bins.df
   project.l$tables$bin_clusters <- clusters.l
   cli::cli_inform("MAGs: {nrow(bins.df)} bins, {sum(bins.df$High_quality)} high quality")
+
+  if (has_output(config.l, "dram_bins_product")){
+    project.l$tables$dram_product <- read_dram_product(locate_output(config.l, "dram_bins_product"))
+  }
 
   for (set.s in names(mag_sets())){
     key.s <- paste0("coverm_", set.s)
@@ -189,8 +194,10 @@ cazy_substrate_map <- function(path){
   annotation.df <- carbon.l$annotation
   is_cazy.v <- annotation.df$header == "CAZY" & grepl("^(GH|GT|PL|CE|AA|CBM)[0-9]", annotation.df$gene_id)
   cazy.df <- annotation.df[is_cazy.v, , drop = FALSE]
-  unique(data.frame(CAZy_family = sub("_[0-9]+$", "", cazy.df$gene_id), Substrate = cazy.df$subheader,
-                    Module = cazy.df$module, stringsAsFactors = FALSE))
+  substrates.l <- lapply(strsplit(cazy.df$subheader, ",", fixed = TRUE), trimws)
+  map.df <- data.frame(CAZy_family = rep(sub("_[0-9]+$", "", cazy.df$gene_id), lengths(substrates.l)),
+                       Substrate = unlist(substrates.l), stringsAsFactors = FALSE)
+  unique(map.df[!is.na(map.df$Substrate) & map.df$Substrate != "", , drop = FALSE])
 }
 
 #' Add Nonpareil curves and summaries
@@ -300,6 +307,10 @@ add_palettes <- function(project.l, min_taxon_abundance = 0.1){
   palette_file.s <- project_path(config.l, "palettes.yml")
   palettes.l <- build_palettes(metadata.df, variables.v, taxa.df, existing.l = read_palettes(palette_file.s),
                                fixed.l = config.l$colours, taxa_scheme = config.l$outputs$taxa_colour_scheme)
+  if (config.l$mode == "isolate"){
+    palettes.l <- lapply(palettes.l, function(x) c(x, Reference = special_colours()[["Reference"]]))
+    palettes.l$Entry_type <- c(Sample = "#2171B5", Reference = special_colours()[["Reference"]])
+  }
   write_palettes(palettes.l, palette_file.s)
   project.l$palettes <- palettes.l
   project.l

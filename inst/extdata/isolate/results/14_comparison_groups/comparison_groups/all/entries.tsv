@@ -1,0 +1,8 @@
+comparison_group	entry_type	id	fasta	gff	faa	parsnp_reference
+all	sample	ISO1	/work/comparison_groups/all/fastas/ISO1.fasta			false
+all	sample	ISO2	/work/comparison_groups/all/fastas/ISO2.fasta			false
+all	sample	ISO3	/work/comparison_groups/all/fastas/ISO3.fasta			false
+all	sample	ISO4	/work/comparison_groups/all/fastas/ISO4.fasta			false
+all	sample	ISO5	/work/comparison_groups/all/fastas/ISO5.fasta			false
+all	sample	ISO6	/work/comparison_groups/all/fastas/ISO6.fasta			false
+all	reference	GCF_000005845.2	/work/comparison_groups/all/fastas/GCF_000005845.2.fasta			true

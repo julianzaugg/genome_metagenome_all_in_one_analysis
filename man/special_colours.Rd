@@ -7,7 +7,7 @@
 special_colours()
 }
 \value{
-Named character vector for \code{"Other"}, \code{"Unassigned"} and missing values.
+Named character vector for \code{"Other"}, \code{"Unassigned"}, missing values and reference genomes.
 }
 \description{
 Fixed colours for special categories

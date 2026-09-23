@@ -146,3 +146,102 @@ for (i in seq_along(samples.v)){
   utils::write.table(npo.df, path.s, sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE, append = TRUE)
 }
 cat("Fixtures written to", root.s, "\n")
+
+# ---- Isolate mode ------------------------------------------------------------
+root.s <- "inst/extdata/isolate"
+unlink(root.s, recursive = TRUE)
+results.s <- file.path(root.s, "results")
+isolates.v <- c("ISO1", "ISO2", "ISO3", "ISO4", "ISO5", "ISO6")
+references.v <- c("GCF_000005845.2")
+genomes.v <- c(isolates.v, references.v)
+dir.create(root.s, recursive = TRUE, showWarnings = FALSE)
+utils::write.csv(data.frame(Sample_ID = isolates.v, Isolate = paste0("Strain_", seq_along(isolates.v)),
+                            Source = c("Clinical", "Clinical", "Clinical", "Environmental", "Environmental", "Environmental")),
+                 file.path(root.s, "metadata.csv"), row.names = FALSE)
+dir.create(file.path(results.s, "pipeline_info"), recursive = TRUE)
+writeLines('{"mode": "illumina_isolate", "outdir": "results"}', file.path(results.s, "pipeline_info", "run_params.json"))
+write_tsv(data.frame(Sample_ID = isolates.v, GBbp = round(runif(6, 0.3, 0.8), 3), Raw_count = 2e6 + 1:6,
+                     Covered_fraction = 0.99, Mean_coverage = round(runif(6, 40, 120), 1), Read_count = 1.9e6,
+                     Read_count_percent = 97),
+          "00_read_stats", "read_stat_report.tsv")
+for (i in seq_along(isolates.v)){
+  write_tsv(data.frame(Name = paste0(isolates.v[i], ".scaffolds"), Completeness = 99.5 - i / 10, Contamination = 0.2 * i,
+                       Completeness_Model_Used = "Neural Network (Specific Model)", Translation_Table_Used = 11,
+                       Coding_Density = 0.88, Contig_N50 = 150000 + i * 1000, Average_Gene_Length = 310,
+                       Genome_Size = 5e6 + i * 1e4, GC_Content = 0.51, Total_Coding_Sequences = 4800, Total_Contigs = 60 + i,
+                       Max_Contig_Length = 4e5, Additional_Notes = "None"),
+            "07_checkm2", paste0(isolates.v[i], "_checkm2_report.tsv"))
+}
+write_tsv(data.frame(user_genome = paste0(isolates.v, ".scaffolds"),
+                     classification = "d__Bacteria;p__Pseudomonadota;c__Gammaproteobacteria;o__Enterobacterales;f__Enterobacteriaceae;g__Escherichia;s__Escherichia coli",
+                     classification_method = "ANI"),
+          "15_gtdbtk", "all_genomes", "classify", "all_genomes.bac120.summary.tsv")
+bakta.df <- data.frame(Genome = isolates.v, Taxon = "Escherichia coli", Complete = "False", `Translation table` = 11,
+                       `# Sequences` = 60, Size = 5e6, GC = 0.51, `N ratio` = 0, N50 = 150000, `Coding ratio` = 0.88,
+                       tRNA = 85, tmRNA = 1, rRNA = 7, ncRNA = 70, `ncRNA region` = 30, CRISPR = c(1, 0, 1, 0, 2, 0),
+                       CDS = 4700 + 1:6, `CDS hypothetical` = 100, `CDS pseudogene` = 20, sORF = 5, GAP = 0, oriC = 1,
+                       oriV = 0, oriT = 0, check.names = FALSE)
+write_tsv(bakta.df, "10_bakta", "bakta_annotation_stats.tsv")
+dir.create(file.path(results.s, "11_mlst"))
+writeLines(paste0("/work/", isolates.v, ".scaffolds.fasta,ecoli_achtman_4,", c(131, 131, 73, 10, 10, "-"),
+                  ",adk(53),fumC(40),gyrB(47),icd(13),mdh(36),purA(28),recA(29)"),
+           file.path(results.s, "11_mlst", "mlst_summary.csv"))
+amr.df <- data.frame(Sample = c("ISO1", "ISO1", "ISO2", "ISO2", "ISO3", "ISO4", "ISO5", "ISO6", "ISO1", "ISO2"),
+                     `Protein id` = paste0("p", 1:10), `Contig id` = "contig_1", Start = 100, Stop = 900, Strand = "+",
+                     `Element symbol` = c("blaCTX-M-15", "tet(A)", "blaCTX-M-15", "sul1", "blaCTX-M-15", "sul1", "mdtM", "mdtM",
+                                          "qnrS1", "qnrS1"),
+                     `Element name` = "resistance gene", Scope = "core", Type = "AMR", Subtype = "AMR",
+                     Class = c("BETA-LACTAM", "TETRACYCLINE", "BETA-LACTAM", "SULFONAMIDE", "BETA-LACTAM", "SULFONAMIDE",
+                               "EFFLUX", "EFFLUX", "QUINOLONE", "QUINOLONE"),
+                     Subclass = "", Method = "EXACTX", check.names = FALSE)
+write_tsv(amr.df, "12_amrfinder", "amrfinder_all.tsv")
+is.df <- data.frame(Genome_ID = c("ISO1", "ISO1", "ISO2", "ISO3", "ISO4", "ISO5", "ISO5", "ISO6"), seqID = "contig_1",
+                    family = c("IS3", "IS1", "IS3", "IS3", "IS30", "IS1", "IS30", "IS3"), cluster = "c1", isBegin = 100,
+                    isEnd = 1400, isLen = 1300, ncopy4is = 1, type = "c")
+write_tsv(is.df, "13_isescan", "ISEScan_summary.tsv")
+
+group_dir.s <- file.path("14_comparison_groups", "comparison_groups", "all")
+write_tsv(data.frame(comparison_group = "all", entry_type = c(rep("sample", 6), "reference"), id = genomes.v,
+                     fasta = paste0("/work/comparison_groups/all/fastas/", genomes.v, ".fasta"), gff = "", faa = "",
+                     parsnp_reference = c(rep("false", 6), "true")),
+          group_dir.s, "entries.tsv")
+genes.v <- c(paste0("core_", 1:8), "blaCTX_M", "tetA", "sul1", "phage_int", "group_1234", "fimH")
+presence.m <- matrix(1, nrow = length(genes.v), ncol = length(genomes.v))
+presence.m[9, c(4, 5, 6, 7)] <- 0
+presence.m[10, -1] <- 0
+presence.m[11, c(1, 3, 5, 6, 7)] <- 0
+presence.m[12, c(1, 2, 3)] <- 0
+presence.m[13, c(2, 4, 6)] <- 0
+presence.m[14, 7] <- 0
+panaroo.df <- data.frame(Gene = genes.v, `Non-unique Gene name` = "", Annotation = paste("protein", genes.v), check.names = FALSE)
+for (j in seq_along(genomes.v)) panaroo.df[[genomes.v[j]]] <- ifelse(presence.m[, j] == 1, paste0(genomes.v[j], "_", seq_along(genes.v)), "")
+path.s <- file.path(results.s, "15_panaroo", "all_panaroo", "gene_presence_absence.csv")
+dir.create(dirname(path.s), recursive = TRUE)
+utils::write.csv(panaroo.df, path.s, row.names = FALSE, quote = FALSE)
+ani.m <- matrix(99.9, 7, 7)
+ani.m[1:3, 4:6] <- ani.m[4:6, 1:3] <- 98.7
+ani.m[7, ] <- ani.m[, 7] <- 97.4
+diag(ani.m) <- 100
+pairs.df <- expand.grid(q = seq_along(genomes.v), r = seq_along(genomes.v))
+dir.create(file.path(results.s, "18_fastani"))
+utils::write.table(data.frame(paste0("/work/fastas/", genomes.v[pairs.df$q], ".fasta"),
+                              paste0("/work/fastas/", genomes.v[pairs.df$r], ".fasta"),
+                              round(ani.m[cbind(pairs.df$q, pairs.df$r)] + runif(nrow(pairs.df), -0.05, 0.05), 4), 1500, 1600),
+                   file.path(results.s, "18_fastani", "all.fastani.tsv"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+alleles.m <- matrix(sample(1:3, 7 * 20, replace = TRUE), nrow = 7)
+alleles.m[4:6, 1:10] <- 7
+alleles.m[2, 3] <- "LNF"
+alleles.m[5, 4] <- "INF-12"
+cgmlst.df <- data.frame(FILE = genomes.v, alleles.m)
+names(cgmlst.df)[-1] <- paste0("locus_", 1:20, ".fasta")
+write_tsv(cgmlst.df, "19_chewbacca", "all_chewbbaca", "cgMLST", "cgMLST95.tsv")
+write_tsv(data.frame(original_id = genomes.v, chewbbaca_id = genomes.v), "19_chewbacca", "all_chewbbaca", "genome_hash_map.tsv")
+dir.create(file.path(results.s, "20_tree"))
+writeLines("((ISO1.fasta:0.01,(ISO2.fasta:0.005,ISO3.fasta:0.004):0.003):0.02,((ISO4.fasta:0.002,ISO5.fasta:0.003):0.01,ISO6.fasta:0.006):0.015,GCF_000005845.2.fasta.ref:0.05);",
+           file.path(results.s, "20_tree", "all.treefile"))
+write_tsv(data.frame(seq_name = paste0(isolates.v[c(1, 1, 3, 5)], ".scaffolds__genomad__contig_", 1:4), length = 40000,
+                     topology = "Provirus", coordinates = "1-40000", n_genes = 50, genetic_code = 11, virus_score = 0.95,
+                     fdr = NA, n_hallmarks = 5, marker_enrichment = 20,
+                     taxonomy = "Viruses;Duplodnaviria;Heunggongvirae;Uroviricota;Caudoviricetes;;"),
+          "20_genomad", "genomad_virus_summary.tsv")
+cat("Fixtures written to", root.s, "\n")

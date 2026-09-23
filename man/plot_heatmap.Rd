@@ -37,7 +37,8 @@ plot_heatmap(
 
 \item{row_annotation}{Optional feature column shown as a row annotation (e.g. \code{"Phylum"}).}
 
-\item{row_annotation_colours}{Named colours for \code{row_annotation} (defaults to the taxa palette).}
+\item{row_annotation_colours}{Named colours for \code{row_annotation} (defaults to the taxa palette
+for rank columns, otherwise generated colours).}
 
 \item{row_split}{Optional feature column splitting the rows.}
 
