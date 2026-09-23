@@ -34,10 +34,12 @@ theme_gmaio <- function(base_size = 9, legend_position = "right"){
 #' @param path Output path (`.pdf`, `.svg` or `.png`); the directory is created.
 #' @param width,height Size in centimetres. Defaults: measured from the drawn heatmap,
 #'   the size suggested by the gmaio plot function, or 18 x 12.
-#' @param ... Passed to [ComplexHeatmap::draw()] for heatmaps.
+#' @param dpi Resolution of png figures.
+#' @param ... Passed to [ComplexHeatmap::draw()] for heatmaps, overriding the settings stored
+#'   by [plot_heatmap()] (see [draw_heatmap()]).
 #' @return The path, invisibly.
 #' @export
-save_plot <- function(plot, path, width = NULL, height = NULL, ...){
+save_plot <- function(plot, path, width = NULL, height = NULL, dpi = 300, ...){
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
   ext.s <- tolower(tools::file_ext(path))
   if (inherits(plot, c("Heatmap", "HeatmapList")) && (is.null(width) || is.null(height))){
@@ -53,12 +55,14 @@ save_plot <- function(plot, path, width = NULL, height = NULL, ...){
   if (inherits(plot, c("gg", "ggplot", "patchwork"))){
     device.x <- if (ext.s == "pdf") pdf_device() else NULL
     ggplot2::ggsave(path, plot, width = width, height = height, units = "cm", device = device.x,
-                    dpi = 300, limitsize = FALSE)
+                    dpi = dpi, limitsize = FALSE)
     return(invisible(path))
   }
-  open_device(path, ext.s, width_in.n, height_in.n)
+  open_device(path, ext.s, width_in.n, height_in.n, dpi)
   on.exit(grDevices::dev.off(), add = TRUE)
-  if (inherits(plot, c("Heatmap", "HeatmapList", "HeatmapAnnotation"))){
+  if (inherits(plot, c("Heatmap", "HeatmapList"))){
+    draw_heatmap(plot, ...)
+  } else if (inherits(plot, "HeatmapAnnotation")){
     ComplexHeatmap::draw(plot, ...)
   } else if (is.function(plot)){
     plot()
@@ -70,23 +74,33 @@ save_plot <- function(plot, path, width = NULL, height = NULL, ...){
   invisible(path)
 }
 
+# ComplexHeatmap measures text while building heatmaps and legends; with no device open R
+# would open its default one, which under Rscript writes Rplots.pdf to the working directory
+with_measure_device <- function(expr){
+  if (!is.null(grDevices::dev.list())) return(expr)
+  grDevices::pdf(NULL)
+  device.n <- grDevices::dev.cur()
+  on.exit(grDevices::dev.off(device.n), add = TRUE)
+  expr
+}
+
 measure_heatmap <- function(plot, ...){
   grDevices::pdf(NULL)
   on.exit(grDevices::dev.off(), add = TRUE)
-  drawn <- ComplexHeatmap::draw(plot, ...)
+  drawn <- draw_heatmap(plot, ...)
   width.n <- grid::convertWidth(ComplexHeatmap::width.HeatmapList(drawn), "cm", valueOnly = TRUE)
   height.n <- grid::convertHeight(ComplexHeatmap::height.HeatmapList(drawn), "cm", valueOnly = TRUE)
   list(width = width.n + 1, height = height.n + 1)
 }
 
-open_device <- function(path, ext.s, width_in.n, height_in.n){
+open_device <- function(path, ext.s, width_in.n, height_in.n, dpi = 300){
   switch(ext.s,
     pdf = pdf_device()(path, width = width_in.n, height = height_in.n),
     svg = {
       require_pkg("svglite", "to save svg figures")
       svglite::svglite(path, width = width_in.n, height = height_in.n)
     },
-    png = grDevices::png(path, width = width_in.n, height = height_in.n, units = "in", res = 300),
+    png = grDevices::png(path, width = width_in.n, height = height_in.n, units = "in", res = dpi),
     cli::cli_abort("Unsupported figure format {.val {ext.s}}")
   )
 }

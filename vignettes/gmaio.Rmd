@@ -1,0 +1,163 @@
+---
+title: "Getting started with gmaio"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with gmaio}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.align = "center", dpi = 96)
+```
+
+gmaio turns the output of the [genome_metagenome_all_in_one](https://github.com/julianzaugg/genome_metagenome_all_in_one) pipeline into tables, figures and statistics.
+This guide explains how a project fits together and the handful of objects and functions everything else builds on.
+The worked examples for individual figures are in the other vignettes:
+
+- `vignette("heatmaps", package = "gmaio")`
+- `vignette("ordination", package = "gmaio")`
+
+## How a project fits together
+
+A project is a directory with a `config.yml`, a metadata table and a `code/` folder of scripts, created by `gmaio::create_project()`.
+
+1. `code/fetch_results.R` copies the pipeline outputs gmaio reads from the server (optional).
+2. `code/main.R` does the bulk processing: it reads every available pipeline output, links samples to the metadata, assigns colours, writes the standard tables to `Result_tables/` and saves the processed project to `Result_other/processed.rds`.
+3. Every other script in `code/` is one analysis.
+   Each starts by loading the processed project, so the scripts are independent and can be rerun in any order.
+
+The scripts contain no analysis logic of their own.
+They choose which data to use and call `gmaio::` functions, so what a figure looks like is controlled by the arguments of those functions.
+Every function has a help page (`?gmaio::plot_heatmap`) listing all of its arguments.
+The scripts only set the few that differ from the defaults, so read the help page to see what else you can change.
+
+## The processed project
+
+An analysis script starts with:
+
+```r
+project.l <- gmaio::load_processed()
+```
+
+In these vignettes, `example_project()` builds the same object from a small synthetic dataset shipped with the package: 16 mouse samples, Control vs Treated, sampled at week 0 and week 4, profiled with sylph and SingleM.
+
+```{r project}
+project.l <- gmaio::example_project()
+project.l
+```
+
+The project is a list:
+
+| Element | What it holds |
+|---|---|
+| `config` | The parsed `config.yml` (paths, groups, ranks, permutations, colours) |
+| `metadata` | The metadata table, linked to the pipeline sample names |
+| `profiles` | Every abundance or function table, as `gm_profile` objects |
+| `tables` | Other results (MAG summaries, SingleM prokaryotic fraction, ...) |
+| `palettes` | Colours for metadata variables and taxa |
+
+## Metadata
+
+`analysis_metadata()` returns the metadata without excluded samples, in the order set by `sample_order` in `config.yml`.
+gmaio adds `Sample_ID` (the ID used everywhere), `Sample_label` (the display label, from `label_column`) and `Excluded`.
+
+```{r metadata}
+metadata.df <- gmaio::analysis_metadata(project.l)
+head(metadata.df)
+```
+
+The first of `analysis: group_variables` in the config is the primary group, used for splitting and colouring figures and for the statistical tests:
+
+```{r group}
+gmaio::primary_group(project.l)
+```
+
+## Profiles
+
+Every abundance or function table is a `gm_profile`: a features x samples matrix (`values`) plus a `features` data frame with at least `Feature_ID` and a display `Label`.
+Taxonomic profiles also have one column per rank (`Domain` to `Species`).
+The same functions therefore work on sylph, SingleM, MAG and DRAM function profiles alike.
+
+```{r profiles}
+names(project.l$profiles)
+profile <- gmaio::get_profile(project.l, "sylph_taxonomic")
+profile
+profile$values[1:3, 1:4]
+profile$features[1:3, c("Feature_ID", "Phylum", "Genus", "Label")]
+```
+
+`get_profile()` drops excluded samples and, for relative abundance, rescales each sample back to 100%.
+
+### Working with profiles
+
+A figure usually starts with a few steps that choose the data, each taking and returning a profile.
+
+| Function | What it does |
+|---|---|
+| `aggregate_profile(profile, rank = "genus")` | Sum features to a taxonomic rank, or `by =` any feature column |
+| `filter_profile(profile, min_abundance, min_prevalence)` | Keep features reaching an abundance in any sample, or present in enough samples |
+| `top_features(profile, n)` | Keep the `n` most abundant features (by mean or max) |
+| `collapse_top_n(profile, top_n)` | Keep the top features and sum the rest into `"Other"` (for barcharts) |
+| `subset_features()`, `subset_samples()` | Keep given features or samples |
+| `as_relative_abundance()` | Rescale each sample to 100 |
+| `profile_to_long()` | A long data frame with metadata joined, for your own ggplot figures |
+
+For example, the ten most abundant genera present in at least four samples:
+
+```{r verbs}
+genus.p <- gmaio::get_profile(project.l, "sylph_taxonomic") |>
+  gmaio::aggregate_profile(rank = "genus") |>
+  gmaio::filter_profile(min_prevalence = 4) |>
+  gmaio::top_features(10)
+genus.p
+round(rowMeans(genus.p$values), 1) |> stats::setNames(genus.p$features$Genus)
+```
+
+## Colours
+
+Colours are assigned once, in `main.R`, and saved to `palettes.yml` in the project directory, so a group or taxon has the same colour in every figure and every run.
+Colours are chosen in this order:
+
+1. `colours:` in `config.yml`.
+2. `palettes.yml`, which you can edit directly; your edits are kept.
+3. Newly generated colours for anything not yet coloured.
+
+```{r palettes}
+project.l$palettes$Treatment
+project.l$palettes$Time
+gmaio::get_palette(project.l, "taxa", c("p__Bacteroidota", "p__Bacillota"))
+```
+
+Plot functions take either the whole palette list (`project.l$palettes`) or the colours for one variable (`project.l$palettes$Treatment`).
+
+## Saving figures and tables
+
+`save_plot()` saves ggplots and heatmaps with sizes in centimetres.
+Heatmaps are sized automatically to fit their cells, labels and legends.
+`figure_path()` builds a path in the project figure directory with the configured format (`outputs: figure_format`).
+`write_xlsx_tables()` writes a named list of data frames to one formatted Excel file, one sheet each.
+
+```r
+gmaio::save_plot(figure.gg, gmaio::figure_path(project.l$config, "heatmaps", "sylph_genus"), width = 16, height = 12)
+gmaio::write_xlsx_tables(list(PERMANOVA = permanova.df), gmaio::output_path(project.l$config, "tables", "Statistics.xlsx"))
+```
+
+## Scripts and their main functions
+
+| Script | Main functions |
+|---|---|
+| `main.R` | `read_config()`, `start_project()`, `add_sylph()`, `add_singlem()`, `add_mags()`, `add_gene_catalogue_functions()`, `add_palettes()`, `write_project_tables()` |
+| `barcharts.R` | `plot_stacked_barchart()` |
+| `heatmaps.R` | `plot_heatmap()` |
+| `ordination.R` | `run_ordination()`, `plot_ordination()`, `run_permanova()`, `run_permdisp()`, `plot_loadings()` |
+| `diversity.R` | `alpha_diversity()`, `plot_alpha_diversity()` |
+| `differential_abundance.R` | `run_differential_abundance()`, `da_consensus()`, `plot_da_consensus()` |
+| `functional_profiles.R` | `plot_heatmap()`, `plot_stacked_barchart()` |
+| `mag_summary.R` | `plot_mag_quality()`, `plot_mag_counts()`, `plot_mag_taxonomy()` |
+| `nonpareil.R` | `plot_nonpareil_curves()`, `plot_nonpareil_metrics()` |
+| `mobile_elements.R` | `mobile_element_summary()`, `plot_mobile_prevalence()` |
+| `genomespot.R` | `community_weighted_traits()`, `plot_genomespot_traits()` |
+
+To change a figure, find its function in the script, look up its help page, and add the argument to the call.
+To make a figure the templates do not provide, add a script that starts with `gmaio::load_processed()` and uses the same building blocks.

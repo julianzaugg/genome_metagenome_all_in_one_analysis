@@ -10,46 +10,145 @@ plot_ordination(
   colour_by,
   colours.v = NULL,
   shape_by = NULL,
+  shapes.v = NULL,
   label_by = NULL,
-  ellipse = FALSE,
-  hull = FALSE,
-  n_loadings = 0,
+  group_by = colour_by,
+  group_colours.v = NULL,
   axes = c(1, 2),
   title = NULL,
+  subtitle = ordination$distance_label,
   caption = NULL,
-  point_size = 2.5
+  point_size = 2.5,
+  point_alpha = 1,
+  point_stroke = 0.3,
+  point_outline = "grey15",
+  label_size = 2.3,
+  label_colour = "grey20",
+  label_max_overlaps = 30,
+  ellipse = FALSE,
+  ellipse_type = "norm",
+  ellipse_level = 0.95,
+  ellipse_fill = FALSE,
+  ellipse_alpha = 0.15,
+  ellipse_linewidth = 0.4,
+  ellipse_linetype = "solid",
+  hull = FALSE,
+  hull_alpha = 0.12,
+  hull_linewidth = 0.3,
+  spider = FALSE,
+  spider_alpha = 0.6,
+  spider_linewidth = 0.3,
+  centroids = FALSE,
+  n_loadings = 0,
+  loadings = NULL,
+  loading_colour = "grey45",
+  loading_label_size = 2,
+  loading_label_colour = "grey30",
+  loading_scale = 0.8,
+  envfit = NULL,
+  envfit_p = 0.05,
+  envfit_permutations = 999,
+  seed = 1234,
+  envfit_colour = "#B2182B",
+  envfit_label_size = 2.2,
+  origin_lines = TRUE,
+  origin_colour = "grey80",
+  origin_linetype = "solid",
+  origin_linewidth = 0.3,
+  base_size = 9,
+  legend_position = "right",
+  fixed_aspect = TRUE
 )
 }
 \arguments{
-\item{ordination}{A \code{gm_ordination} from \code{\link[=run_ordination]{run_ordination()}}.}
+\item{ordination}{A \code{gm_ordination} from \code{\link[=run_ordination]{run_ordination()}} or \code{\link[=ordinate_distance]{ordinate_distance()}}.}
 
 \item{metadata.df}{Metadata.}
 
-\item{colour_by}{Metadata column for point fill.}
+\item{colour_by}{Metadata column for point fill; numeric columns get a continuous scale.}
 
-\item{colours.v}{Named colours for \code{colour_by}.}
+\item{colours.v}{Named colours for \code{colour_by} (usually \code{project.l$palettes[[colour_by]]}).}
 
 \item{shape_by}{Optional metadata column for point shape.}
 
+\item{shapes.v}{Named shapes for \code{shape_by}; defaults to filled shapes (21 to 25) first.}
+
 \item{label_by}{Optional metadata column for point labels (e.g. \code{"Sample_label"}).}
 
-\item{ellipse}{Draw 95\% normal-theory ellipses per group (groups with at least 4 samples).}
+\item{group_by}{Metadata column defining groups for ellipses, hulls, spiders and centroids;
+defaults to \code{colour_by}. When it differs from \code{colour_by}, the group layers get their own
+colours and legend.}
 
-\item{hull}{Draw convex hulls per group.}
+\item{group_colours.v}{Named colours for \code{group_by} when it differs from \code{colour_by}.}
 
-\item{n_loadings}{Number of top PCA loadings drawn as arrows.}
+\item{axes}{Two axes to plot, by number.}
 
-\item{axes}{Two axes to plot.}
+\item{title, subtitle, caption}{Plot titles; the subtitle defaults to the distance used.}
 
-\item{title}{Optional plot title (the distance is shown as the subtitle).}
+\item{point_size, point_alpha}{Point size and opacity.}
 
-\item{caption}{Optional caption, e.g. from \code{\link[=permanova_caption]{permanova_caption()}}.}
+\item{point_stroke, point_outline}{Point outline width and colour.}
 
-\item{point_size}{Point size.}
+\item{label_size, label_colour}{Label font size (mm) and colour.}
+
+\item{label_max_overlaps}{Labels dropped when they would overlap more than this many others.}
+
+\item{ellipse}{Draw an ellipse per group (groups with at least 4 samples).}
+
+\item{ellipse_type, ellipse_level}{Ellipse type (\code{"norm"}, \code{"t"} or \code{"euclid"}, see
+\code{\link[ggplot2:stat_ellipse]{ggplot2::stat_ellipse()}}) and confidence level.}
+
+\item{ellipse_fill}{Fill ellipses with the group colour.}
+
+\item{ellipse_alpha}{Fill opacity when \code{ellipse_fill = TRUE}.}
+
+\item{ellipse_linewidth, ellipse_linetype}{Ellipse outline.}
+
+\item{hull}{Draw a convex hull per group.}
+
+\item{hull_alpha, hull_linewidth}{Hull fill opacity and outline width.}
+
+\item{spider}{Draw lines from each sample to its group centroid.}
+
+\item{spider_alpha, spider_linewidth}{Spider line opacity and width.}
+
+\item{centroids}{Draw group centroids as large points.}
+
+\item{n_loadings}{Number of top PCA loadings (longest in the plotted axes) drawn as arrows.}
+
+\item{loadings}{Feature IDs or labels to draw as arrows, instead of the top \code{n_loadings}.}
+
+\item{loading_colour}{Arrow colour.}
+
+\item{loading_label_size, loading_label_colour}{Arrow label font size (mm) and colour.}
+
+\item{loading_scale}{Longest arrow as a fraction of the largest sample score.}
+
+\item{envfit}{Metadata columns fitted onto the plotted axes with \code{\link[=ordination_envfit]{ordination_envfit()}}:
+numeric columns are drawn as arrows, discrete columns as labelled level centroids.}
+
+\item{envfit_p}{Only draw fitted variables with p at or below this.}
+
+\item{envfit_permutations, seed}{Permutations and random seed for the envfit test.}
+
+\item{envfit_colour, envfit_label_size}{Colour and label font size (mm) of fitted variables.}
+
+\item{origin_lines}{Draw lines through the origin.}
+
+\item{origin_colour, origin_linetype, origin_linewidth}{Origin line style.}
+
+\item{base_size}{Base font size of the theme.}
+
+\item{legend_position}{Legend position (\code{"none"} hides it).}
+
+\item{fixed_aspect}{Keep a 1:1 panel aspect ratio.}
 }
 \value{
 A ggplot.
 }
 \description{
-Plot an ordination
+Samples as points, optionally grouped with ellipses, hulls or spiders, with PCA loadings
+and fitted metadata variables drawn on top. The result is a ggplot, so axis limits,
+themes and extra layers can be added with \code{+}.
+See \code{vignette("ordination", package = "gmaio")} for worked examples.
 }

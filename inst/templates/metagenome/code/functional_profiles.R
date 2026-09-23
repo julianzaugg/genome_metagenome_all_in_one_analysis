@@ -14,8 +14,7 @@ heatmap_profiles.v <- c(functions_ko = 50, functions_cazy = 50, functions_peptid
 for (name.s in intersect(names(heatmap_profiles.v), names(project.l$profiles))){
   profile <- gmaio::get_profile(project.l, name.s)
   profile <- gmaio::subset_features(profile, setdiff(rownames(profile$values), "Unassigned"))
-  top_features.v <- names(utils::head(sort(rowMeans(profile$values), decreasing = TRUE), heatmap_profiles.v[[name.s]]))
-  profile <- gmaio::subset_features(profile, top_features.v)
+  profile <- gmaio::top_features(profile, heatmap_profiles.v[[name.s]])
   heatmap.ht <- gmaio::plot_heatmap(profile, metadata.df, project.l$palettes, transform = "zscore", column_split = group.s,
                                     row_annotation = if ("CAZy_class" %in% names(profile$features)) "CAZy_class",
                                     legend_title = "Z-score\n(log10 normalised RPKM)")

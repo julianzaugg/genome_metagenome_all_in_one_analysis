@@ -196,6 +196,23 @@ filter_profile <- function(profile, min_abundance = 0, min_prevalence = 0, detec
   update_profile(profile, values.m[keep.v, , drop = FALSE])
 }
 
+#' Keep the most abundant features
+#'
+#' Unlike [collapse_top_n()], the remaining features are dropped rather than summed into `"Other"`.
+#'
+#' @param profile A `gm_profile`.
+#' @param n Number of features to keep.
+#' @param by Rank features by their `"mean"` or `"max"` value across samples.
+#' @return `gm_profile` with at most `n` features, most abundant first.
+#' @export
+top_features <- function(profile, n, by = c("mean", "max")){
+  by <- match.arg(by)
+  check_profile(profile)
+  score.v <- if (by == "mean") rowMeans(profile$values) else apply(profile$values, 1, max)
+  keep.v <- utils::head(names(sort(score.v, decreasing = TRUE)), n)
+  update_profile(profile, profile$values[keep.v, , drop = FALSE])
+}
+
 #' Keep the top features and sum the rest into "Other"
 #'
 #' Features are kept if they are among the `top_n` most abundant in any sample

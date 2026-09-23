@@ -152,3 +152,38 @@ get_profile <- function(project.l, name, include_excluded = FALSE, renormalise =
 taxonomic_profile_names <- function(project.l){
   names(Filter(function(p) all(rank_columns() %in% names(p$features)), project.l$profiles))
 }
+
+#' Example processed project
+#'
+#' Builds a processed metagenome project from the synthetic pipeline output shipped with
+#' gmaio, running the same steps as the template `main.R`. The data mimic an early partial
+#' pipeline run (sylph and SingleM only) on 16 mouse samples: `Treatment` (Control, Treated)
+#' by `Time` (Week_0, Week_4), with `Age_weeks` and `Cage`. Some genera respond to treatment
+#' and others to time. Used in the vignettes and handy for trying out functions.
+#'
+#' @param path Project directory for the config, palettes and any outputs; a new temporary
+#'   directory by default.
+#' @return A processed `gm_project`, as returned by [load_processed()] in an analysis script.
+#' @export
+example_project <- function(path = tempfile("gmaio_example_")){
+  example.s <- system.file("extdata", "example", package = "gmaio", mustWork = TRUE)
+  dir.create(path, recursive = TRUE, showWarnings = FALSE)
+  config.l <- list(
+    project_name = "gmaio example", mode = "metagenome",
+    pipeline_results = file.path(example.s, "results"),
+    metadata = list(file = file.path(example.s, "metadata.csv"), sample_id_column = "Sample_ID", label_column = "Name",
+                    exclude_column = "Exclude", sample_order = list("Treatment", "Time", "Sample_ID"),
+                    colour_variables = list("Time", "Cage")),
+    analysis = list(group_variables = list("Treatment"), reference_levels = list(Treatment = "Control"),
+                    ranks = list("phylum", "genus"), permutations = 999)
+  )
+  yaml::write_yaml(config.l, file.path(path, "config.yml"))
+  config.l <- read_config(file.path(path, "config.yml"))
+  suppressMessages({
+    project.l <- start_project(config.l)
+    project.l <- add_sylph(project.l)
+    project.l <- add_singlem(project.l)
+    project.l <- add_palettes(project.l)
+  })
+  project.l
+}

@@ -112,16 +112,18 @@ plot_dram_heatmap <- function(values.m, bin_summary.df, bins.v, colours.v = NULL
   presence.b <- all(values.m %in% c(0, 1))
   colour_function <- if (presence.b) c(`0` = "#F7F7F7", `1` = "#0072B2") else
     circlize::colorRamp2(c(0, 0.5, 1), c("#F7F7F7", "#6BAED6", "#08306B"))
-  ComplexHeatmap::Heatmap(
-    values.m, name = if (presence.b) "Present" else "Completeness", col = colour_function,
-    row_split = phylum.v, cluster_row_slices = FALSE, row_title_rot = 0, row_title_gp = grid::gpar(fontsize = 7),
-    left_annotation = ComplexHeatmap::rowAnnotation(Phylum = phylum.v, col = list(Phylum = phylum_colours.v),
-                                                    show_annotation_name = FALSE, show_legend = FALSE,
-                                                    simple_anno_size = grid::unit(0.3, "cm")),
-    cluster_columns = TRUE, clustering_distance_columns = "euclidean",
-    row_names_gp = grid::gpar(fontsize = 6), column_names_gp = grid::gpar(fontsize = 6),
-    column_names_max_height = grid::unit(12, "cm"), rect_gp = grid::gpar(col = "white", lwd = 0.3),
-    width = grid::unit(ncol(values.m) * cell_size, "cm"), height = grid::unit(nrow(values.m) * cell_size, "cm"),
-    heatmap_legend_param = list(title_gp = grid::gpar(fontsize = 8, fontface = "bold"), labels_gp = grid::gpar(fontsize = 7))
-  )
+  with_measure_device({
+    ComplexHeatmap::Heatmap(
+      values.m, name = if (presence.b) "Present" else "Completeness", col = colour_function,
+      row_split = phylum.v, cluster_row_slices = FALSE, row_title_rot = 0, row_title_gp = grid::gpar(fontsize = 7),
+      left_annotation = ComplexHeatmap::rowAnnotation(Phylum = phylum.v, col = list(Phylum = phylum_colours.v),
+                                                      show_annotation_name = FALSE, show_legend = FALSE,
+                                                      simple_anno_size = grid::unit(0.3, "cm")),
+      cluster_columns = TRUE, clustering_distance_columns = "euclidean",
+      row_names_gp = grid::gpar(fontsize = 6), column_names_gp = grid::gpar(fontsize = 6),
+      column_names_max_height = grid::unit(12, "cm"), rect_gp = grid::gpar(col = "white", lwd = 0.3),
+      width = grid::unit(ncol(values.m) * cell_size, "cm"), height = grid::unit(nrow(values.m) * cell_size, "cm"),
+      heatmap_legend_param = list(title_gp = grid::gpar(fontsize = 8, fontface = "bold"), labels_gp = grid::gpar(fontsize = 7))
+    )
+  })
 }

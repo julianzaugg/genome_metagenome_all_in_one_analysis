@@ -38,3 +38,12 @@ test_that("palettes round-trip through palettes.yml", {
   write_palettes(palettes.l, path.s)
   expect_equal(read_palettes(path.s), palettes.l)
 })
+
+test_that("metadata variables avoid each other's colours", {
+  metadata.df <- data.frame(Sample_ID = paste0("S", 1:4), Sample_label = paste0("S", 1:4),
+                            Treatment = c("Control", "Control", "Treated", "Treated"), Time = c("W0", "W4", "W0", "W4"))
+  palettes.l <- build_palettes(metadata.df, c("Treatment", "Time"))
+  expect_length(intersect(palettes.l$Treatment, palettes.l$Time), 0)
+  saved.l <- build_palettes(metadata.df, c("Treatment", "Time"), existing.l = list(Time = c(W0 = "#E69F00", W4 = "#56B4E9")))
+  expect_equal(unname(saved.l$Time), c("#E69F00", "#56B4E9"))
+})

@@ -6,7 +6,8 @@ R package for downstream analysis of [genome_metagenome_all_in_one](https://gith
 
 - `R/` package functions; `inst/templates/{metagenome,isolate}/` project templates (`config.yml`, `code/main.R`, one script per analysis).
 - `R/pipeline_registry.R` is the single map of pipeline outputs (directory and file patterns, matched by name suffix so mode-specific numbering does not matter).
-- `inst/extdata/` synthetic pipeline output for tests, built by `data-raw/make_fixtures.R`. Never commit client data.
+- `inst/extdata/metagenome` (small, for tests) and `inst/extdata/example` (larger, for vignettes and `example_project()`) are synthetic pipeline output built by `data-raw/make_fixtures.R` and `data-raw/make_example.R`. Never commit client data.
+- `vignettes/` worked examples on `example_project()`; update them when plot function options change.
 - `code_examples_dump/` holds old ad-hoc scripts for reference; it is gitignored.
 
 ## Design rules
@@ -33,4 +34,5 @@ Rscript -e 'devtools::test()'
 Rscript -e 'lintr::lint_package()'
 Rscript -e 'devtools::check()'
 Rscript data-raw/make_fixtures.R
+Rscript data-raw/make_example.R
 ```

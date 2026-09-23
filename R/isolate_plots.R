@@ -60,22 +60,24 @@ plot_genome_matrix <- function(values.m, genomes.df, palettes.l = list(), annota
     legend_title.s <- "Allele\ndifferences"
   }
   clustering <- stats::hclust(distance.d, method = "average")
-  annotation.l <- heatmap_annotations(genomes.df, annotation_variables, palettes.l)
-  cell_fun <- NULL
-  if (show_values){
-    cell_fun <- function(j, i, x, y, width, height, fill){
-      grid::grid.text(formatC(values.m[i, j], format = if (type == "ani") "f" else "d", digits = if (type == "ani") 1 else 0),
-                      x, y, gp = grid::gpar(fontsize = 5))
+  with_measure_device({
+    annotation.l <- heatmap_annotations(genomes.df, annotation_variables, palettes.l)
+    cell_fun <- NULL
+    if (show_values){
+      cell_fun <- function(j, i, x, y, width, height, fill){
+        grid::grid.text(formatC(values.m[i, j], format = if (type == "ani") "f" else "d", digits = if (type == "ani") 1 else 0),
+                        x, y, gp = grid::gpar(fontsize = 5))
+      }
     }
-  }
-  ComplexHeatmap::Heatmap(
-    values.m, name = legend_title.s, col = colour_function, cluster_rows = clustering, cluster_columns = clustering,
-    top_annotation = annotation.l$top, left_annotation = annotation.l$left, cell_fun = cell_fun,
-    row_names_gp = grid::gpar(fontsize = 7), column_names_gp = grid::gpar(fontsize = 7),
-    rect_gp = grid::gpar(col = "white", lwd = 0.4),
-    width = grid::unit(ncol(values.m) * cell_size, "cm"), height = grid::unit(nrow(values.m) * cell_size, "cm"),
-    heatmap_legend_param = list(title_gp = grid::gpar(fontsize = 8, fontface = "bold"), labels_gp = grid::gpar(fontsize = 7))
-  )
+    ComplexHeatmap::Heatmap(
+      values.m, name = legend_title.s, col = colour_function, cluster_rows = clustering, cluster_columns = clustering,
+      top_annotation = annotation.l$top, left_annotation = annotation.l$left, cell_fun = cell_fun,
+      row_names_gp = grid::gpar(fontsize = 7), column_names_gp = grid::gpar(fontsize = 7),
+      rect_gp = grid::gpar(col = "white", lwd = 0.4),
+      width = grid::unit(ncol(values.m) * cell_size, "cm"), height = grid::unit(nrow(values.m) * cell_size, "cm"),
+      heatmap_legend_param = list(title_gp = grid::gpar(fontsize = 8, fontface = "bold"), labels_gp = grid::gpar(fontsize = 7))
+    )
+  })
 }
 
 heatmap_annotations <- function(genomes.df, variables.v, palettes.l){
@@ -145,19 +147,21 @@ plot_presence_heatmap <- function(profile, genomes.df, palettes.l = list(), anno
   split.v <- if (!is.null(row_split)) features.df[[row_split]] else NULL
   rownames(values.m) <- features.df$Label
   colnames(values.m) <- genomes.df$Sample_label
-  annotation.l <- heatmap_annotations(genomes.df, annotation_variables, palettes.l)
-  cluster.b <- ncol(values.m) > 2
-  ComplexHeatmap::Heatmap(
-    values.m, name = "Present", col = c(`0` = "#F7F7F7", `1` = "#2171B5"),
-    heatmap_legend_param = list(at = c(0, 1), labels = c("No", "Yes"), title_gp = grid::gpar(fontsize = 8, fontface = "bold"),
-                                labels_gp = grid::gpar(fontsize = 7)),
-    clustering_distance_rows = "binary", clustering_distance_columns = "binary",
-    cluster_rows = nrow(values.m) > 2, cluster_columns = cluster.b, row_split = split.v, row_title_rot = 0,
-    row_title_gp = grid::gpar(fontsize = 7), top_annotation = annotation.l$top,
-    show_row_names = nrow(values.m) <= 80, row_names_gp = grid::gpar(fontsize = 6), column_names_gp = grid::gpar(fontsize = 7),
-    rect_gp = grid::gpar(col = "white", lwd = 0.3),
-    width = grid::unit(ncol(values.m) * 0.4, "cm"), height = grid::unit(min(nrow(values.m) * 0.3, 40), "cm")
-  )
+  with_measure_device({
+    annotation.l <- heatmap_annotations(genomes.df, annotation_variables, palettes.l)
+    cluster.b <- ncol(values.m) > 2
+    ComplexHeatmap::Heatmap(
+      values.m, name = "Present", col = c(`0` = "#F7F7F7", `1` = "#2171B5"),
+      heatmap_legend_param = list(at = c(0, 1), labels = c("No", "Yes"), title_gp = grid::gpar(fontsize = 8, fontface = "bold"),
+                                  labels_gp = grid::gpar(fontsize = 7)),
+      clustering_distance_rows = "binary", clustering_distance_columns = "binary",
+      cluster_rows = nrow(values.m) > 2, cluster_columns = cluster.b, row_split = split.v, row_title_rot = 0,
+      row_title_gp = grid::gpar(fontsize = 7), top_annotation = annotation.l$top,
+      show_row_names = nrow(values.m) <= 80, row_names_gp = grid::gpar(fontsize = 6), column_names_gp = grid::gpar(fontsize = 7),
+      rect_gp = grid::gpar(col = "white", lwd = 0.3),
+      width = grid::unit(ncol(values.m) * 0.4, "cm"), height = grid::unit(min(nrow(values.m) * 0.3, 40), "cm")
+    )
+  })
 }
 
 #' Genome summary figure

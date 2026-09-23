@@ -9,7 +9,8 @@ run_ordination(
   method = c("pca_rclr", "pcoa"),
   distance = "bray",
   binary = FALSE,
-  detection = 0
+  detection = 0,
+  scaling = 1
 )
 }
 \arguments{
@@ -23,6 +24,10 @@ run_ordination(
 
 \item{detection}{Percent of the sample total above which a feature counts as present
 when \code{binary = TRUE}.}
+
+\item{scaling}{PCA score scaling (see \code{\link[vegan:scores.rda]{vegan::scores.rda()}}): \code{1} preserves distances between
+samples (default), \code{2} correlations between features, \code{3} (\code{"symmetric"}) is a compromise.
+Only affects the plotted scores and loadings, not the distances used for statistics.}
 }
 \value{
 A \code{gm_ordination} list: \code{method}, \code{distance_label}, \code{sites} (scores with \code{Sample_ID}),

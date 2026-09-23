@@ -10,7 +10,7 @@ Each project gets a `config.yml`, a `code/main.R` entry point that does the bulk
 
 ```r
 install.packages("remotes")
-remotes::install_github("julianzaugg/genome_metagenome_all_in_one_analysis")
+remotes::install_github("julianzaugg/genome_metagenome_all_in_one_analysis", build_vignettes = TRUE)
 ```
 
 Optional packages used by specific analyses:
@@ -120,6 +120,19 @@ Isolate projects (`mode: isolate`):
 | `phylogeny.R` | Trees with tips coloured by the group variable |
 
 Each script has a short parameter block at the top (profiles, ranks, thresholds) that can be edited per project.
+The scripts set only the plot options that differ from the defaults; every option is listed on the function's help page (`?gmaio::plot_heatmap`).
+
+## Documentation
+
+The vignettes are worked examples on a synthetic example project (`gmaio::example_project()`):
+
+| Vignette | Covers |
+|---|---|
+| `vignette("gmaio", package = "gmaio")` | How a project fits together: the processed project, profiles, palettes, saving, which functions each script uses |
+| `vignette("heatmaps", package = "gmaio")` | `plot_heatmap()`: choosing the data, annotations and splits, transforms, colours and legend breaks, ordering, cell values, sizes and fonts |
+| `vignette("ordination", package = "gmaio")` | `run_ordination()`, PERMANOVA and PERMDISP, and `plot_ordination()`: shapes, ellipses, hulls, spiders, loadings, envfit, combining panels |
+
+`browseVignettes("gmaio")` lists them; they are only installed when the package is installed with `build_vignettes = TRUE`.
 
 ## Working with the package directly
 

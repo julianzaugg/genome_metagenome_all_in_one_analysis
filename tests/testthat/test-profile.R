@@ -49,3 +49,11 @@ test_that("filter, subset and scale behave", {
 test_that("new_profile validates inputs", {
   expect_error(new_profile(matrix(1:4, 2), value_type = "coverage", source = "x"), "row names")
 })
+
+test_that("top_features keeps the most abundant features in order", {
+  profile <- new_profile(matrix(c(1, 5, 3, 2, 6, 1), nrow = 3, dimnames = list(c("a", "b", "c"), c("S1", "S2"))),
+                         value_type = "value", source = "test")
+  expect_equal(rownames(top_features(profile, 2)$values), c("b", "c"))
+  expect_equal(rownames(top_features(profile, 1, by = "max")$values), "b")
+  expect_equal(nrow(top_features(profile, 10)$values), 3)
+})

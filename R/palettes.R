@@ -51,9 +51,11 @@ qualitative_palette <- function(n){
 #' @param values.v Vector (factor levels are respected, otherwise sorted unique values).
 #' @param existing.v Named vector of previously assigned colours.
 #' @param fixed.v Named vector of user-fixed colours.
+#' @param avoid.v Colours to leave out when generating new ones (e.g. those of another
+#'   variable), as long as enough other colours remain.
 #' @return Named character vector of colours.
 #' @export
-assign_colours <- function(values.v, existing.v = NULL, fixed.v = NULL){
+assign_colours <- function(values.v, existing.v = NULL, fixed.v = NULL, avoid.v = NULL){
   levels.v <- if (is.factor(values.v)) levels(droplevels(values.v)) else sort(unique(as.character(stats::na.omit(values.v))))
   special.v <- special_colours()
   colours.v <- stats::setNames(rep(NA_character_, length(levels.v)), levels.v)
@@ -64,8 +66,11 @@ assign_colours <- function(values.v, existing.v = NULL, fixed.v = NULL){
   }
   remaining.v <- names(colours.v)[is.na(colours.v)]
   if (length(remaining.v) > 0){
-    candidates.v <- qualitative_palette(length(levels.v))
-    candidates.v <- setdiff(toupper(candidates.v), toupper(colours.v))
+    candidates.v <- setdiff(toupper(qualitative_palette(length(levels.v))), toupper(colours.v))
+    if (length(avoid.v) > 0){
+      spread.v <- setdiff(toupper(qualitative_palette(length(levels.v) + length(avoid.v))), toupper(c(colours.v, avoid.v)))
+      if (length(spread.v) >= length(remaining.v)) candidates.v <- spread.v
+    }
     if (length(candidates.v) < length(remaining.v)){
       candidates.v <- c(candidates.v, qualitative_palette(length(remaining.v) + 30))
       candidates.v <- setdiff(unique(toupper(candidates.v)), toupper(colours.v))
@@ -164,11 +169,17 @@ build_palettes <- function(metadata.df, variables.v, taxa.df = NULL, existing.l 
                            taxa_scheme = "distinct"){
   variables.v <- unique(c("Sample_ID", variables.v))
   require_columns(metadata.df, variables.v, "Metadata")
-  palettes.l <- lapply(stats::setNames(variables.v, variables.v), function(variable.s){
+  # Each grouping variable avoids the colours of the ones before it, so e.g. Treatment and
+  # Time annotations on one figure do not share colours
+  palettes.l <- list()
+  used.v <- character()
+  for (variable.s in variables.v){
     values.v <- metadata.df[[variable.s]]
     if (variable.s == "Sample_ID") values.v <- factor(values.v, levels = metadata.df$Sample_ID)
-    assign_colours(values.v, unlist(existing.l[[variable.s]]), unlist(fixed.l[[variable.s]]))
-  })
+    palettes.l[[variable.s]] <- assign_colours(values.v, unlist(existing.l[[variable.s]]), unlist(fixed.l[[variable.s]]),
+                                               avoid.v = if (variable.s != "Sample_ID") used.v)
+    if (variable.s != "Sample_ID") used.v <- unique(c(used.v, palettes.l[[variable.s]]))
+  }
   palettes.l$Sample_label <- stats::setNames(palettes.l$Sample_ID[metadata.df$Sample_ID], metadata.df$Sample_label)
   if (!is.null(taxa.df)){
     palettes.l$taxa <- assign_taxa_colours(taxa.df, unlist(existing.l$taxa), unlist(fixed.l$taxa), scheme = taxa_scheme)

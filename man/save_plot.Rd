@@ -4,7 +4,7 @@
 \alias{save_plot}
 \title{Save a figure}
 \usage{
-save_plot(plot, path, width = NULL, height = NULL, ...)
+save_plot(plot, path, width = NULL, height = NULL, dpi = 300, ...)
 }
 \arguments{
 \item{plot}{A ggplot, patchwork, \code{Heatmap}, \code{HeatmapList}, or a function that draws the figure.}
@@ -14,7 +14,10 @@ save_plot(plot, path, width = NULL, height = NULL, ...)
 \item{width, height}{Size in centimetres. Defaults: measured from the drawn heatmap,
 the size suggested by the gmaio plot function, or 18 x 12.}
 
-\item{...}{Passed to \code{\link[ComplexHeatmap:draw]{ComplexHeatmap::draw()}} for heatmaps.}
+\item{dpi}{Resolution of png figures.}
+
+\item{...}{Passed to \code{\link[ComplexHeatmap:draw]{ComplexHeatmap::draw()}} for heatmaps, overriding the settings stored
+by \code{\link[=plot_heatmap]{plot_heatmap()}} (see \code{\link[=draw_heatmap]{draw_heatmap()}}).}
 }
 \value{
 The path, invisibly.

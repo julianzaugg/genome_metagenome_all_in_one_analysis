@@ -9,55 +9,179 @@ plot_heatmap(
   metadata.df,
   palettes.l = list(),
   transform = c("log10", "sqrt", "zscore", "none"),
+  colours = NULL,
+  legend_breaks = NULL,
+  legend_labels = NULL,
+  legend_title = NULL,
+  zero_colour = "#F2F2F2",
+  zero_legend = "0",
+  row_labels = "Label",
+  column_labels = "Sample_label",
+  row_title = NULL,
+  column_title = NULL,
+  row_title_side = "left",
+  column_title_side = "bottom",
   column_split = NULL,
+  row_split = NULL,
   column_annotations = NULL,
+  annotation_colours = NULL,
   row_annotation = NULL,
   row_annotation_colours = NULL,
-  row_split = NULL,
+  column_annotation_side = "top",
+  row_annotation_side = "left",
+  annotation_size = 0.35,
   cluster_rows = TRUE,
   cluster_columns = FALSE,
+  show_row_dend = FALSE,
+  show_column_dend = FALSE,
+  clustering_distance = "euclidean",
+  clustering_method = "average",
+  order_rows_by = NULL,
+  order_columns_by = NULL,
   cell_size = 0.4,
-  colours = NULL,
-  legend_title = NULL,
-  show_values = FALSE
+  cell_width = cell_size,
+  cell_height = cell_size,
+  cell_border_colour = "white",
+  cell_border_width = 0.5,
+  show_values = FALSE,
+  value_digits = 2,
+  value_size = 5,
+  value_colour = NULL,
+  hide_zero_values = TRUE,
+  row_names_size = 7,
+  column_names_size = 7,
+  column_names_rot = 90,
+  row_names_side = "right",
+  column_names_side = "bottom",
+  title_size = 8,
+  annotation_name_size = 8,
+  legend_title_size = 8,
+  legend_label_size = 7,
+  legend_side = "right",
+  merge_legends = FALSE,
+  padding = c(2, 2, 2, 2),
+  ...
 )
 }
 \arguments{
-\item{profile}{A \code{gm_profile} (filter it first, e.g. with \code{\link[=filter_profile]{filter_profile()}}).}
+\item{profile}{A \code{gm_profile}.}
 
-\item{metadata.df}{Metadata.}
+\item{metadata.df}{Metadata; samples are drawn in its row order.}
 
-\item{palettes.l}{Project palettes (for column annotations and the taxa row annotation).}
+\item{palettes.l}{Project palettes, used for column annotations and the taxa row annotation.}
 
-\item{transform}{Value transform.}
+\item{transform}{Value transform: \code{"log10"}, \code{"sqrt"}, \code{"zscore"} or \code{"none"}.}
 
-\item{column_split}{Optional metadata column splitting the columns.}
+\item{colours}{Colour ramp for the values: a vector of colours (low to high), or the
+name of a \code{\link[grDevices:hcl.colors]{grDevices::hcl.colors()}} palette such as \code{"Viridis"}, \code{"Mako"} or \code{"YlOrRd"}
+(sequential palettes run light to dark). Default viridis, or blue-white-red for \code{"zscore"}.}
 
-\item{column_annotations}{Metadata columns shown as column annotations.}
+\item{legend_breaks}{Legend (and colour) breaks in original units, e.g. \code{c(0.01, 0.1, 1, 10, 40)}.}
 
-\item{row_annotation}{Optional feature column shown as a row annotation (e.g. \code{"Phylum"}).}
+\item{legend_labels}{Labels for \code{legend_breaks}, e.g. \code{c("0.01", "0.1", "1", "10", ">= 40")}.}
 
-\item{row_annotation_colours}{Named colours for \code{row_annotation} (defaults to the taxa palette
-for rank columns, otherwise generated colours).}
+\item{legend_title}{Legend title; defaults from the transform.}
 
-\item{row_split}{Optional feature column splitting the rows.}
+\item{zero_colour}{Colour for cells with a value of zero; \code{NULL} to colour them from the ramp.}
+
+\item{zero_legend}{Label of the legend key for \code{zero_colour}; \code{NULL} for no key.}
+
+\item{row_labels}{Feature column used for row labels.}
+
+\item{column_labels}{Metadata column used for column labels.}
+
+\item{row_title, column_title}{Axis titles for the whole heatmap, e.g. \code{"Genus"} and \code{"Sample"}.}
+
+\item{row_title_side, column_title_side}{Sides for the axis titles.}
+
+\item{column_split}{Metadata column splitting the columns into blocks.}
+
+\item{row_split}{Feature column splitting the rows into blocks (e.g. \code{"Phylum"}).}
+
+\item{column_annotations}{Metadata columns drawn as column annotations. Discrete columns use
+the project palettes; numeric columns get a continuous colour scale.}
+
+\item{annotation_colours}{Named list of colours for column annotations, overriding
+\code{palettes.l}: named vectors for discrete columns, \code{\link[circlize:colorRamp2]{circlize::colorRamp2()}} functions for numeric ones.}
+
+\item{row_annotation}{Feature columns drawn as row annotations (e.g. \code{"Phylum"}).}
+
+\item{row_annotation_colours}{Colours for \code{row_annotation}: a named vector (one annotation) or
+a named list of them. Defaults to the taxa palette for rank columns, else generated colours.}
+
+\item{column_annotation_side, row_annotation_side}{Where annotations are drawn.}
+
+\item{annotation_size}{Height (column) or width (row) of each annotation track, in cm.}
 
 \item{cluster_rows, cluster_columns}{Cluster rows/columns (within splits).}
 
-\item{cell_size}{Cell size in centimetres.}
+\item{show_row_dend, show_column_dend}{Draw the dendrograms.}
 
-\item{colours}{Colour ramp for the values.}
+\item{clustering_distance, clustering_method}{Distance (see \code{\link[stats:dist]{stats::dist()}}) and linkage
+(see \code{\link[stats:hclust]{stats::hclust()}}) for clustering, applied to the transformed values.}
 
-\item{legend_title}{Legend title; defaults from the value type and transform.}
+\item{order_rows_by}{When rows are not clustered: \code{NULL} (profile order), \code{"abundance"}
+(mean, decreasing), \code{"label"}, or feature columns (e.g. \code{"Phylum"}, then by abundance).}
 
-\item{show_values}{Print values in cells.}
+\item{order_columns_by}{When columns are not clustered: \code{NULL} (metadata order), \code{"label"},
+or metadata columns to sort by.}
+
+\item{cell_size, cell_width, cell_height}{Cell size in cm (\code{cell_width}/\code{cell_height} default to \code{cell_size}).}
+
+\item{cell_border_colour, cell_border_width}{Cell border colour and line width.}
+
+\item{show_values}{Print values in the cells (original units).}
+
+\item{value_digits}{Significant digits for printed values.}
+
+\item{value_size}{Font size of printed values.}
+
+\item{value_colour}{Colour of printed values; \code{NULL} picks black or white by cell colour.}
+
+\item{hide_zero_values}{Leave cells with zero empty when \code{show_values = TRUE}.}
+
+\item{row_names_size, column_names_size}{Font sizes of row and column labels.}
+
+\item{column_names_rot}{Rotation of column labels.}
+
+\item{row_names_side, column_names_side}{Sides of row and column labels.}
+
+\item{title_size}{Font size of axis and split titles.}
+
+\item{annotation_name_size}{Font size of annotation names.}
+
+\item{legend_title_size, legend_label_size}{Font sizes in legends.}
+
+\item{legend_side}{Side for all legends (\code{"right"}, \code{"left"}, \code{"top"} or \code{"bottom"}).}
+
+\item{merge_legends}{Put the value legend and annotation legends in one column.}
+
+\item{padding}{Space around the figure in mm: bottom, left, top, right.}
+
+\item{...}{Further arguments to \code{\link[ComplexHeatmap:Heatmap]{ComplexHeatmap::Heatmap()}}, overriding those set here.}
 }
 \value{
-A ComplexHeatmap \code{Heatmap}; save it with \code{\link[=save_plot]{save_plot()}} (size is automatic).
+A ComplexHeatmap \code{Heatmap} with drawing settings attached; save it with \code{\link[=save_plot]{save_plot()}}
+(size is measured automatically) or display it with \code{\link[=draw_heatmap]{draw_heatmap()}}.
 }
 \description{
-Features in rows (labelled by \code{Label}), samples in columns (labelled by \code{Sample_label},
-in metadata order). The value transform is explicit: \code{"log10"} (log10 of value plus
-half the smallest non-zero value, legend back-transformed), \code{"sqrt"}, \code{"zscore"}
-(per feature, of log10 values) or \code{"none"}.
+Features in rows, samples in columns, drawn with ComplexHeatmap. Filter the profile
+first (e.g. \code{\link[=filter_profile]{filter_profile()}} and \code{\link[=top_features]{top_features()}}); every feature it contains is drawn.
+See \code{vignette("heatmaps", package = "gmaio")} for worked examples.
+}
+\details{
+\strong{Values and colours.} \code{transform} is explicit: \code{"log10"} (log10 of value plus half
+the smallest non-zero value, legend back-transformed to the original units), \code{"sqrt"},
+\code{"zscore"} (per feature, of log10 values) or \code{"none"}. Zeros are drawn in \code{zero_colour}
+(except for \code{"zscore"}) so they are never confused with small values. \code{legend_breaks}
+are in the original units; the colour ramp is spread evenly over them, and values beyond
+the last break take the last colour, so \code{legend_labels = c(..., ">= 40")} caps the scale.
+
+\strong{Order.} Rows are clustered by default; with \code{cluster_rows = FALSE} they follow
+\code{order_rows_by}. Columns follow the metadata order (config \code{sample_order}) or
+\code{order_columns_by}, unless \code{cluster_columns = TRUE}. Splits keep their level order.
+
+\strong{Drawing.} Axis titles, legend sides and padding are applied when the heatmap is
+drawn by \code{\link[=save_plot]{save_plot()}} or \code{\link[=draw_heatmap]{draw_heatmap()}}; printing the object directly ignores them.
+Any other \code{\link[ComplexHeatmap:Heatmap]{ComplexHeatmap::Heatmap()}} argument can be passed through \code{...}.
 }

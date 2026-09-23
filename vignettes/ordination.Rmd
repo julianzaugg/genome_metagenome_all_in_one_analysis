@@ -1,0 +1,206 @@
+---
+title: "Ordination"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Ordination}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+# 16 x 13 cm, the size code/ordination.R saves at
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.align = "center", fig.width = 16 / 2.54,
+                      fig.height = 13 / 2.54, dpi = 96, out.width = "90%")
+```
+
+An ordination in gmaio has three steps, each a separate function:
+
+1. `run_ordination()` computes the ordination and the distances between samples.
+2. `run_permanova()` and `run_permdisp()` test group differences on those distances.
+3. `plot_ordination()` draws it, with many options for points, groups, loadings and fitted variables.
+
+This vignette follows `code/ordination.R` through those steps, then goes through the plotting options.
+It uses the synthetic example project; see `vignette("gmaio", package = "gmaio")` for how projects and profiles work.
+
+```{r project}
+project.l <- gmaio::example_project()
+metadata.df <- gmaio::analysis_metadata(project.l)
+```
+
+## Choosing the data
+
+The template ordinates genus-level sylph and SingleM profiles, the HQ MAG profile and the KEGG and CAZy function profiles, keeping features present in at least two samples:
+
+```{r data}
+genus.p <- gmaio::get_profile(project.l, "sylph_taxonomic") |>
+  gmaio::aggregate_profile(rank = "genus") |>
+  gmaio::filter_profile(min_prevalence = 2)
+genus.p
+```
+
+## Running the ordination
+
+`run_ordination()` has two methods:
+
+- `method = "pca_rclr"` (default): robust centred log-ratio transform, then PCA.
+  This suits compositional data such as relative abundance, and zeros need no pseudocount.
+  Distances for the statistics are Euclidean on the rclr values (robust Aitchison distance).
+- `method = "pcoa"`: principal coordinates of any `vegan::vegdist()` distance, e.g. `distance = "bray"`.
+  With `binary = TRUE`, features above `detection` percent of a sample count as present, which gives Jaccard on presence/absence.
+
+```{r run}
+pca <- gmaio::run_ordination(genus.p, method = "pca_rclr")
+jaccard <- gmaio::run_ordination(genus.p, method = "pcoa", distance = "jaccard", binary = TRUE, detection = 0.1)
+bray <- gmaio::run_ordination(genus.p, method = "pcoa", distance = "bray")
+pca$variance
+head(pca$sites, 3)
+```
+
+The result holds the sample scores (`sites`), PCA feature loadings (`loadings`), the percentage of variance per axis (`variance`) and the distance matrix (`distance`).
+For PCA, `scaling = 1` (default) preserves distances between samples, while `scaling = "symmetric"` spreads samples and loadings more evenly for biplots.
+`ordinate_distance()` makes the same object from a distance matrix you already have, such as ANI or SNP distances.
+
+Axis signs are arbitrary, so `orient_ordination()` flips axes to put the first level of a variable on the negative side.
+This keeps figures comparable between runs and datasets.
+
+```{r orient}
+pca <- gmaio::orient_ordination(pca, metadata.df, "Treatment")
+```
+
+## Testing groups
+
+```{r stats}
+permanova.df <- gmaio::run_permanova(pca$distance, metadata.df, "Treatment", permutations = 999)
+permanova.df
+permdisp.l <- gmaio::run_permdisp(pca$distance, metadata.df, "Treatment", permutations = 999)
+permdisp.l$overall
+```
+
+`run_permanova()` takes several terms (`c("Treatment", "Time")`, tested by margin) and `strata` to restrict permutations, e.g. within mouse or cage.
+A significant PERMDISP means the groups differ in spread, which can also produce a significant PERMANOVA.
+`permanova_caption()` summarises both for a figure caption.
+
+## The template figure
+
+```{r template}
+gmaio::plot_ordination(pca, metadata.df,
+                       colour_by = "Treatment",
+                       colours.v = project.l$palettes$Treatment,
+                       label_by = "Sample_label",
+                       ellipse = TRUE,
+                       title = "sylph genus",
+                       caption = gmaio::permanova_caption(permanova.df, permdisp.l))
+```
+
+`plot_ordination()` returns a ggplot.
+Everything below is a change to this call; in a project, edit the `gmaio::plot_ordination()` call in `code/ordination.R` and rerun the script.
+
+## Points and labels
+
+`shape_by` adds a second variable as point shape, using filled shapes first.
+Point size, opacity and outline are set with `point_size`, `point_alpha`, `point_stroke` and `point_outline`.
+Labels come from any metadata column (`label_by`), styled with `label_size` and `label_colour`.
+
+```{r points}
+gmaio::plot_ordination(pca, metadata.df, colour_by = "Treatment", colours.v = project.l$palettes$Treatment,
+                       shape_by = "Time", point_size = 3.5, point_stroke = 0.5,
+                       label_by = "Sample_label", label_size = 2, label_colour = "grey40")
+```
+
+A numeric `colour_by`, such as age, gets a continuous colour scale.
+
+## Groups: ellipses, hulls, spiders and centroids
+
+Groups come from `group_by`, which defaults to `colour_by`.
+
+- `ellipse = TRUE` draws an ellipse per group with at least 4 samples; `ellipse_type` (`"norm"`, `"t"`, `"euclid"`), `ellipse_level`, `ellipse_fill`, `ellipse_alpha`, `ellipse_linewidth` and `ellipse_linetype` style it.
+- `hull = TRUE` draws the convex hull of each group; `hull_alpha`, `hull_linewidth`.
+- `spider = TRUE` joins each sample to its group centroid; `spider_alpha`, `spider_linewidth`.
+- `centroids = TRUE` marks each group centroid.
+
+```{r groups}
+gmaio::plot_ordination(pca, metadata.df, colour_by = "Treatment", colours.v = project.l$palettes$Treatment,
+                       shape_by = "Time", spider = TRUE, centroids = TRUE,
+                       ellipse = TRUE, ellipse_fill = TRUE, ellipse_alpha = 0.1, ellipse_linetype = "dashed")
+```
+
+When `group_by` differs from `colour_by`, the groups get their own colours and legend.
+Here points are coloured by age and hulls show time point:
+
+```{r group-by}
+gmaio::plot_ordination(pca, metadata.df, colour_by = "Age_weeks", group_by = "Time",
+                       group_colours.v = project.l$palettes$Time, hull = TRUE, hull_alpha = 0.15)
+```
+
+## Loadings
+
+For PCA, `n_loadings` draws the features with the longest loadings in the plotted axes as arrows.
+`loadings` draws chosen features instead, by feature ID or label.
+Arrow and label styling: `loading_colour`, `loading_label_size`, `loading_label_colour` and `loading_scale` (the longest arrow as a fraction of the plot extent).
+
+```{r loadings}
+biplot <- gmaio::run_ordination(genus.p, method = "pca_rclr", scaling = "symmetric") |>
+  gmaio::orient_ordination(metadata.df, "Treatment")
+gmaio::plot_ordination(biplot, metadata.df, colour_by = "Treatment", colours.v = project.l$palettes$Treatment,
+                       shape_by = "Time", n_loadings = 6, loading_colour = "grey30")
+```
+
+`plot_loadings()` shows the top loadings of one axis as a bar chart, and `top_loadings()` returns them as a table:
+
+```{r loadings-bar, fig.height = 10 / 2.54}
+gmaio::plot_loadings(biplot, axis = "PC1", n = 8)
+```
+
+## Fitted metadata variables
+
+`envfit` fits metadata columns onto the plotted axes with `vegan::envfit()`.
+Numeric columns are drawn as arrows (length proportional to the square root of R2) and discrete columns as labelled centroids of their levels.
+Only variables with p at or below `envfit_p` are drawn.
+
+```{r envfit}
+gmaio::plot_ordination(pca, metadata.df, colour_by = "Treatment", colours.v = project.l$palettes$Treatment,
+                       shape_by = "Time", envfit = c("Age_weeks", "Cage"), envfit_p = 1, envfit_colour = "#7B3294")
+gmaio::ordination_envfit(pca, metadata.df, c("Age_weeks", "Cage"))
+```
+
+## Axes, titles and theme
+
+| Argument | Controls | Default |
+|---|---|---|
+| `axes` | Axes to plot, e.g. `c(1, 3)` | `c(1, 2)` |
+| `title`, `subtitle`, `caption` | Titles; the subtitle is the distance used | |
+| `origin_lines`, `origin_colour`, `origin_linetype`, `origin_linewidth` | Lines through the origin | on, grey |
+| `base_size` | Base font size | 9 |
+| `legend_position` | `"right"`, `"bottom"`, `"none"`, ... | `"right"` |
+| `fixed_aspect` | 1:1 panel | `TRUE` |
+
+Because the result is a ggplot, anything else can be added with `+`: axis limits, theme changes, extra layers or annotations.
+
+```{r ggplot}
+gmaio::plot_ordination(jaccard, metadata.df, colour_by = "Time", colours.v = project.l$palettes$Time,
+                       shape_by = "Treatment", subtitle = "Jaccard (presence above 0.1%)",
+                       origin_lines = FALSE, legend_position = "bottom") +
+  ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.15)) +
+  ggplot2::theme(panel.grid.major = ggplot2::element_line(colour = "grey92"))
+```
+
+## Combining panels
+
+patchwork puts several ordinations in one figure, sharing the legend:
+
+```{r panels, fig.width = 24 / 2.54, fig.height = 8.5 / 2.54}
+panels.l <- lapply(list(pca, jaccard, bray), function(o){
+  gmaio::plot_ordination(gmaio::orient_ordination(o, metadata.df, "Treatment"), metadata.df, colour_by = "Treatment",
+                         colours.v = project.l$palettes$Treatment, shape_by = "Time", subtitle = o$distance_label,
+                         base_size = 8)
+})
+patchwork::wrap_plots(panels.l, nrow = 1) + patchwork::plot_layout(guides = "collect")
+```
+
+## Saving
+
+```r
+gmaio::save_plot(ordination.gg, gmaio::figure_path(project.l$config, "ordination", "sylph_genus_pca"), width = 16, height = 13)
+```
+
+Sizes are in centimetres; with `fixed_aspect = TRUE` the panel stays square and the rest of the space goes to the legend and titles.

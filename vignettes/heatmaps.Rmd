@@ -1,0 +1,245 @@
+---
+title: "Heatmaps"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Heatmaps}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.align = "center")
+# Show each heatmap exactly as save_plot() writes it, at its automatic size
+show_heatmap <- function(heatmap.ht, ...){
+  path.s <- knitr::fig_path(".png")
+  gmaio::save_plot(heatmap.ht, path.s, dpi = 110, ...)
+  knitr::include_graphics(path.s, dpi = 110)
+}
+```
+
+`plot_heatmap()` draws any profile as a heatmap: features in rows, samples in columns.
+This vignette builds up the heatmaps made by `code/heatmaps.R` step by step, then goes through the options for changing them.
+It uses the synthetic example project; see `vignette("gmaio", package = "gmaio")` for how projects and profiles work.
+
+```{r project}
+project.l <- gmaio::example_project()
+metadata.df <- gmaio::analysis_metadata(project.l)
+```
+
+## Choosing the data
+
+`plot_heatmap()` draws every feature in the profile it is given, so choosing what to show happens before the call.
+`code/heatmaps.R` does the following for each profile and rank:
+
+```{r data}
+genus.p <- gmaio::get_profile(project.l, "sylph_taxonomic") |>
+  gmaio::aggregate_profile(rank = "genus") |>
+  gmaio::filter_profile(min_abundance = 0.5) |>   # at least 0.5% in one sample
+  gmaio::top_features(25)                         # then the 25 most abundant by mean
+genus.p
+```
+
+## The default heatmap
+
+With only a profile and metadata, values are log10 transformed, rows are clustered and samples follow the metadata order (`sample_order` in `config.yml`).
+Zeros are drawn in light grey with their own legend key, so they are never confused with small values.
+
+```{r default}
+heatmap.ht <- gmaio::plot_heatmap(genus.p, metadata.df, project.l$palettes)
+```
+
+```{r default-show, echo = FALSE}
+show_heatmap(heatmap.ht)
+```
+
+## The template heatmap
+
+The template adds a split by the primary group, a phylum row annotation, axis titles and a legend title:
+
+```{r template}
+heatmap.ht <- gmaio::plot_heatmap(genus.p, metadata.df, project.l$palettes,
+                                  transform = "log10",
+                                  column_split = "Treatment",
+                                  row_annotation = "Phylum",
+                                  row_title = "Genus",
+                                  column_title = "Sample",
+                                  legend_title = "Relative\nabundance (%)")
+```
+
+```{r template-show, echo = FALSE}
+show_heatmap(heatmap.ht)
+```
+
+Everything below is a change to this call.
+In a project, edit the `gmaio::plot_heatmap()` call in `code/heatmaps.R` and rerun the script.
+
+## Annotations and splits
+
+`column_annotations` adds metadata columns above the heatmap.
+Discrete columns use the project colours; numeric columns such as `Age_weeks` get a continuous scale.
+`row_split` separates the rows into blocks, here by phylum.
+
+```{r annotations}
+heatmap.ht <- gmaio::plot_heatmap(genus.p, metadata.df, project.l$palettes,
+                                  column_split = "Treatment",
+                                  column_annotations = c("Time", "Age_weeks"),
+                                  row_split = "Phylum",
+                                  row_labels = "Genus",
+                                  row_title = "Genus", column_title = "Sample",
+                                  legend_title = "Relative\nabundance (%)")
+```
+
+```{r annotations-show, echo = FALSE}
+show_heatmap(heatmap.ht)
+```
+
+`row_labels = "Genus"` labels rows by the genus column instead of the default `Label` (which includes the phylum).
+Annotation colours come from `project.l$palettes`; to override them for one figure use `annotation_colours = list(Time = c(Week_0 = "grey80", Week_4 = "grey30"))`.
+To change them everywhere, edit `palettes.yml` or set `colours:` in `config.yml`.
+
+## Values and colours
+
+### Transform
+
+`transform` is one of `"log10"` (default), `"sqrt"`, `"zscore"` or `"none"`.
+For log10, half the smallest non-zero value is added before the transform, and the legend shows the original units.
+`"zscore"` scales each feature (row) across samples, which suits function profiles where features differ in scale:
+
+```{r zscore}
+heatmap.ht <- gmaio::plot_heatmap(genus.p, metadata.df, project.l$palettes, transform = "zscore",
+                                  column_split = "Treatment", row_labels = "Genus",
+                                  legend_title = "Z-score\n(log10 abundance)")
+```
+
+```{r zscore-show, echo = FALSE}
+show_heatmap(heatmap.ht)
+```
+
+### Colour ramp
+
+`colours` takes a vector of colours (low to high) or the name of any palette in `grDevices::hcl.pals()`, such as `"Mako"`, `"Rocket"`, `"YlOrRd"` or `"Blues 3"`.
+Sequential palettes run from light (low) to dark (high).
+
+### Legend breaks and capping the scale
+
+`legend_breaks` sets the legend (and colour) breaks in the original units.
+The colours are spread evenly over the breaks, and values above the last break take the last colour, so the top label can say so:
+
+```{r breaks}
+heatmap.ht <- gmaio::plot_heatmap(genus.p, metadata.df, project.l$palettes,
+                                  column_split = "Treatment", row_labels = "Genus",
+                                  colours = "Rocket",
+                                  legend_breaks = c(0.01, 0.1, 1, 10, 30),
+                                  legend_labels = c("0.01", "0.1", "1", "10", ">= 30"),
+                                  legend_title = "Relative\nabundance (%)",
+                                  zero_colour = "white", zero_legend = "Not detected")
+```
+
+```{r breaks-show, echo = FALSE}
+show_heatmap(heatmap.ht)
+```
+
+`zero_colour` sets the colour of zero cells (`NULL` colours them from the ramp) and `zero_legend` the label of their legend key (`NULL` for no key).
+
+## Order
+
+Rows are clustered by default (`cluster_rows = TRUE`), within row splits.
+With `cluster_rows = FALSE`, `order_rows_by` sets the order: `"abundance"` (mean, highest first), `"label"`, or feature columns such as `"Phylum"` (then by abundance).
+Columns follow the metadata order unless `cluster_columns = TRUE`; `order_columns_by` sorts them by `"label"` or metadata columns.
+
+```{r order}
+heatmap.ht <- gmaio::plot_heatmap(genus.p, metadata.df, project.l$palettes,
+                                  cluster_rows = FALSE, order_rows_by = c("Phylum", "abundance"),
+                                  order_columns_by = c("Time", "Treatment"),
+                                  column_annotations = c("Time", "Treatment"),
+                                  row_annotation = "Phylum", row_labels = "Genus",
+                                  legend_title = "Relative\nabundance (%)")
+```
+
+```{r order-show, echo = FALSE}
+show_heatmap(heatmap.ht)
+```
+
+When clustering, `show_row_dend` and `show_column_dend` draw the dendrograms, and `clustering_distance` and `clustering_method` choose the distance (`"euclidean"`, `"manhattan"`, ...) and linkage (`"average"`, `"complete"`, `"ward.D2"`, ...).
+
+## Cell values
+
+`show_values = TRUE` prints each value (in original units) in its cell.
+The text is black or white depending on the cell colour, unless `value_colour` is set.
+`value_digits` sets the significant digits and `value_size` the font size; zeros are left empty unless `hide_zero_values = FALSE`.
+Larger cells make room for the numbers:
+
+```{r values}
+top.p <- gmaio::top_features(genus.p, 12)
+heatmap.ht <- gmaio::plot_heatmap(top.p, metadata.df, project.l$palettes,
+                                  column_split = "Treatment", row_labels = "Genus",
+                                  show_values = TRUE, value_digits = 2, value_size = 6,
+                                  cell_width = 0.9, cell_height = 0.6,
+                                  legend_title = "Relative\nabundance (%)")
+```
+
+```{r values-show, echo = FALSE}
+show_heatmap(heatmap.ht)
+```
+
+## Size, fonts and layout
+
+| Argument | Controls | Default |
+|---|---|---|
+| `cell_size`, `cell_width`, `cell_height` | Cell size in cm | 0.4 |
+| `cell_border_colour`, `cell_border_width` | Lines between cells | white, 0.5 |
+| `row_names_size`, `column_names_size` | Row and column label font size | 7 |
+| `column_names_rot` | Column label rotation | 90 |
+| `row_names_side`, `column_names_side` | Label sides | right, bottom |
+| `title_size` | Axis and split titles | 8 |
+| `annotation_name_size`, `annotation_size` | Annotation names and track size (cm) | 8, 0.35 |
+| `legend_title_size`, `legend_label_size` | Legend fonts | 8, 7 |
+| `column_annotation_side`, `row_annotation_side` | Annotation sides | top, left |
+| `legend_side`, `merge_legends` | Legend position; one column of legends | right, `FALSE` |
+| `padding` | Space around the figure, mm (bottom, left, top, right) | 2, 2, 2, 2 |
+
+The saved figure is sized to fit, so changing cell or font sizes needs no change to `save_plot()`.
+
+```{r layout}
+heatmap.ht <- gmaio::plot_heatmap(genus.p, metadata.df, project.l$palettes,
+                                  column_split = "Treatment", row_annotation = "Phylum", row_labels = "Genus",
+                                  cell_width = 0.3, cell_height = 0.3, column_names_rot = 60,
+                                  row_names_size = 6, column_names_size = 6,
+                                  legend_side = "bottom", legend_title = "Relative abundance (%)")
+```
+
+```{r layout-show, echo = FALSE}
+show_heatmap(heatmap.ht)
+```
+
+## Anything else
+
+`plot_heatmap()` returns a ComplexHeatmap `Heatmap`.
+Any other `ComplexHeatmap::Heatmap()` argument can be passed directly and overrides the gmaio setting, for example wider gaps between splits and a border around each block:
+
+```{r extra}
+heatmap.ht <- gmaio::plot_heatmap(genus.p, metadata.df, project.l$palettes,
+                                  column_split = "Treatment", row_split = "Phylum", row_labels = "Genus",
+                                  column_gap = grid::unit(3, "mm"), border = "grey40")
+```
+
+```{r extra-show, echo = FALSE}
+show_heatmap(heatmap.ht)
+```
+
+Settings applied when the heatmap is drawn (axis titles, legend sides, padding) are stored with it.
+`save_plot()` and `draw_heatmap()` apply them, and take any `ComplexHeatmap::draw()` argument to override them, e.g. `gmaio::save_plot(heatmap.ht, path, merge_legend = TRUE)`.
+
+## Saving and viewing
+
+```r
+gmaio::save_plot(heatmap.ht, gmaio::figure_path(project.l$config, "heatmaps", "sylph_genus"))
+```
+
+The size is measured from the drawn heatmap; pass `width` and `height` (cm) to fix it instead.
+To look at a heatmap in RStudio, use `gmaio::draw_heatmap(heatmap.ht)`.
+Printing the object also draws it, but without the stored titles and legend layout.
+
+## Other heatmaps
+
+Presence/absence and genome heatmaps (`plot_presence_heatmap()`, `plot_genome_matrix()`, `plot_dram_heatmap()`) are separate functions for isolate and MAG data; see their help pages.

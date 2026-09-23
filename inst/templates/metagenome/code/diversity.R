@@ -4,7 +4,7 @@ project.l <- gmaio::load_processed()
 config.l <- project.l$config
 metadata.df <- gmaio::analysis_metadata(project.l)
 group.s <- gmaio::primary_group(project.l)
-if (is.null(group.s)) stop("Set analysis: group_variables in config.yml")
+if (is.null(group.s)) gmaio::skip_analysis("No group variable; set analysis: group_variables in config.yml")
 
 # name = profile, rank (NA for unaggregated features)
 datasets.df <- data.frame(
