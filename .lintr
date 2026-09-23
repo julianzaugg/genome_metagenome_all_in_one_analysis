@@ -1,0 +1,11 @@
+linters: linters_with_defaults(
+    line_length_linter(130),
+    object_name_linter = NULL,
+    object_length_linter(50),
+    brace_linter = NULL,
+    paren_body_linter = NULL,
+    indentation_linter = NULL,
+    return_linter = NULL
+  )
+exclusions: list("code_examples_dump", "data-raw")
+encoding: "UTF-8"

@@ -1,0 +1,7 @@
+Name	Completeness	Contamination	Completeness_Model_Used	Translation_Table_Used	Coding_Density	Contig_N50	Average_Gene_Length	Genome_Size	GC_Content	Total_Coding_Sequences	Total_Contigs	Max_Contig_Length	Additional_Notes
+S1.metabat2.1	98	1	Gradient Boost (General Model)	11	0.9	25000	300	3e+06	0.45	3000	120	1e+05	None
+S1.semibin.2	72	8	Gradient Boost (General Model)	11	0.9	25000	300	3e+06	0.45	3000	120	1e+05	None
+S2.metabat2.1	95	2	Gradient Boost (General Model)	11	0.9	25000	300	3e+06	0.45	3000	120	1e+05	None
+S10.vamb.3	60	12	Gradient Boost (General Model)	11	0.9	25000	300	3e+06	0.45	3000	120	1e+05	None
+S11.metabat2.4	91	0.5	Gradient Boost (General Model)	11	0.9	25000	300	3e+06	0.45	3000	120	1e+05	None
+S12.rosella.5	88	3	Gradient Boost (General Model)	11	0.9	25000	300	3e+06	0.45	3000	120	1e+05	None

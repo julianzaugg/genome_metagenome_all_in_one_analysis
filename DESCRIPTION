@@ -1,0 +1,55 @@
+Package: gmaio
+Title: Downstream Analysis of genome_metagenome_all_in_one Pipeline Output
+Version: 0.1.0
+Authors@R:
+    person("Julian", "Zaugg", , "j.zaugg@uq.edu.au", role = c("aut", "cre"))
+Description: Loads, links and analyses the output of the genome_metagenome_all_in_one
+    Nextflow pipeline for metagenomes and isolate genomes. Provides readers for each
+    pipeline output, a common feature-profile data model, consistent palettes, tables,
+    figures and statistics, and project templates with a main entry point script and
+    one script per analysis.
+License: MIT + file LICENSE
+URL: https://github.com/julianzaugg/genome_metagenome_all_in_one_analysis
+BugReports: https://github.com/julianzaugg/genome_metagenome_all_in_one_analysis/issues
+Depends:
+    R (>= 4.2)
+Imports:
+    circlize,
+    cli,
+    ComplexHeatmap,
+    data.table,
+    dplyr,
+    farver,
+    ggnewscale,
+    ggplot2,
+    ggrepel,
+    grDevices,
+    grid,
+    jsonlite,
+    openxlsx,
+    patchwork,
+    permute,
+    readxl,
+    rlang,
+    scales,
+    stats,
+    tibble,
+    tidyr,
+    utils,
+    vegan,
+    yaml
+Suggests:
+    ape,
+    ggtree,
+    maaslin3,
+    MicrobiomeStat,
+    mixOmics,
+    Nonpareil,
+    svglite,
+    testthat (>= 3.0.0),
+    withr
+biocViews:
+Config/testthat/edition: 3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.0

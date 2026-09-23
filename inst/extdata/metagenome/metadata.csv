@@ -1,0 +1,7 @@
+"Sample_ID","Name","Treatment","Exclude","Age_weeks"
+"S1","Mouse_1","Control","no",8
+"S2","Mouse_2","Control","no",9
+"S3","Mouse_3","Control","no",8
+"S10","Mouse_4","Treated","no",10
+"S11","Mouse_5","Treated","no",9
+"S12","Mouse_6","Treated","yes",8

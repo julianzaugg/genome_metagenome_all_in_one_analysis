@@ -1,0 +1,7 @@
+user_genome	classification	classification_method	note	msa_percent	red_value	warnings
+S1.metabat2.1	d__Bacteria;p__Bacillota_A;c__Clostridia;o__Lachnospirales;f__Lachnospiraceae;g__Blautia;s__Blautia obeum	ANI		90	N/A	N/A
+S1.semibin.2	d__Bacteria;p__Bacillota_A;c__Clostridia;o__Lachnospirales;f__Lachnospiraceae;g__Blautia;s__Blautia obeum	ANI		90	N/A	N/A
+S2.metabat2.1	d__Bacteria;p__Bacteroidota;c__Bacteroidia;o__Bacteroidales;f__Bacteroidaceae;g__Bacteroides;s__Bacteroides fragilis	ANI		90	N/A	N/A
+S10.vamb.3	d__Bacteria;p__Bacteroidota;c__Bacteroidia;o__Bacteroidales;f__Bacteroidaceae;g__Phocaeicola;s__Phocaeicola vulgatus	ANI		90	N/A	N/A
+S11.metabat2.4	d__Bacteria;p__Pseudomonadota;c__Gammaproteobacteria;o__Enterobacterales;f__Enterobacteriaceae;g__Escherichia;s__Escherichia coli	ANI		90	N/A	N/A
+S12.rosella.5	d__Bacteria;p__Bacillota_A;c__Clostridia;o__Lachnospirales;f__Lachnospiraceae;g__;s__	ANI		90	N/A	N/A

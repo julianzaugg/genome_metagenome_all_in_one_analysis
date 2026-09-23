@@ -1,0 +1,12 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^LICENSE\.md$
+^README\.Rmd$
+^\.github$
+^\.lintr$
+^CLAUDE\.md$
+^code_examples_dump$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^data-raw$

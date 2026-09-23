@@ -1,0 +1,7 @@
+seq_name	length	topology	coordinates	n_genes	genetic_code	virus_score	fdr	n_hallmarks	marker_enrichment	taxonomy
+S1.scaffolds__genomad__NODE_1_length_5000_cov_3.0	5000	No terminal repeats		6	11	0.9		2	5	Viruses;Duplodnaviria;Heunggongvirae;Uroviricota;Caudoviricetes;;
+S2.scaffolds__genomad__NODE_2_length_5000_cov_3.0	5000	No terminal repeats		6	11	0.9		2	5	Viruses;Duplodnaviria;Heunggongvirae;Uroviricota;Caudoviricetes;;
+S3.scaffolds__genomad__NODE_3_length_5000_cov_3.0	5000	No terminal repeats		6	11	0.9		2	5	Viruses;Duplodnaviria;Heunggongvirae;Uroviricota;Caudoviricetes;;
+S10.scaffolds__genomad__NODE_4_length_5000_cov_3.0	5000	No terminal repeats		6	11	0.9		2	5	Viruses;Duplodnaviria;Heunggongvirae;Uroviricota;Caudoviricetes;;
+S11.scaffolds__genomad__NODE_5_length_5000_cov_3.0	5000	No terminal repeats		6	11	0.9		2	5	Viruses;Duplodnaviria;Heunggongvirae;Uroviricota;Caudoviricetes;;
+S12.scaffolds__genomad__NODE_6_length_5000_cov_3.0	5000	No terminal repeats		6	11	0.9		2	5	Viruses;Duplodnaviria;Heunggongvirae;Uroviricota;Caudoviricetes;;

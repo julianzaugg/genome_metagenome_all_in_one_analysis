@@ -1,0 +1,7 @@
+Bin Id	Marker lineage	# genomes	# markers	# marker sets	Completeness	Contamination	Strain heterogeneity
+S1.metabat2.1	o__Clostridiales (UID1)	100	500	300	96	1.5	0
+S1.semibin.2	o__Clostridiales (UID1)	100	500	300	70	9	0
+S2.metabat2.1	o__Clostridiales (UID1)	100	500	300	90	2	0
+S10.vamb.3	o__Clostridiales (UID1)	100	500	300	55	15	0
+S11.metabat2.4	o__Clostridiales (UID1)	100	500	300	92	1	0
+S12.rosella.5	o__Clostridiales (UID1)	100	500	300	85	4	0

@@ -1,0 +1,48 @@
+# gmaio project configuration (metagenome)
+# Relative paths are resolved from the directory containing this file.
+
+project_name: My metagenome project
+mode: metagenome
+
+# genome_metagenome_all_in_one output directory (the pipeline --outdir)
+pipeline_results: /path/to/pipeline/results
+
+# Optional per-output overrides (file, glob or directory); keys are listed by gmaio::pipeline_registry()
+files: {}
+#  sylph_relative: data/sylph/merged_relative_abundance.tsv
+#  nonpareil: data/nonpareil
+
+metadata:
+  file: data/metadata.xlsx
+  sheet: 1
+  sample_id_column: Sample_ID      # must match the pipeline samplesheet `sample` column
+  label_column: null               # display labels for figures (optional)
+  exclude_column: null             # yes/no column marking samples to leave out of analyses (optional)
+  exclude_samples: []              # or list sample IDs here
+  sample_order: []                 # columns used to order samples, e.g. [Group, Sample_ID]
+  colour_variables: []             # extra metadata columns to give fixed colours
+
+analysis:
+  group_variables: []              # e.g. [Treatment]; first is used for grouping in figures and tests
+  reference_levels: {}             # e.g. {Treatment: Control}
+  covariates: []                   # extra model terms for differential abundance
+  ranks: [phylum, genus]           # taxonomic ranks for figures and statistics
+  permutations: 999
+  seed: 1234
+
+mags:
+  quality_weight: 3                # quality score = completeness - weight x contamination
+  quality_threshold: 50            # HQ when the score reaches this
+  quality_source: both             # both (either passes), checkm1 or checkm2
+
+outputs:
+  tables: Result_tables
+  figures: Result_figures
+  other: Result_other
+  figure_format: pdf               # pdf, svg or png
+  taxa_colour_scheme: distinct     # distinct, or hierarchical (shades of the phylum colour)
+
+# Fixed colours; these override generated colours saved in palettes.yml
+colours: {}
+#  Treatment: {Control: "#4E79A7", Treated: "#E15759"}
+#  taxa: {p__Bacillota_A: "#59A14F"}

@@ -1,0 +1,31 @@
+	fasta	rank	ko_id	kegg_hit	cazy_ids	cazy_best_hit	peptidase_family
+chunk.001_S1___NODE_1_length_1000_cov_2.0_1	chunk.001	C	K00002	alcohol dehydrogenase [EC:1.1.1.1]	GH13; CBM48		
+chunk.001_S1___NODE_2_length_1000_cov_2.0_1	chunk.001	C	K00003	alcohol dehydrogenase [EC:1.1.1.1]	GH13; CBM48		
+chunk.001_S1___NODE_3_length_1000_cov_2.0_1	chunk.001	C		alcohol dehydrogenase [EC:1.1.1.1]	GT2		
+chunk.001_S1___NODE_4_length_1000_cov_2.0_1	chunk.001	C	K00003	alcohol dehydrogenase [EC:1.1.1.1]			
+chunk.001_S1___NODE_5_length_1000_cov_2.0_1	chunk.001	C	K00001	alcohol dehydrogenase [EC:1.1.1.1]	GH13; CBM48		
+chunk.001_S2___NODE_6_length_1000_cov_2.0_1	chunk.001	C	K00003	alcohol dehydrogenase [EC:1.1.1.1]	GT2		M23
+chunk.001_S2___NODE_7_length_1000_cov_2.0_1	chunk.001	C		alcohol dehydrogenase [EC:1.1.1.1]	GT2		M23
+chunk.001_S2___NODE_8_length_1000_cov_2.0_1	chunk.001	C	K00002	alcohol dehydrogenase [EC:1.1.1.1]	GT2		M23
+chunk.001_S2___NODE_9_length_1000_cov_2.0_1	chunk.001	C	K00003	alcohol dehydrogenase [EC:1.1.1.1]	GT2		M23
+chunk.001_S2___NODE_10_length_1000_cov_2.0_1	chunk.001	C		alcohol dehydrogenase [EC:1.1.1.1]	GH23		M23
+chunk.001_S3___NODE_11_length_1000_cov_2.0_1	chunk.001	C	K00002	alcohol dehydrogenase [EC:1.1.1.1]			
+chunk.001_S3___NODE_12_length_1000_cov_2.0_1	chunk.001	C	K00003	alcohol dehydrogenase [EC:1.1.1.1]	GT2		M23
+chunk.001_S3___NODE_13_length_1000_cov_2.0_1	chunk.001	C	K00003	alcohol dehydrogenase [EC:1.1.1.1]			
+chunk.001_S3___NODE_14_length_1000_cov_2.0_1	chunk.001	C	K00001	alcohol dehydrogenase [EC:1.1.1.1]	GT2		
+chunk.001_S3___NODE_15_length_1000_cov_2.0_1	chunk.001	C	K00001	alcohol dehydrogenase [EC:1.1.1.1]	GH13; CBM48		
+chunk.001_S10___NODE_16_length_1000_cov_2.0_1	chunk.001	C	K00001	alcohol dehydrogenase [EC:1.1.1.1]	GH13; CBM48		
+chunk.001_S10___NODE_17_length_1000_cov_2.0_1	chunk.001	C	K00003	alcohol dehydrogenase [EC:1.1.1.1]			M23
+chunk.001_S10___NODE_18_length_1000_cov_2.0_1	chunk.001	C	K00002	alcohol dehydrogenase [EC:1.1.1.1]			M23
+chunk.001_S10___NODE_19_length_1000_cov_2.0_1	chunk.001	C	K00001	alcohol dehydrogenase [EC:1.1.1.1]	GH13; CBM48		
+chunk.001_S10___NODE_20_length_1000_cov_2.0_1	chunk.001	C	K00003	alcohol dehydrogenase [EC:1.1.1.1]	GT2		
+chunk.001_S11___NODE_21_length_1000_cov_2.0_1	chunk.001	C		alcohol dehydrogenase [EC:1.1.1.1]	GH13; CBM48		
+chunk.001_S11___NODE_22_length_1000_cov_2.0_1	chunk.001	C		alcohol dehydrogenase [EC:1.1.1.1]	GT2		M23
+chunk.001_S11___NODE_23_length_1000_cov_2.0_1	chunk.001	C	K00003	alcohol dehydrogenase [EC:1.1.1.1]	GH13; CBM48		M23
+chunk.001_S11___NODE_24_length_1000_cov_2.0_1	chunk.001	C	K00001	alcohol dehydrogenase [EC:1.1.1.1]	GT2		M23
+chunk.001_S11___NODE_25_length_1000_cov_2.0_1	chunk.001	C	K00001	alcohol dehydrogenase [EC:1.1.1.1]	GH23		
+chunk.001_S12___NODE_26_length_1000_cov_2.0_1	chunk.001	C		alcohol dehydrogenase [EC:1.1.1.1]	GH13; CBM48		M23
+chunk.001_S12___NODE_27_length_1000_cov_2.0_1	chunk.001	C	K00001	alcohol dehydrogenase [EC:1.1.1.1]			M23
+chunk.001_S12___NODE_28_length_1000_cov_2.0_1	chunk.001	C		alcohol dehydrogenase [EC:1.1.1.1]	GH23		M23
+chunk.001_S12___NODE_29_length_1000_cov_2.0_1	chunk.001	C	K00002	alcohol dehydrogenase [EC:1.1.1.1]	GT2		M23
+chunk.001_S12___NODE_30_length_1000_cov_2.0_1	chunk.001	C		alcohol dehydrogenase [EC:1.1.1.1]			

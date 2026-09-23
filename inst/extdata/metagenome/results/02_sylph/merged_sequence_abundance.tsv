@@ -1,0 +1,36 @@
+clade_name	/work/reads/S1.clean_1.fastq.gz	/work/reads/S2.clean_1.fastq.gz	/work/reads/S3.clean_1.fastq.gz	/work/reads/S10.clean_1.fastq.gz	/work/reads/S11.clean_1.fastq.gz	/work/reads/S12.clean_1.fastq.gz
+d__Bacteria	69.3405	35.2963	84.4324	100	100	100
+d__Archaea	30.6595	64.7037	15.5676	0	0	0
+d__Bacteria|p__Bacillota_A	6.32	10.4452	67.3604	9.4887	65.3852	52.1556
+d__Bacteria|p__Bacteroidota	63.0205	24.8512	17.072	34.4679	23.7362	20.2897
+d__Bacteria|p__Pseudomonadota	0	0	0	56.0434	10.8786	27.5547
+d__Archaea|p__Methanobacteriota	30.6595	64.7037	15.5676	0	0	0
+d__Bacteria|p__Bacillota_A|c__Clostridia	6.32	10.4452	67.3604	9.4887	65.3852	52.1556
+d__Bacteria|p__Bacteroidota|c__Bacteroidia	63.0205	24.8512	17.072	34.4679	23.7362	20.2897
+d__Bacteria|p__Pseudomonadota|c__Gammaproteobacteria	0	0	0	56.0434	10.8786	27.5547
+d__Archaea|p__Methanobacteriota|c__Methanobacteria	30.6595	64.7037	15.5676	0	0	0
+d__Bacteria|p__Bacillota_A|c__Clostridia|o__Lachnospirales	6.32	10.4452	67.3604	9.4887	65.3852	52.1556
+d__Bacteria|p__Bacteroidota|c__Bacteroidia|o__Bacteroidales	63.0205	24.8512	17.072	34.4679	23.7362	20.2897
+d__Bacteria|p__Pseudomonadota|c__Gammaproteobacteria|o__Enterobacterales	0	0	0	56.0434	10.8786	27.5547
+d__Archaea|p__Methanobacteriota|c__Methanobacteria|o__Methanobacteriales	30.6595	64.7037	15.5676	0	0	0
+d__Bacteria|p__Bacillota_A|c__Clostridia|o__Lachnospirales|f__Lachnospiraceae	6.32	10.4452	67.3604	9.4887	65.3852	52.1556
+d__Bacteria|p__Bacteroidota|c__Bacteroidia|o__Bacteroidales|f__Bacteroidaceae	63.0205	24.8512	17.072	34.4679	23.7362	20.2897
+d__Bacteria|p__Pseudomonadota|c__Gammaproteobacteria|o__Enterobacterales|f__Enterobacteriaceae	0	0	0	56.0434	10.8786	27.5547
+d__Archaea|p__Methanobacteriota|c__Methanobacteria|o__Methanobacteriales|f__Methanobacteriaceae	30.6595	64.7037	15.5676	0	0	0
+d__Bacteria|p__Bacillota_A|c__Clostridia|o__Lachnospirales|f__Lachnospiraceae|g__Blautia	6.32	10.4452	67.3604	9.4887	65.3852	52.1556
+d__Bacteria|p__Bacteroidota|c__Bacteroidia|o__Bacteroidales|f__Bacteroidaceae|g__Bacteroides	26.4438	8.2777	2.6597	23.8965	22.8434	12.7708
+d__Bacteria|p__Bacteroidota|c__Bacteroidia|o__Bacteroidales|f__Bacteroidaceae|g__Phocaeicola	36.5768	16.5735	14.4123	10.5714	0.8929	7.5189
+d__Bacteria|p__Pseudomonadota|c__Gammaproteobacteria|o__Enterobacterales|f__Enterobacteriaceae|g__Escherichia	0	0	0	56.0434	10.8786	27.5547
+d__Archaea|p__Methanobacteriota|c__Methanobacteria|o__Methanobacteriales|f__Methanobacteriaceae|g__Methanobrevibacter	30.6595	64.7037	15.5676	0	0	0
+d__Bacteria|p__Bacillota_A|c__Clostridia|o__Lachnospirales|f__Lachnospiraceae|g__Blautia|s__Blautia obeum	4.3289	4.1224	7.9216	5.1978	10.982	37.0113
+d__Bacteria|p__Bacillota_A|c__Clostridia|o__Lachnospirales|f__Lachnospiraceae|g__Blautia|s__Blautia wexlerae	1.9911	6.3228	59.4388	4.2909	54.4032	15.1443
+d__Bacteria|p__Bacteroidota|c__Bacteroidia|o__Bacteroidales|f__Bacteroidaceae|g__Bacteroides|s__Bacteroides fragilis	26.4438	8.2777	2.6597	23.8965	22.8434	12.7708
+d__Bacteria|p__Bacteroidota|c__Bacteroidia|o__Bacteroidales|f__Bacteroidaceae|g__Phocaeicola|s__Phocaeicola vulgatus	36.5768	16.5735	14.4123	10.5714	0.8929	7.5189
+d__Bacteria|p__Pseudomonadota|c__Gammaproteobacteria|o__Enterobacterales|f__Enterobacteriaceae|g__Escherichia|s__Escherichia coli	0	0	0	56.0434	10.8786	27.5547
+d__Archaea|p__Methanobacteriota|c__Methanobacteria|o__Methanobacteriales|f__Methanobacteriaceae|g__Methanobrevibacter|s__Methanobrevibacter smithii	30.6595	64.7037	15.5676	0	0	0
+d__Bacteria|p__Bacillota_A|c__Clostridia|o__Lachnospirales|f__Lachnospiraceae|g__Blautia|s__Blautia obeum|t__GCF_000001.1	4.3289	4.1224	7.9216	5.1978	10.982	37.0113
+d__Bacteria|p__Bacillota_A|c__Clostridia|o__Lachnospirales|f__Lachnospiraceae|g__Blautia|s__Blautia wexlerae|t__GCF_000002.1	1.9911	6.3228	59.4388	4.2909	54.4032	15.1443
+d__Bacteria|p__Bacteroidota|c__Bacteroidia|o__Bacteroidales|f__Bacteroidaceae|g__Bacteroides|s__Bacteroides fragilis|t__GCF_000003.1	26.4438	8.2777	2.6597	23.8965	22.8434	12.7708
+d__Bacteria|p__Bacteroidota|c__Bacteroidia|o__Bacteroidales|f__Bacteroidaceae|g__Phocaeicola|s__Phocaeicola vulgatus|t__GCF_000004.1	36.5768	16.5735	14.4123	10.5714	0.8929	7.5189
+d__Bacteria|p__Pseudomonadota|c__Gammaproteobacteria|o__Enterobacterales|f__Enterobacteriaceae|g__Escherichia|s__Escherichia coli|t__GCF_000005.1	0	0	0	56.0434	10.8786	27.5547
+d__Archaea|p__Methanobacteriota|c__Methanobacteria|o__Methanobacteriales|f__Methanobacteriaceae|g__Methanobrevibacter|s__Methanobrevibacter smithii|t__GCF_000006.1	30.6595	64.7037	15.5676	0	0	0
