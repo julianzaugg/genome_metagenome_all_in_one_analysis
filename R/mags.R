@@ -77,7 +77,9 @@ mimag_tier <- function(summary.df){
 #' @param set_name Name of the mapped genome set, used as the profile source.
 #' @return Named list of `gm_profile`: `coverage`, `read_count`, `relative_abundance`
 #'   (coverage normalised to 100 per sample among genomes) and `coverm_relative_abundance`
-#'   (CoverM's own value, a share of all reads including unmapped).
+#'   (CoverM's own value: a share of the reads that went into mapping, i.e. after QC and host
+#'   removal, with the unmapped rest left out; value type `"read_share"`, so it is never
+#'   rescaled to 100).
 #' @export
 build_mag_profiles <- function(coverm.df, bin_summary.df, set_name){
   require_columns(coverm.df, c("Sample_ID", "Genome", "Mean_coverage", "Read_count", "Relative_abundance"), "CoverM table")
@@ -104,5 +106,5 @@ build_mag_profiles <- function(coverm.df, bin_summary.df, set_name){
   list(coverage = coverage.p,
        read_count = to_profile("Read_count", "read_count"),
        relative_abundance = as_relative_abundance(coverage.p),
-       coverm_relative_abundance = to_profile("Relative_abundance", "relative_abundance"))
+       coverm_relative_abundance = to_profile("Relative_abundance", "read_share"))
 }

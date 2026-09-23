@@ -1,5 +1,6 @@
 profile_value_types <- function(){
-  c("relative_abundance", "coverage", "read_count", "rpkm", "normalised_rpkm", "presence", "copy_number", "value")
+  c("relative_abundance", "read_share", "coverage", "read_count", "rpkm", "normalised_rpkm", "presence", "copy_number",
+    "value")
 }
 
 #' Create a feature profile
@@ -11,8 +12,10 @@ profile_value_types <- function(){
 #' @param values.m Numeric matrix, features in rows and samples in columns, with unique row names.
 #' @param features.df Optional annotation data frame with a `Feature_ID` column matching the row names.
 #'   A `Label` column is used for display; it defaults to `Feature_ID`.
-#' @param value_type What the values are; one of `"relative_abundance"`, `"coverage"`,
-#'   `"read_count"`, `"rpkm"`, `"normalised_rpkm"`, `"presence"`, `"copy_number"`, `"value"`.
+#' @param value_type What the values are; one of `"relative_abundance"` (percent, each sample
+#'   sums to 100), `"read_share"` (percent of the reads that went into mapping, e.g. CoverM
+#'   relative abundance, where unmapped reads make up the rest), `"coverage"`, `"read_count"`, `"rpkm"`,
+#'   `"normalised_rpkm"`, `"presence"`, `"copy_number"`, `"value"`.
 #' @param source Short name of the data source, e.g. `"sylph"`.
 #' @param feature_level What a feature is, e.g. `"species"`, `"genus"`, `"genome"`, `"KO"`.
 #' @return A `gm_profile`.
@@ -290,7 +293,7 @@ profile_to_long <- function(profile, metadata.df = NULL){
   long.df$Label <- profile$features$Label[match(long.df$Feature_ID, profile$features$Feature_ID)]
   long.df <- long.df[, c("Feature_ID", "Label", "Sample_ID", "Value")]
   if (!is.null(metadata.df)){
-    long.df <- dplyr::left_join(long.df, metadata.df, by = "Sample_ID")
+    long.df <- join_metadata(long.df, metadata.df)
   }
   long.df
 }

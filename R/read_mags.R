@@ -44,18 +44,21 @@ read_gtdbtk <- function(paths.v){
         gtdb.df[, setdiff(names(gtdb.df), c("Bin_ID", "Classification")), drop = FALSE])
 }
 
-#' Read a CoverM cluster definition
+#' Read CoverM cluster definitions
 #'
-#' @param path Path to `cluster_definition.tsv` (representative, member; no header).
+#' @param paths.v Paths to `cluster_definition.tsv` files (representative, member; no header),
+#'   e.g. one per sample for within-sample dereplication.
 #' @return Data frame with `Representative` and `Bin_ID`.
 #' @export
-read_cluster_definition <- function(path){
-  clusters.df <- utils::read.delim(path, header = FALSE, col.names = c("Representative", "Bin_ID"),
-                                   stringsAsFactors = FALSE)
-  clusters.df <- clusters.df[!(clusters.df$Representative == "representative" & clusters.df$Bin_ID == "member"), ]
+read_cluster_definition <- function(paths.v){
   strip.f <- function(x) sub("\\.(fasta|fa|fna)(\\.gz)?$", "", basename(x))
-  data.frame(Representative = strip.f(clusters.df$Representative), Bin_ID = strip.f(clusters.df$Bin_ID),
-             stringsAsFactors = FALSE)
+  do.call(rbind, lapply(paths.v, function(path.s){
+    clusters.df <- utils::read.delim(path.s, header = FALSE, col.names = c("Representative", "Bin_ID"),
+                                     stringsAsFactors = FALSE)
+    clusters.df <- clusters.df[!(clusters.df$Representative == "representative" & clusters.df$Bin_ID == "member"), ]
+    data.frame(Representative = strip.f(clusters.df$Representative), Bin_ID = strip.f(clusters.df$Bin_ID),
+               stringsAsFactors = FALSE)
+  }))
 }
 
 #' Read per-sample CoverM genome abundance tables

@@ -45,8 +45,9 @@ write_project_tables <- function(project.l){
     written.e$paths <- c(written.e$paths, path.s)
   }
 
-  write.f(list(Metadata = project.l$metadata, Read_stats = project.l$read_stats,
-               Run_parameters = run_params_table(project.l$run_params)), "Metadata_and_read_stats.xlsx")
+  write.f(c(list(Metadata = project.l$metadata), read_stats_tables(project.l$read_stats, project.l$metadata,
+                                                                    bases = is_long_read_run(project.l$run_params)),
+            list(Run_parameters = run_params_table(project.l$run_params))), "Metadata_and_read_stats.xlsx")
 
   for (name.s in intersect(names(profile_table_names()), names(project.l$profiles))){
     tables.l <- taxonomy_tables(project.l$profiles[[name.s]])

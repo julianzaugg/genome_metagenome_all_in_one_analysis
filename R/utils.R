@@ -38,7 +38,11 @@ require_pkg <- function(pkg, reason = NULL){
 require_columns <- function(input.df, columns.v, what = "table"){
   missing.v <- setdiff(columns.v, names(input.df))
   if (length(missing.v) > 0){
-    cli::cli_abort("{what} is missing column{?s} {.val {missing.v}}")
+    # Column names are case sensitive; point out near misses such as "label" for "Label"
+    near.v <- names(input.df)[tolower(names(input.df)) %in% tolower(missing.v)]
+    hint.v <- if (length(near.v) > 0) c("i" = "Column names are case sensitive; did you mean {.val {near.v}}?") else
+      c("i" = "Available: {.val {names(input.df)}}")
+    cli::cli_abort(c("{what} is missing column{?s} {.val {missing.v}}", hint.v))
   }
   invisible(TRUE)
 }
@@ -74,4 +78,14 @@ try_step <- function(expr, label){
     cli::cli_warn("{label} skipped: {conditionMessage(e)}")
     NULL
   })
+}
+
+# Join metadata onto a per-sample table by Sample_ID. Metadata columns that share a name with
+# a column of x.df (e.g. a metadata "Label" column next to the feature Label) are left out,
+# so the data being plotted keeps its column names instead of becoming .x/.y pairs.
+join_metadata <- function(x.df, metadata.df, type = c("left", "inner")){
+  type <- match.arg(type)
+  metadata.df <- metadata.df[, c("Sample_ID", setdiff(names(metadata.df), names(x.df))), drop = FALSE]
+  if (type == "left") dplyr::left_join(x.df, metadata.df, by = "Sample_ID") else
+    dplyr::inner_join(x.df, metadata.df, by = "Sample_ID")
 }

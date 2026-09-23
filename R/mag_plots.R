@@ -43,7 +43,7 @@ plot_mag_quality <- function(bin_summary.df, colours.v = NULL, source = c("Check
 plot_mag_counts <- function(bin_summary.df, metadata.df, facet_variable = NULL){
   counts.df <- as.data.frame(table(Sample_ID = bin_summary.df$Sample_ID, Tier = bin_summary.df$MIMAG_tier),
                              stringsAsFactors = FALSE)
-  counts.df <- dplyr::inner_join(counts.df, metadata.df, by = "Sample_ID")
+  counts.df <- join_metadata(counts.df, metadata.df, "inner")
   counts.df$Sample_label <- factor(counts.df$Sample_label, levels = metadata.df$Sample_label)
   counts.df$Tier <- factor(counts.df$Tier, levels = c("Low", "Medium", "High"))
   counts.gg <- ggplot2::ggplot(counts.df, ggplot2::aes(x = .data$Sample_label, y = .data$Freq, fill = .data$Tier)) +

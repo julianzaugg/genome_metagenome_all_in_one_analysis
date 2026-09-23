@@ -18,3 +18,13 @@ the per-bin DRAM distillate when present, then, for each CoverM mapping set foun
 builds profiles named \verb{mags_<set>_<type>} where type is \code{relative_abundance},
 \code{coverm_relative_abundance}, \code{coverage} or \code{read_count}.
 }
+\details{
+Sets \code{derep_bins}, \code{hq_bins}, \code{hq_derep_bins} and \code{hq_ref_bins} map every sample to one
+catalogue of genomes pooled across samples, so they can be compared between samples.
+Sets \code{ws_derep_bins} and \code{ws_hq_bins} (pipeline \code{--within_sample_dereplication}) map each
+sample only to its own bins: a genome can only be detected in the sample it was assembled
+from, so use them for per-sample summaries (\code{\link[=within_sample_mag_summary]{within_sample_mag_summary()}}), not for
+ordination, differential abundance or other between-sample comparisons.
+The share of each sample's mapped reads (after QC and host removal) for each set is kept in
+\code{project.l$tables$mag_mapping}.
+}

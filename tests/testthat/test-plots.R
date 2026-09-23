@@ -100,3 +100,16 @@ test_that("Nonpareil curves are read, modelled and plotted", {
   metrics.l <- plot_nonpareil_metrics(nonpareil.l$summary, analysis_metadata(project.l), "Treatment")
   expect_equal(nrow(metrics.l$tests), 3)
 })
+
+test_that("metadata columns named like plot columns do not break figures", {
+  project.l <- example_project()
+  metadata.df <- analysis_metadata(project.l)
+  metadata.df$Label <- paste0("L_", metadata.df$Sample_ID)
+  metadata.df$Value <- 1
+  genus.p <- aggregate_profile(get_profile(project.l, "sylph_taxonomic"), rank = "genus")
+  long.df <- profile_to_long(genus.p, metadata.df)
+  expect_true(all(c("Label", "Value", "Treatment") %in% names(long.df)))
+  expect_false(any(grepl("\\.(x|y)$", names(long.df))))
+  expect_equal(long.df$Label, genus.p$features$Label[match(long.df$Feature_ID, genus.p$features$Feature_ID)])
+  expect_s3_class(plot_stacked_barchart(genus.p, metadata.df, project.l$palettes$taxa), "ggplot")
+})

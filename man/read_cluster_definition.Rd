@@ -2,16 +2,17 @@
 % Please edit documentation in R/read_mags.R
 \name{read_cluster_definition}
 \alias{read_cluster_definition}
-\title{Read a CoverM cluster definition}
+\title{Read CoverM cluster definitions}
 \usage{
-read_cluster_definition(path)
+read_cluster_definition(paths.v)
 }
 \arguments{
-\item{path}{Path to \code{cluster_definition.tsv} (representative, member; no header).}
+\item{paths.v}{Paths to \code{cluster_definition.tsv} files (representative, member; no header),
+e.g. one per sample for within-sample dereplication.}
 }
 \value{
 Data frame with \code{Representative} and \code{Bin_ID}.
 }
 \description{
-Read a CoverM cluster definition
+Read CoverM cluster definitions
 }

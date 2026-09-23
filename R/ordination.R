@@ -22,6 +22,7 @@ run_ordination <- function(profile, method = c("pca_rclr", "pcoa"), distance = "
                            scaling = 1){
   method <- match.arg(method)
   check_profile(profile)
+  warn_within_sample(profile, "An ordination")
   values.m <- profile$values
   values.m <- values.m[rowSums(values.m != 0) > 0, , drop = FALSE]
   empty.v <- colnames(values.m)[colSums(values.m != 0) == 0]
@@ -166,7 +167,7 @@ plot_ordination <- function(ordination, metadata.df, colour_by, colours.v = NULL
   axis.v <- names(ordination$variance)[axes]
   if (anyNA(axis.v)) cli::cli_abort("The ordination has only {length(ordination$variance)} axes")
   require_columns(metadata.df, unique(c("Sample_ID", colour_by, shape_by, label_by, group_by)), "Metadata")
-  plot.df <- dplyr::left_join(ordination$sites, metadata.df, by = "Sample_ID")
+  plot.df <- join_metadata(ordination$sites, metadata.df)
   plot.df$x <- plot.df[[axis.v[1]]]
   plot.df$y <- plot.df[[axis.v[2]]]
   continuous.b <- is.numeric(plot.df[[colour_by]])

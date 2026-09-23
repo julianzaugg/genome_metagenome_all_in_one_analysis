@@ -181,7 +181,7 @@ plot_genome_summary <- function(summary.df, metadata.df, fill_by = NULL, colours
                  CDS = "CDS")
   scale.v <- c(Genome_size = 1e-6, Contig_N50 = 1e-3, GC_content = 100)
   metrics.v <- metrics.v[names(metrics.v) %in% names(summary.df)]
-  joined.df <- dplyr::inner_join(summary.df[, setdiff(names(summary.df), "Sample_label")], metadata.df, by = "Sample_ID")
+  joined.df <- join_metadata(summary.df[, setdiff(names(summary.df), "Sample_label")], metadata.df, "inner")
   long.df <- do.call(rbind, lapply(names(metrics.v), function(m){
     value.v <- as.numeric(joined.df[[m]])
     if (m %in% names(scale.v)) value.v <- value.v * scale.v[[m]]

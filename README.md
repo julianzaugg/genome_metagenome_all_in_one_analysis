@@ -103,7 +103,7 @@ Metagenome projects (`mode: metagenome`):
 | `differential_abundance.R` | MaAsLin3, LinDA and sPLS-DA with a consensus table, effect plots and boxplots |
 | `nonpareil.R` | Nonpareil coverage curves and metrics by group |
 | `genomespot.R` | GenomeSPOT trait predictions for HQ MAGs and abundance-weighted community traits |
-| `mag_summary.R` | MAG quality, yield per sample, representative taxonomy, DRAM module heatmaps |
+| `mag_summary.R` | MAG quality, yield per sample, representative taxonomy, how much of each sample its own MAGs and the pooled catalogue explain, DRAM module heatmaps |
 | `functional_profiles.R` | KEGG, CAZy and peptidase heatmaps, CAZy substrate barcharts |
 | `mobile_elements.R` | Viral and plasmid cluster prevalence, richness, richness against depth, Jaccard PCoA, virus taxonomy |
 
@@ -146,6 +146,19 @@ gmaio::run_permanova(ordination$distance, gmaio::analysis_metadata(project.l), "
 
 Every abundance or function table is a `gm_profile`: a features x samples matrix plus feature annotations, so the same functions work for sylph, SingleM, MAGs, DRAM functions, AMR genes and pangenomes.
 `names(project.l$profiles)` lists what was loaded.
+
+## MAG sets and read statistics
+
+MAG abundance profiles are named `mags_<set>_<type>`.
+The cross-sample sets (`derep_bins`, `hq_bins`, `hq_derep_bins`, `hq_ref_bins`) map every sample to one catalogue of genomes pooled across samples; `hq_derep_bins` is the one the analysis scripts use.
+With the pipeline's `--within_sample_dereplication`, gmaio also loads `ws_derep_bins` and `ws_hq_bins`, where each sample is mapped only to its own bins.
+A genome can then only be detected in the sample it came from, so these are for per-sample summaries (`within_sample_mag_summary()`, `plot_mag_mapping()`), not ordination or differential abundance; those functions warn if given one.
+`<type>` is `relative_abundance` (each sample sums to 100), `coverm_relative_abundance` (CoverM's value: % of the reads after QC and host removal, not rescaled), `coverage` or `read_count`.
+
+`Metadata_and_read_stats.xlsx` has the read funnel in `Read_stats`: raw reads, each QC step, and reads mapped to each genome set, all as % of raw reads.
+For Nanopore runs it adds `Bases_mapped_<set>_percent`, the full length of mapped reads as % of raw sequenced bases (the pipeline's metric A).
+`Read_stats_full` is the pipeline report unchanged (including metrics B and C), and `Column_descriptions` explains every column.
+Mapping percentages against raw reads include host reads in the denominator, so they can be far lower than CoverM's percentages when host removal discards most reads.
 
 ## Metadata and sample linking
 

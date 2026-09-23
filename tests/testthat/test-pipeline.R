@@ -6,14 +6,14 @@ test_that("outputs are located by directory name suffix, whatever the number", {
   expect_error(locate_output(config.l, "coverm_derep_bins", required = TRUE), "not found")
 
   renumbered.s <- withr::local_tempdir()
-  file.copy(file.path(fixture_dir(), "results"), renumbered.s, recursive = TRUE)
-  file.rename(file.path(renumbered.s, "results", "02_sylph"), file.path(renumbered.s, "results", "04_sylph"))
-  config.l$pipeline_results <- file.path(renumbered.s, "results")
+  file.copy(fixture_results(), renumbered.s, recursive = TRUE)
+  file.rename(file.path(renumbered.s, "res", "02_sylph"), file.path(renumbered.s, "res", "04_sylph"))
+  config.l$pipeline_results <- file.path(renumbered.s, "res")
   expect_match(locate_output(config.l, "sylph_relative"), "04_sylph/merged_relative_abundance.tsv$")
 })
 
 test_that("file overrides accept files and directories", {
-  config.l <- make_test_project(files = list(nonpareil = file.path(fixture_dir(), "results", "17_nonpareil")))
+  config.l <- make_test_project(files = list(nonpareil = file.path(fixture_results(), "17_nonpareil")))
   expect_length(locate_output(config.l, "nonpareil"), 6)
   expect_error(make_test_project(files = list(not_a_key = "x")), "Unknown")
 })
@@ -78,7 +78,7 @@ test_that("the template configs parse list settings as character vectors", {
   for (mode.s in c("metagenome", "isolate")){
     project_dir.s <- withr::local_tempdir()
     config.l <- yaml::read_yaml(system.file("templates", mode.s, "config.yml", package = "gmaio"))
-    config.l$pipeline_results <- file.path(fixture_dir(), "results")
+    config.l$pipeline_results <- fixture_results()
     yaml::write_yaml(config.l, file.path(project_dir.s, "config.yml"))
     config.l <- read_config(file.path(project_dir.s, "config.yml"))
     expect_identical(config.l$analysis$covariates, character(), info = mode.s)

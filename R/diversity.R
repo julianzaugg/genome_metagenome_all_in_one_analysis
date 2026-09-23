@@ -71,7 +71,7 @@ pairwise_tests <- function(long.df, by, group, p_adjust_method = "BH"){
 plot_alpha_diversity <- function(diversity.df, metadata.df, group, colours.v = NULL,
                                  measures = c("Richness", "Shannon", "Simpson", "Pielou")){
   measures <- intersect(measures, names(diversity.df))
-  joined.df <- dplyr::inner_join(diversity.df, metadata.df, by = "Sample_ID")
+  joined.df <- join_metadata(diversity.df, metadata.df, "inner")
   long.df <- do.call(rbind, lapply(measures, function(m){
     data.frame(Sample_ID = joined.df$Sample_ID, Group = joined.df[[group]], Measure = m, Value = joined.df[[m]])
   }))

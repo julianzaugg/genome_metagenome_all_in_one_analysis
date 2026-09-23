@@ -206,8 +206,10 @@ write_isolate_tables <- function(project.l){
     write_xlsx_tables(x.l, path.s)
     path.s
   }
-  written.v <- c(written.v, write.f(list(Metadata = project.l$metadata, Read_stats = project.l$read_stats,
-                                         Run_parameters = run_params_table(project.l$run_params)),
+  written.v <- c(written.v, write.f(c(list(Metadata = project.l$metadata),
+                                       read_stats_tables(project.l$read_stats, project.l$metadata,
+                                                         bases = is_long_read_run(project.l$run_params)),
+                                       list(Run_parameters = run_params_table(project.l$run_params))),
                                     "Metadata_and_read_stats.xlsx"))
   written.v <- c(written.v, write.f(list(Summary = tables.l$genome_summary, CheckM2 = tables.l$checkm2, GTDBTk = tables.l$gtdbtk,
                                          Bakta = tables.l$bakta, MLST = tables.l$mlst, AMRFinderPlus = tables.l$amrfinder,

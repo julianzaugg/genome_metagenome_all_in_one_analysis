@@ -6,7 +6,8 @@
 set.seed(42)
 root.s <- "inst/extdata/metagenome"
 unlink(root.s, recursive = TRUE)
-results.s <- file.path(root.s, "results")
+# Short name keeps fixture paths under the 100-byte limit for portable package tarballs
+results.s <- file.path(root.s, "res")
 write_tsv <- function(x.df, ...){
   path.s <- file.path(results.s, ...)
   dir.create(dirname(path.s), recursive = TRUE, showWarnings = FALSE)
@@ -25,7 +26,10 @@ writeLines('{"mode": "illumina_metagenome", "outdir": "results", "hq_quality_sou
            file.path(results.s, "pipeline_info", "run_params.json"))
 
 write_tsv(data.frame(Sample_ID = samples.v, GBbp = round(runif(6, 1, 3), 3), Raw_count = 1e6 + 1:6,
-                     Fastp_count = 9e5 + 1:6, Fastp_percent = 90, Reads_mapped_HQ_Derep_MAGs_percent = round(runif(6, 20, 60), 2)),
+                     Fastp_count = 9e5 + 1:6, Fastp_percent = 90, Reads_mapped_HQ_Derep_MAGs_percent = round(runif(6, 20, 60), 2),
+                     Bases_mapped_A_HQ_Derep_MAGs_percent = c(55.2, 48.1, 30.4, 41.7, 52.3, 38.9),
+                     Reads_mapped_PerSample_HQ_MAGs_percent = c(35.1, 28.4, 0, 0, 22.7, 18.2),
+                     Bases_mapped_A_PerSample_HQ_MAGs_percent = c(37.9, 30.2, 0, 0, 24.5, 19.6)),
           "00_read_stats", "read_stat_report.tsv")
 
 lineages.v <- c(
@@ -97,6 +101,35 @@ for (i in seq_along(samples.v)){
                           c(NA, coverage.v), c(NA, round(coverage.v * 1000)), check.names = FALSE)
   names(coverm.df)[-1] <- paste(label.s, c("Relative Abundance (%)", "Covered Fraction", "Mean", "Read Count"))
   write_tsv(coverm.df, "09_coverm_hq_derep_bins", paste0(samples.v[i], "_abundances.tsv"))
+}
+
+# Within-sample dereplication (--within_sample_dereplication sample): each sample's own bins are
+# clustered, and its reads are mapped only to them. S3 has no bins, S10 no HQ bins. No RNG here,
+# so the fixtures written after this block are unchanged.
+own_bins.l <- split(bins.v, sub("\\..*", "", bins.v))
+for (sample.s in names(own_bins.l)){
+  own.v <- own_bins.l[[sample.s]]
+  own_hq.v <- intersect(own.v, hq.v)
+  write_tsv(data.frame(V1 = paste0("bins/", own.v, ".fasta"), V2 = paste0("bins/", own.v, ".fasta")),
+            "08_within_sample_dereplicated_bins", sample.s, "cluster_definition.tsv")
+  lines.v <- readLines(file.path(results.s, "08_within_sample_dereplicated_bins", sample.s, "cluster_definition.tsv"))[-1]
+  writeLines(lines.v, file.path(results.s, "08_within_sample_dereplicated_bins", sample.s, "cluster_definition.tsv"))
+  for (set.s in c("derep", "hq")){
+    genomes.v <- if (set.s == "derep") own.v else own_hq.v
+    if (length(genomes.v) == 0) next
+    if (set.s == "hq"){
+      dir.create(file.path(results.s, "08_within_sample_dereplicated_hq_bins", sample.s), recursive = TRUE, showWarnings = FALSE)
+      writeLines(paste0("hq_bins/", genomes.v, ".fasta\thq_bins/", genomes.v, ".fasta"),
+                 file.path(results.s, "08_within_sample_dereplicated_hq_bins", sample.s, "cluster_definition.tsv"))
+    }
+    coverage.v <- seq(8, by = -2.5, length.out = length(genomes.v))
+    mapped.n <- if (set.s == "derep") 45 else 30
+    label.s <- paste0(sample.s, ".clean_1.fastq.gz")
+    coverm.df <- data.frame(Genome = c("unmapped", genomes.v), c(100 - mapped.n, round(coverage.v / sum(coverage.v) * mapped.n, 4)),
+                            c(NA, rep(0.95, length(genomes.v))), c(NA, coverage.v), c(NA, coverage.v * 1000), check.names = FALSE)
+    names(coverm.df)[-1] <- paste(label.s, c("Relative Abundance (%)", "Covered Fraction", "Mean", "Read Count"))
+    write_tsv(coverm.df, paste0("09_coverm_within_sample_", set.s, "_bins"), paste0(sample.s, "_abundances.tsv"))
+  }
 }
 
 spot_targets.v <- c("ph_optimum", "ph_min", "ph_max", "salinity_optimum", "temperature_optimum", "oxygen")

@@ -197,6 +197,7 @@ run_differential_abundance <- function(profile, metadata.df, variable, covariate
                                        min_prevalence = 0.1, splsda_repeats = 50, output_dir = tempfile("maaslin3_"),
                                        seed = 1234){
   methods <- match.arg(methods, several.ok = TRUE)
+  warn_within_sample(profile, "Differential abundance")
   results.l <- list()
   splsda.l <- NULL
   if ("maaslin3" %in% methods){

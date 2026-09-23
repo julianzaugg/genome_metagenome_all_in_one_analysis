@@ -61,10 +61,15 @@ add_singlem <- function(project.l){
   project.l
 }
 
+# MAG sets mapped by CoverM, named by gmaio key, valued by the pipeline's read-statistics label.
+# ws_ sets come from --within_sample_dereplication: each sample is mapped only to its own
+# (or its group's) bins, so they describe samples one at a time and are not comparable between samples.
 mag_sets <- function(){
   c(derep_bins = "Dereplicated_Bins", hq_bins = "HQ_MAGs_direct", hq_derep_bins = "HQ_Derep_MAGs",
-    hq_ref_bins = "HQ_Ref_MAGs")
+    hq_ref_bins = "HQ_Ref_MAGs", ws_derep_bins = "PerSample_Derep_MAGs", ws_hq_bins = "PerSample_HQ_MAGs")
 }
+
+within_sample_sets <- function() grep("^ws_", names(mag_sets()), value = TRUE)
 
 #' Add MAG quality, taxonomy and abundance profiles
 #'
@@ -72,6 +77,15 @@ mag_sets <- function(){
 #' the per-bin DRAM distillate when present, then, for each CoverM mapping set found,
 #' builds profiles named `mags_<set>_<type>` where type is `relative_abundance`,
 #' `coverm_relative_abundance`, `coverage` or `read_count`.
+#'
+#' Sets `derep_bins`, `hq_bins`, `hq_derep_bins` and `hq_ref_bins` map every sample to one
+#' catalogue of genomes pooled across samples, so they can be compared between samples.
+#' Sets `ws_derep_bins` and `ws_hq_bins` (pipeline `--within_sample_dereplication`) map each
+#' sample only to its own bins: a genome can only be detected in the sample it was assembled
+#' from, so use them for per-sample summaries ([within_sample_mag_summary()]), not for
+#' ordination, differential abundance or other between-sample comparisons.
+#' The share of each sample's mapped reads (after QC and host removal) for each set is kept in
+#' `project.l$tables$mag_mapping`.
 #'
 #' @param project.l A `gm_project`.
 #' @return Updated `gm_project`.
@@ -105,15 +119,29 @@ add_mags <- function(project.l){
     project.l$tables$dram_product <- read_dram_product(locate_output(config.l, "dram_bins_product"))
   }
 
+  mapping.l <- list()
   for (set.s in names(mag_sets())){
     key.s <- paste0("coverm_", set.s)
     if (!has_output(config.l, key.s)) next
     coverm.df <- read_coverm_abundances(locate_output(config.l, key.s))
     coverm.df <- link_table_samples(coverm.df, "Sample", project.l$metadata, paste("CoverM", set.s))
     profiles.l <- build_mag_profiles(coverm.df, bins.df, set_name = paste0("mags_", set.s))
+    # Samples without genomes of their own get no CoverM table in within-sample runs; they have zero of them
+    if (set.s %in% within_sample_sets()) profiles.l <- lapply(profiles.l, add_zero_samples, project.l$metadata$Sample_ID)
     for (type.s in names(profiles.l)){
       project.l$profiles[[paste0("mags_", set.s, "_", type.s)]] <- profiles.l[[type.s]]
     }
+    unmapped.df <- coverm.df[coverm.df$Genome == "unmapped", c("Sample_ID", "Relative_abundance"), drop = FALSE]
+    mapping.l[[set.s]] <- data.frame(Sample_ID = unmapped.df$Sample_ID, Set = set.s, Label = mag_sets()[[set.s]],
+                                        CoverM_mapped_percent = 100 - unmapped.df$Relative_abundance)
+  }
+  if (length(mapping.l) > 0){
+    project.l$tables$mag_mapping <- do.call(rbind, unname(mapping.l))
+    rownames(project.l$tables$mag_mapping) <- NULL
+  }
+  if (any(paste0("mags_", within_sample_sets(), "_relative_abundance") %in% names(project.l$profiles))){
+    cli::cli_inform(c("i" = paste("Within-sample MAG profiles ({.val mags_ws_*}) map each sample to its own bins;",
+                                  "use them for per-sample summaries, not between-sample comparisons")))
   }
   project.l
 }

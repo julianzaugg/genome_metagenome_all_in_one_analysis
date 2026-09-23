@@ -46,8 +46,8 @@ plot_mobile_prevalence <- function(prevalence.df, n_samples, title = NULL){
 #' @return List with `plot` and `correlation` (Spearman).
 #' @export
 plot_richness_vs_depth <- function(richness.df, read_stats.df, metadata.df, colour_by, colours.v = NULL, depth_column = "GBbp"){
-  joined.df <- dplyr::inner_join(dplyr::inner_join(richness.df, read_stats.df[, c("Sample_ID", depth_column)], by = "Sample_ID"),
-                                 metadata.df, by = "Sample_ID")
+  joined.df <- dplyr::inner_join(richness.df, read_stats.df[, c("Sample_ID", depth_column)], by = "Sample_ID")
+  joined.df <- join_metadata(joined.df, metadata.df, "inner")
   test <- suppressWarnings(stats::cor.test(joined.df[[depth_column]], joined.df$Clusters, method = "spearman", exact = FALSE))
   if (is.null(colours.v)) colours.v <- assign_colours(joined.df[[colour_by]])
   depth.gg <- ggplot2::ggplot(joined.df, ggplot2::aes(x = .data[[depth_column]], y = .data$Clusters)) +
@@ -75,7 +75,7 @@ plot_virus_taxonomy <- function(virus_summary.df, metadata.df, rank_index = 5, f
     if (length(x) >= rank_index && x[rank_index] != "") x[rank_index] else "Unassigned"
   }, character(1))
   counts.df <- as.data.frame(table(Sample_ID = virus_summary.df$Sample_ID, Taxon = taxa.v), stringsAsFactors = FALSE)
-  counts.df <- dplyr::inner_join(counts.df, metadata.df, by = "Sample_ID")
+  counts.df <- join_metadata(counts.df, metadata.df, "inner")
   counts.df$Sample_label <- factor(counts.df$Sample_label, levels = metadata.df$Sample_label)
   taxa_levels.v <- c(setdiff(names(sort(table(taxa.v), decreasing = TRUE)), "Unassigned"), intersect("Unassigned", taxa.v))
   counts.df$Taxon <- factor(counts.df$Taxon, levels = rev(taxa_levels.v))

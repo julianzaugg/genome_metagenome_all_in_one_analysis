@@ -13,7 +13,7 @@
 #' @export
 plot_nonpareil_curves <- function(nonpareil.l, metadata.df, colour_by = "Sample_label", colours.v = NULL, facet_by = NULL,
                                   min_effort_gbp = 1e-3){
-  join.f <- function(x.df) dplyr::inner_join(x.df, metadata.df, by = "Sample_ID")
+  join.f <- function(x.df) join_metadata(x.df, metadata.df, "inner")
   curves.df <- join.f(nonpareil.l$curves)
   curves.df <- curves.df[curves.df$Effort / 1e9 >= min_effort_gbp, , drop = FALSE]
   models.df <- if (!is.null(nonpareil.l$models)) join.f(nonpareil.l$models) else NULL
@@ -60,7 +60,7 @@ plot_nonpareil_curves <- function(nonpareil.l, metadata.df, colour_by = "Sample_
 plot_nonpareil_metrics <- function(summary.df, metadata.df, group, colours.v = NULL){
   metrics.v <- c(C = "Coverage at sequenced depth (%)", diversity = "Nonpareil diversity (Nd)",
                  LRstar = "Effort for 95% coverage (Gbp)")
-  joined.df <- dplyr::inner_join(summary.df, metadata.df, by = "Sample_ID")
+  joined.df <- join_metadata(summary.df, metadata.df, "inner")
   joined.df$C <- joined.df$C * 100
   joined.df$LRstar <- joined.df$LRstar / 1e9
   long.df <- do.call(rbind, lapply(names(metrics.v), function(m){

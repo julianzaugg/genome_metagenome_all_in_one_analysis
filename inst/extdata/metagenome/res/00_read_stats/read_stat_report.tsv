@@ -1,0 +1,7 @@
+Sample_ID	GBbp	Raw_count	Fastp_count	Fastp_percent	Reads_mapped_HQ_Derep_MAGs_percent	Bases_mapped_A_HQ_Derep_MAGs_percent	Reads_mapped_PerSample_HQ_MAGs_percent	Bases_mapped_A_PerSample_HQ_MAGs_percent
+S1	2.83	1000001	900001	90	49.46	55.2	35.1	37.9
+S2	2.874	1000002	900002	90	25.39	48.1	28.4	30.2
+S3	1.572	1000003	900003	90	46.28	30.4	0	0
+S10	2.661	1000004	900004	90	48.2	41.7	0	0
+S11	2.283	1000005	900005	90	38.31	52.3	22.7	24.5
+S12	2.038	1000006	900006	90	48.76	38.9	18.2	19.6

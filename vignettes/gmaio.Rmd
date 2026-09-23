@@ -154,7 +154,7 @@ gmaio::write_xlsx_tables(list(PERMANOVA = permanova.df), gmaio::output_path(proj
 | `diversity.R` | `alpha_diversity()`, `plot_alpha_diversity()` |
 | `differential_abundance.R` | `run_differential_abundance()`, `da_consensus()`, `plot_da_consensus()` |
 | `functional_profiles.R` | `plot_heatmap()`, `plot_stacked_barchart()` |
-| `mag_summary.R` | `plot_mag_quality()`, `plot_mag_counts()`, `plot_mag_taxonomy()` |
+| `mag_summary.R` | `plot_mag_quality()`, `plot_mag_counts()`, `plot_mag_taxonomy()`, `within_sample_mag_summary()`, `plot_mag_mapping()` |
 | `nonpareil.R` | `plot_nonpareil_curves()`, `plot_nonpareil_metrics()` |
 | `mobile_elements.R` | `mobile_element_summary()`, `plot_mobile_prevalence()` |
 | `genomespot.R` | `community_weighted_traits()`, `plot_genomespot_traits()` |
