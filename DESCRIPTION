@@ -48,7 +48,7 @@ Suggests:
     svglite,
     testthat (>= 3.0.0),
     withr
-biocViews:
+biocViews: Software, Microbiome, Metagenomics
 Config/testthat/edition: 3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
