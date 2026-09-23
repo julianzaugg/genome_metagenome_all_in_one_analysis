@@ -139,15 +139,28 @@ run_splsda <- function(profile, metadata.df, variable, n_components = 3, folds =
   n_components <- max(2, min(n_components, nlevels(outcome.v) + 1, nrow(x.m) - 1))
 
   set.seed(seed)
-  tuning <- mixOmics::tune.splsda(x.m, outcome.v, ncomp = n_components, logratio = "CLR", test.keepX = test_keep_x,
-                                  validation = "Mfold", folds = folds, nrepeat = n_repeats, dist = "max.dist",
-                                  measure = "BER", progressBar = FALSE)
-  n_components <- max(2, tuning$choice.ncomp$ncomp %||% 2, na.rm = TRUE)
-  keep_x.v <- tuning$choice.keepX[seq_len(n_components)]
+  tuning <- tryCatch(mixOmics::tune.splsda(x.m, outcome.v, ncomp = n_components, logratio = "CLR", test.keepX = test_keep_x,
+                                           validation = "Mfold", folds = folds, nrepeat = n_repeats, dist = "max.dist",
+                                           measure = "BER", progressBar = FALSE),
+                     error = function(e){
+                       cli::cli_inform(c("!" = "sPLS-DA tuning failed ({conditionMessage(e)}); using keepX = {min(test_keep_x)}"))
+                       NULL
+                     })
+  if (is.null(tuning)){
+    n_components <- 2
+    keep_x.v <- rep(min(test_keep_x), n_components)
+  } else {
+    n_components <- max(2, tuning$choice.ncomp$ncomp %||% 2, na.rm = TRUE)
+    keep_x.v <- tuning$choice.keepX[seq_len(n_components)]
+  }
   model <- mixOmics::splsda(x.m, outcome.v, ncomp = n_components, keepX = keep_x.v, logratio = "CLR")
   set.seed(seed)
-  performance <- mixOmics::perf(model, validation = "Mfold", folds = folds, nrepeat = n_repeats, dist = "max.dist",
-                                progressBar = FALSE)
+  performance <- tryCatch(mixOmics::perf(model, validation = "Mfold", folds = folds, nrepeat = n_repeats, dist = "max.dist",
+                                         progressBar = FALSE),
+                          error = function(e){
+                            cli::cli_inform(c("!" = "sPLS-DA performance estimation failed: {conditionMessage(e)}"))
+                            NULL
+                          })
 
   clr.m <- model$X
   group_means.m <- apply(clr.m, 2, function(x) tapply(x, outcome.v, mean))
@@ -155,7 +168,8 @@ run_splsda <- function(profile, metadata.df, variable, n_components = 3, folds =
     selected.v <- mixOmics::selectVar(model, comp = component.n)$name
     loadings.v <- model$loadings$X[selected.v, component.n]
     stability.v <- performance$features$stable[[paste0("comp", component.n)]]
-    stability.v <- stability.v[match(selected.v, names(stability.v))]
+    stability.v <- if (is.null(stability.v)) rep(NA_real_, length(selected.v)) else
+      stability.v[match(selected.v, names(stability.v))]
     data.frame(Method = "sPLS-DA", Model = paste0("component_", component.n), Feature_ID = selected.v,
                Variable = variable, Contrast = NA_character_, Effect = loadings.v, Effect_type = "loading",
                Stability = as.numeric(stability.v), stringsAsFactors = FALSE)

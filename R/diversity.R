@@ -22,7 +22,9 @@ alpha_diversity <- function(profile, rarefy_depth = NULL, seed = 1234){
     }
     samples.m <- samples.m[rowSums(samples.m) >= rarefy_depth, , drop = FALSE]
     set.seed(seed)
-    samples.m <- vegan::rrarefy(samples.m, rarefy_depth)
+    samples.m <- withCallingHandlers(vegan::rrarefy(samples.m, rarefy_depth), warning = function(w){
+      if (grepl("smallest count", conditionMessage(w))) invokeRestart("muffleWarning")
+    })
   }
   richness.v <- rowSums(samples.m > 0)
   shannon.v <- vegan::diversity(samples.m, index = "shannon")
