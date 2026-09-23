@@ -1,6 +1,7 @@
 # Average nucleotide identity (fastANI) heatmaps and PCoA for each comparison group.
 
 project.l <- gmaio::load_processed()
+if (length(project.l$tables$comparisons) == 0) gmaio::skip_analysis("No comparison group results in the processed project")
 config.l <- project.l$config
 group.s <- gmaio::primary_group(project.l)
 annotation_variables.v <- c("Entry_type", group.s)

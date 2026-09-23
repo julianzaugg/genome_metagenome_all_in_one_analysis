@@ -30,13 +30,14 @@ This creates:
 
 ```
 J12345/
-  config.yml        pipeline results directory, metadata, groups, colours
-  data/             put metadata.xlsx (or .csv/.tsv) here
-  code/main.R       bulk processing, run first
-  code/*.R          one script per analysis
+  config.yml              pipeline results directory, metadata, groups, colours
+  data/                   put metadata.xlsx (or .csv/.tsv) here
+  code/fetch_results.R    copies the pipeline outputs gmaio reads from a server
+  code/main.R             bulk processing, run first
+  code/*.R                one script per analysis
 ```
 
-Edit `config.yml`, add the metadata, then from the project directory:
+Edit `config.yml`, add the metadata, get the pipeline outputs (below), then from the project directory:
 
 ```bash
 Rscript code/main.R
@@ -48,6 +49,45 @@ Rscript code/barcharts.R
 
 `main.R` writes the standard tables to `Result_tables/`, the colour assignments to `palettes.yml`, and the processed project to `Result_other/processed.rds`.
 Analysis scripts read that file, so they can be run in any order and rerun individually.
+
+## Getting the pipeline outputs
+
+gmaio reads only small summary tables from the pipeline `--outdir`, not reads, BAMs, assemblies or bins.
+If the pipeline ran on the same machine, set `pipeline_results` in `config.yml` to its results directory.
+
+If it ran on a server, set both paths in `config.yml`:
+
+```yaml
+pipeline_results: pipeline_results                        # local copy, inside the project
+pipeline_remote: user@server:/path/to/pipeline/results    # where the pipeline wrote its output
+```
+
+Then, from the project directory in a terminal:
+
+```bash
+Rscript code/fetch_results.R
+```
+
+This copies only the files gmaio reads, keeping the pipeline's directory layout, and reports which outputs were found.
+It needs rsync on both machines and ssh access to the server; run it from a terminal rather than RStudio if ssh asks for a password.
+A run of a few hundred GB usually transfers tens to a few hundred MB.
+
+The pipeline does not have to be finished.
+Outputs that do not exist yet, or steps that were skipped, are reported and skipped by `main.R`, and analysis scripts without their inputs stop with a message.
+Rerun `fetch_results.R` and `main.R` as the run progresses; only new or changed files are copied.
+Some outputs, such as `read_stat_report.tsv` and `software_versions.tsv`, are only written when the run finishes.
+
+To copy with rsync directly instead:
+
+```r
+gmaio::write_rsync_filter("gmaio_filter.txt", mode = "metagenome")
+```
+
+```bash
+rsync -av --prune-empty-dirs --include-from=gmaio_filter.txt user@server:/path/to/results/ pipeline_results/
+```
+
+`gmaio::check_inputs(gmaio::read_config())` reports what is available at any time; `main.R` runs it first.
 
 ## Analysis scripts
 
@@ -106,7 +146,7 @@ Samples can be excluded from analyses (but kept in tables) with `exclude_column`
 Outputs are found in `pipeline_results` by directory name suffix (`*_sylph`, `*_checkm2`, ...), so Illumina, Nanopore and isolate numbering all work.
 `gmaio::pipeline_registry()` lists every output gmaio reads.
 Any entry can be overridden in `config.yml` under `files:` with a file, glob or directory, for example when outputs have been copied elsewhere.
-Outputs that were not produced (skipped pipeline steps) are reported and skipped.
+Outputs that were not produced (skipped pipeline steps or an unfinished run) are reported by `gmaio::check_inputs()` and skipped.
 
 ## Colours
 

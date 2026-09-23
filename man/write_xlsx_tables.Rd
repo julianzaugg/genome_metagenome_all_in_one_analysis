@@ -21,10 +21,10 @@ write_xlsx_tables(
 \item{number_format}{Optional Excel number format for numeric columns, e.g. \code{"0.0000"}.}
 }
 \value{
-The path, invisibly.
+The path, or \code{NULL} when there was nothing to write, invisibly.
 }
 \description{
 One sheet per list element: bold header, frozen header row (and first column when
 \code{freeze_first_column}), auto column widths and filters. Empty data frames are
-written as a header-only sheet.
+written as a header-only sheet. An empty list writes nothing.
 }

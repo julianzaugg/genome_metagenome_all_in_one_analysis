@@ -6,7 +6,9 @@ metadata.df <- gmaio::analysis_metadata(project.l)
 group.s <- gmaio::primary_group(project.l)
 genomespot.l <- project.l$tables$genomespot
 bins.df <- project.l$tables$bin_summary
-if (is.null(genomespot.l) || is.null(bins.df)) stop("GenomeSPOT or MAG results missing from the processed project")
+if (is.null(genomespot.l) || is.null(bins.df)){
+  gmaio::skip_analysis("GenomeSPOT or MAG results missing from the processed project")
+}
 
 abundance_profile.s <- "mags_hq_derep_bins_relative_abundance"
 hq_bins.v <- bins.df$Bin_ID[bins.df$High_quality]

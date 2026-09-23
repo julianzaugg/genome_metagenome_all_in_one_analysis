@@ -6,6 +6,9 @@ config.l <- project.l$config
 analysis.l <- config.l$analysis
 metadata.df <- gmaio::analysis_metadata(project.l)
 group.s <- gmaio::primary_group(project.l)
+if (!any(grepl("^functions_", names(project.l$profiles)))){
+  gmaio::skip_analysis("No gene catalogue functions in the processed project")
+}
 
 heatmap_profiles.v <- c(functions_ko = 50, functions_cazy = 50, functions_peptidase = 30)
 for (name.s in intersect(names(heatmap_profiles.v), names(project.l$profiles))){

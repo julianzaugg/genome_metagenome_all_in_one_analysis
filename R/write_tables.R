@@ -2,16 +2,20 @@
 #'
 #' One sheet per list element: bold header, frozen header row (and first column when
 #' `freeze_first_column`), auto column widths and filters. Empty data frames are
-#' written as a header-only sheet.
+#' written as a header-only sheet. An empty list writes nothing.
 #'
 #' @param tables.l Named list of data frames (names become sheet names, max 31 characters).
 #' @param path Output `.xlsx` path; the directory is created.
 #' @param freeze_first_column Freeze the first column as well as the header.
 #' @param number_format Optional Excel number format for numeric columns, e.g. `"0.0000"`.
-#' @return The path, invisibly.
+#' @return The path, or `NULL` when there was nothing to write, invisibly.
 #' @export
 write_xlsx_tables <- function(tables.l, path, freeze_first_column = TRUE, number_format = NULL){
   if (is.data.frame(tables.l)) tables.l <- list(Sheet1 = tables.l)
+  if (length(tables.l) == 0){
+    cli::cli_inform(c("i" = "No tables to write to {.path {path}}"))
+    return(invisible(NULL))
+  }
   if (is.null(names(tables.l)) || any(names(tables.l) == "")) cli::cli_abort("{.arg tables.l} must be a named list")
   sheet_names.v <- substr(gsub("[][*?:/\\\\]", "_", names(tables.l)), 1, 31)
   if (anyDuplicated(sheet_names.v)) cli::cli_abort("Sheet names are not unique after truncation: {.val {sheet_names.v}}")

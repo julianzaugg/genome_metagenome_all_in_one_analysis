@@ -13,3 +13,10 @@ test_that("write_xlsx_tables rejects unnamed lists and truncation clashes", {
   tables.l <- stats::setNames(list(data.frame(a = 1), data.frame(a = 2)), c(paste0(long.s, "1"), paste0(long.s, "2")))
   expect_error(write_xlsx_tables(tables.l, path.s), "not unique")
 })
+
+test_that("an empty table list writes nothing", {
+  path.s <- file.path(withr::local_tempdir(), "empty.xlsx")
+  expect_message(result <- write_xlsx_tables(list(), path.s), "No tables")
+  expect_null(result)
+  expect_false(file.exists(path.s))
+})

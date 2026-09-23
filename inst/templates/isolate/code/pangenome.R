@@ -2,6 +2,7 @@
 # and gene associations with the primary group variable.
 
 project.l <- gmaio::load_processed()
+if (length(project.l$tables$comparisons) == 0) gmaio::skip_analysis("No comparison group results in the processed project")
 config.l <- project.l$config
 analysis.l <- config.l$analysis
 group.s <- gmaio::primary_group(project.l)

@@ -8,6 +8,9 @@ metadata.df <- gmaio::analysis_metadata(project.l)
 group.s <- gmaio::primary_group(project.l)
 colour_by.s <- if (is.null(group.s)) "Sample_label" else group.s
 min_length.n <- 5000
+if (!any(c("virus_clusters", "plasmid_clusters") %in% names(project.l$profiles)) && is.null(project.l$tables$virus_summary)){
+  gmaio::skip_analysis("No geNomad or CheckV clustering results in the processed project")
+}
 
 tables.l <- list()
 for (type.s in c("virus", "plasmid")){

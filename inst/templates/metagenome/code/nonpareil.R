@@ -5,7 +5,7 @@ config.l <- project.l$config
 metadata.df <- gmaio::analysis_metadata(project.l)
 group.s <- gmaio::primary_group(project.l)
 nonpareil.l <- project.l$tables$nonpareil
-if (is.null(nonpareil.l)) stop("No Nonpareil results in the processed project")
+if (is.null(nonpareil.l)) gmaio::skip_analysis("No Nonpareil results in the processed project")
 
 curves.gg <- gmaio::plot_nonpareil_curves(nonpareil.l, metadata.df, colour_by = "Sample_label",
                                           colours.v = project.l$palettes$Sample_label)

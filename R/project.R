@@ -89,6 +89,21 @@ load_processed <- function(config_path = "config.yml", path = NULL){
   project.l
 }
 
+#' Stop an analysis script whose inputs are not available
+#'
+#' For partial pipeline runs or skipped steps. When run with `Rscript` it prints the
+#' reason and exits without an error, so running every script in turn carries on; in an
+#' interactive session it signals an error instead of quitting R.
+#'
+#' @param reason Why the analysis cannot run.
+#' @return Does not return.
+#' @export
+skip_analysis <- function(reason){
+  if (rlang::is_interactive()) cli::cli_abort(c(reason, "i" = "Skipping this analysis"))
+  cli::cli_inform(c("!" = reason, "i" = "Skipping this analysis"))
+  quit(save = "no", status = 0)
+}
+
 refresh_palettes <- function(project.l){
   saved.l <- read_palettes(project_path(project.l$config, "palettes.yml"))
   fixed.l <- project.l$config$colours

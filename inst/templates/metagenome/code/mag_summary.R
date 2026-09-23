@@ -4,7 +4,7 @@ project.l <- gmaio::load_processed()
 config.l <- project.l$config
 mags.l <- config.l$mags
 bins.df <- project.l$tables$bin_summary
-if (is.null(bins.df)) stop("No MAG results in the processed project")
+if (is.null(bins.df)) gmaio::skip_analysis("No MAG results in the processed project")
 
 # Representatives of the first available HQ dereplication set, else all HQ bins
 representative_columns.v <- intersect(c("Is_representative_hq_derep_bins", "Is_representative_hq_bins"), names(bins.df))

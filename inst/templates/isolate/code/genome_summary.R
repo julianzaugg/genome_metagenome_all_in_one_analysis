@@ -1,6 +1,7 @@
 # Assembly, quality and annotation summary for each isolate.
 
 project.l <- gmaio::load_processed()
+if (is.null(project.l$tables$genome_summary)) gmaio::skip_analysis("No genome summary in the processed project")
 config.l <- project.l$config
 metadata.df <- gmaio::analysis_metadata(project.l)
 group.s <- gmaio::primary_group(project.l)

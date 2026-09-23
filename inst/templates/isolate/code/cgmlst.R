@@ -1,6 +1,7 @@
 # cgMLST (chewBBACA) allele distance heatmaps for each comparison group and threshold.
 
 project.l <- gmaio::load_processed()
+if (length(project.l$tables$comparisons) == 0) gmaio::skip_analysis("No comparison group results in the processed project")
 config.l <- project.l$config
 annotation_variables.v <- c("Entry_type", gmaio::primary_group(project.l))
 
@@ -15,4 +16,4 @@ for (comparison.s in names(project.l$tables$comparisons)){
     tables.l[[substr(paste0(comparison.s, "_", schema.s), 1, 31)]] <- gmaio::m2df(distance.m, "Genome")
   }
 }
-if (length(tables.l) > 0) gmaio::write_xlsx_tables(tables.l, gmaio::output_path(config.l, "tables", "cgMLST_distances.xlsx"))
+gmaio::write_xlsx_tables(tables.l, gmaio::output_path(config.l, "tables", "cgMLST_distances.xlsx"))

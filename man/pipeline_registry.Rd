@@ -7,12 +7,15 @@
 pipeline_registry()
 }
 \value{
-Tibble with columns \code{key}, \code{modes}, \code{dir}, \code{file}, \code{multiple}, \code{description}.
+Tibble with columns \code{key}, \code{modes}, \code{step}, \code{dir}, \code{file}, \code{transfer},
+\code{multiple}, \code{description}.
 }
 \description{
-Each row describes one output: the directory it is published to (a regular
-expression on the directory name, so mode-specific numbering does not matter),
-the file within it (a regular expression on the path relative to that directory),
-whether several files are expected, and which modes produce it.
+Each row describes one output: the processing step that reads it, the directory it is
+published to (a regular expression on the directory name, so mode-specific numbering
+does not matter), the file within it (a regular expression on the path relative to that
+directory), whether several files are expected, and which modes produce it.
+\code{transfer} is the equivalent rsync pattern (space separated when several are needed)
+used by \code{\link[=rsync_filter]{rsync_filter()}}; it is \code{NA} for outputs the analyses do not use, which are not copied.
 Any key can be overridden with the \verb{files:} section of \code{config.yml}.
 }

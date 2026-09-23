@@ -56,7 +56,7 @@ write_project_tables <- function(project.l){
 
   if (!is.null(project.l$tables$bin_summary)){
     clusters.l <- project.l$tables$bin_clusters
-    names(clusters.l) <- paste0("Clusters_", names(clusters.l))
+    if (length(clusters.l) > 0) names(clusters.l) <- paste0("Clusters_", names(clusters.l))
     write.f(c(list(Bins = project.l$tables$bin_summary), clusters.l), "MAG_summary.xlsx")
     for (set.s in names(mag_sets())){
       prefix.s <- paste0("mags_", set.s, "_")

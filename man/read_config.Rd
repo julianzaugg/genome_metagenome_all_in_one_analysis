@@ -4,10 +4,13 @@
 \alias{read_config}
 \title{Read and validate a project configuration file}
 \usage{
-read_config(path = "config.yml")
+read_config(path = "config.yml", check_paths = TRUE)
 }
 \arguments{
 \item{path}{Path to \code{config.yml}.}
+
+\item{check_paths}{Check that \code{pipeline_results} exists; \code{\link[=fetch_pipeline_results]{fetch_pipeline_results()}}
+turns this off because it creates the directory.}
 }
 \value{
 A \code{gm_config} list.

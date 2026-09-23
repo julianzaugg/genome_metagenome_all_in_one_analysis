@@ -4,8 +4,12 @@
 project_name: My isolate project
 mode: isolate
 
-# genome_metagenome_all_in_one output directory (the pipeline --outdir)
-pipeline_results: /path/to/pipeline/results
+# genome_metagenome_all_in_one output directory (the pipeline --outdir), or a local copy of it
+pipeline_results: pipeline_results
+
+# Where the pipeline ran, when that is not this machine, e.g. user@server:/path/to/results.
+# code/fetch_results.R copies just the outputs gmaio reads from here into pipeline_results.
+pipeline_remote: null
 
 # Optional per-output overrides (file, glob or directory); keys are listed by gmaio::pipeline_registry()
 files: {}

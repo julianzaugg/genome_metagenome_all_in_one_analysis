@@ -26,3 +26,14 @@ processed_test_project <- function(env = parent.frame()){
   project.l <- suppressMessages(add_mobile_elements(project.l))
   suppressMessages(add_palettes(project.l))
 }
+
+partial_results <- function(){
+  results.s <- file.path(withr::local_tempdir(.local_envir = parent.frame()), "results")
+  dir.create(results.s)
+  file.copy(list.files(file.path(fixture_dir(), "results"), full.names = TRUE), results.s, recursive = TRUE)
+  # A run that has finished sylph and bin QC but not SingleM, dereplication, CoverM or the final reports
+  unlink(file.path(results.s, c("00_read_stats", "03_singlem", "08_dereplicated_bins", "08_dereplicated_hq_bins",
+                                "09_coverm_hq_derep_bins", "13_dram", "17_nonpareil", "18_genomespot", "20_genomad",
+                                "22_checkv_clustering", "23_rpkm")), recursive = TRUE)
+  results.s
+}

@@ -73,3 +73,23 @@ test_that("saved palette edits are kept on the next run", {
   expect_equal(rerun.l$palettes$Treatment[["Control"]], "#010101")
   expect_equal(rerun.l$palettes$taxa, project.l$palettes$taxa)
 })
+
+test_that("the template configs parse list settings as character vectors", {
+  for (mode.s in c("metagenome", "isolate")){
+    project_dir.s <- withr::local_tempdir()
+    config.l <- yaml::read_yaml(system.file("templates", mode.s, "config.yml", package = "gmaio"))
+    config.l$pipeline_results <- file.path(fixture_dir(), "results")
+    yaml::write_yaml(config.l, file.path(project_dir.s, "config.yml"))
+    config.l <- read_config(file.path(project_dir.s, "config.yml"))
+    expect_identical(config.l$analysis$covariates, character(), info = mode.s)
+    expect_identical(config.l$analysis$group_variables, character(), info = mode.s)
+    expect_identical(config.l$metadata$exclude_samples, character(), info = mode.s)
+    expect_type(config.l$analysis$ranks, "character")
+  }
+  expect_identical(make_test_project()$analysis$group_variables, "Treatment")
+})
+
+test_that("skip_analysis signals an error in interactive sessions", {
+  rlang::local_interactive(TRUE)
+  expect_error(skip_analysis("No Nonpareil results"), "No Nonpareil results")
+})

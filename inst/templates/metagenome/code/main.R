@@ -3,6 +3,7 @@
 # Run from the project directory: Rscript code/main.R
 
 config.l <- gmaio::read_config("config.yml")
+gmaio::check_inputs(config.l)
 
 project.l <- gmaio::start_project(config.l)
 project.l <- gmaio::add_sylph(project.l)

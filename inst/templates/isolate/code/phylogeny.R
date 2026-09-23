@@ -1,6 +1,7 @@
 # Phylogenetic trees (IQ-TREE) for each comparison group with tips coloured by the primary group.
 
 project.l <- gmaio::load_processed()
+if (length(project.l$tables$comparisons) == 0) gmaio::skip_analysis("No comparison group results in the processed project")
 config.l <- project.l$config
 group.s <- gmaio::primary_group(project.l)
 colour_by.s <- if (is.null(group.s)) "Entry_type" else group.s

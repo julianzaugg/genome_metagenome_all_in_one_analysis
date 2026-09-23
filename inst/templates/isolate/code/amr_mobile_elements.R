@@ -27,4 +27,4 @@ if (!is.null(project.l$tables$virus_summary)){
                    gmaio::figure_path(config.l, "amr_mobile_elements", "virus_taxonomy"))
 }
 tables.l <- Filter(Negate(is.null), tables.l)
-if (length(tables.l) > 0) gmaio::write_xlsx_tables(tables.l, gmaio::output_path(config.l, "tables", "AMR_associations.xlsx"))
+gmaio::write_xlsx_tables(tables.l, gmaio::output_path(config.l, "tables", "AMR_associations.xlsx"))

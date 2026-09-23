@@ -3,6 +3,7 @@ config_defaults <- function(){
     project_name = NULL,
     mode = "metagenome",
     pipeline_results = NULL,
+    pipeline_remote = NULL,
     files = list(),
     metadata = list(
       file = "data/metadata.xlsx",
@@ -44,28 +45,46 @@ config_defaults <- function(){
 #' Relative paths are resolved against the directory containing the file.
 #'
 #' @param path Path to `config.yml`.
+#' @param check_paths Check that `pipeline_results` exists; [fetch_pipeline_results()]
+#'   turns this off because it creates the directory.
 #' @return A `gm_config` list.
 #' @export
-read_config <- function(path = "config.yml"){
+read_config <- function(path = "config.yml", check_paths = TRUE){
   if (!file.exists(path)) cli::cli_abort("Config file {.path {path}} not found")
   user.l <- yaml::read_yaml(path) %||% list()
   config.l <- utils::modifyList(config_defaults(), user.l, keep.null = FALSE)
+  for (field.v in config_vector_fields()){
+    if (!is.null(config.l[[field.v]])) config.l[[field.v]] <- as.character(unlist(config.l[[field.v]]))
+  }
   config.l$project_dir <- normalizePath(dirname(path), mustWork = TRUE)
   config.l$config_file <- normalizePath(path, mustWork = TRUE)
-  validate_config(config.l)
+  validate_config(config.l, check_paths)
   structure(config.l, class = c("gm_config", "list"))
 }
 
-validate_config <- function(config.l){
+# Settings that are vectors; YAML reads `[]` and `[a, b]` as lists
+config_vector_fields <- function(){
+  list(c("metadata", "exclude_samples"), c("metadata", "sample_order"), c("metadata", "colour_variables"),
+       c("analysis", "group_variables"), c("analysis", "covariates"), c("analysis", "ranks"))
+}
+
+validate_config <- function(config.l, check_paths = TRUE){
   if (!config.l$mode %in% c("metagenome", "isolate")){
     cli::cli_abort("{.field mode} must be {.val metagenome} or {.val isolate}, not {.val {config.l$mode}}")
   }
   if (is.null(config.l$pipeline_results) && length(config.l$files) == 0){
     cli::cli_abort("Set {.field pipeline_results} and/or {.field files} in the config")
   }
-  if (!is.null(config.l$pipeline_results)){
+  if (check_paths && !is.null(config.l$pipeline_results)){
     results_dir.s <- project_path(config.l, config.l$pipeline_results)
-    if (!dir.exists(results_dir.s)) cli::cli_abort("{.field pipeline_results} directory {.path {results_dir.s}} does not exist")
+    if (!dir.exists(results_dir.s)){
+      hint.s <- if (is.null(config.l$pipeline_remote)){
+        "Copy the pipeline outputs there first, see {.fn gmaio::write_rsync_filter}"
+      } else {
+        "Run {.file code/fetch_results.R} to copy the pipeline outputs from {.field pipeline_remote}"
+      }
+      cli::cli_abort(c("{.field pipeline_results} directory {.path {results_dir.s}} does not exist", "i" = hint.s))
+    }
   }
   if (!config.l$mags$quality_source %in% c("both", "checkm1", "checkm2")){
     cli::cli_abort("{.field mags$quality_source} must be one of {.val both}, {.val checkm1}, {.val checkm2}")
