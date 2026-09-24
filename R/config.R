@@ -99,7 +99,7 @@ validate_config <- function(config.l, check_paths = TRUE){
   reserved.v <- intersect(c(config.l$analysis$group_variables, config.l$analysis$covariates), c("Sample_ID", "Sample_label"))
   if (length(reserved.v) > 0){
     cli::cli_abort(c("{.val {reserved.v}} cannot be a group variable or covariate: it names each sample individually",
-                     "i" = paste("{.field Sample_ID} is gmaio's sample identifier, taken from {.field metadata$sample_id_column};",
+                     "i" = paste("{.field Sample_ID} is gmaio's sample identifier, from {.field metadata$sample_id_column};",
                                  "a metadata column of that name is renamed {.field Sample_ID_original}"),
                      "i" = "Rename the metadata column (e.g. to {.field Subject}) and use that name"))
   }
