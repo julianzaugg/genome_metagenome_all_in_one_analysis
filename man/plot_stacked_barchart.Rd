@@ -10,6 +10,7 @@ plot_stacked_barchart(
   colours.v = NULL,
   top_n = 10,
   min_abundance = 0,
+  top_method = c("per_sample", "mean"),
   merge_unassigned = TRUE,
   facet_variable = NULL,
   annotation_variables = NULL,
@@ -27,6 +28,10 @@ plot_stacked_barchart(
 (\code{project.l$palettes$taxa}); labels without a colour get unused colours.}
 
 \item{top_n, min_abundance, merge_unassigned}{Passed to \code{\link[=collapse_top_n]{collapse_top_n()}}.}
+
+\item{top_method}{How \code{\link[=collapse_top_n]{collapse_top_n()}} picks features: \code{"per_sample"} keeps the \code{top_n} most
+abundant of every sample, so the legend can hold many more than \code{top_n} taxa when samples
+differ; \code{"mean"} keeps exactly the \code{top_n} highest by mean.}
 
 \item{facet_variable}{Optional metadata column splitting samples into panels.}
 

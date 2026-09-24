@@ -80,12 +80,16 @@ run_maaslin3 <- function(profile, metadata.df, variable, covariates = character(
 #' @inheritParams run_maaslin3
 #' @param data_type `"count"` for read counts, otherwise `"proportion"` (default from the value type).
 #' @param min_prevalence Minimum fraction of samples with the feature.
+#' @param min_nonzero Features nonzero in fewer samples are left out before fitting; LinDA
+#'   flags features below 3 as having virtually no statistical power.
 #' @return Tidy data frame (see [run_differential_abundance()]).
 #' @export
 run_linda <- function(profile, metadata.df, variable, covariates = character(), random_effects = character(),
-                      data_type = NULL, min_prevalence = 0.1){
+                      data_type = NULL, min_prevalence = 0.1, min_nonzero = 3){
   require_pkg("MicrobiomeStat", "for LinDA differential abundance")
   inputs.l <- prepare_da_inputs(profile, metadata.df, c(variable, covariates, random_effects))
+  inputs.l$values <- inputs.l$values[rowSums(inputs.l$values != 0) >= min_nonzero, , drop = FALSE]
+  if (nrow(inputs.l$values) == 0) cli::cli_abort("No features are nonzero in at least {min_nonzero} samples")
   data_type <- data_type %||% if (profile$value_type == "read_count") "count" else "proportion"
   formula.s <- da_formula(variable, covariates, random_effects)
   fit.l <- MicrobiomeStat::linda(inputs.l$values, inputs.l$metadata, formula = formula.s, feature.dat.type = data_type,

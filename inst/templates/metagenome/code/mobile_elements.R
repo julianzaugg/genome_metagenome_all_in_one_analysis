@@ -48,6 +48,11 @@ for (type.s in c("virus", "plasmid")){
       permanova.df <- gmaio::run_permanova(ordination$distance, metadata.df, group.s, analysis.l$permutations,
                                            seed = analysis.l$seed, label = type.s)
       tables.l[[paste0(type.s, "_permanova")]] <- permanova.df
+      if (length(unique(stats::na.omit(metadata.df[[group.s]]))) > 2){
+        tables.l[[paste0(type.s, "_permanova_pairwise")]] <-
+          gmaio::run_pairwise_permanova(ordination$distance, metadata.df, group.s, analysis.l$permutations,
+                                        seed = analysis.l$seed, label = type.s)
+      }
       caption.s <- gmaio::permanova_caption(permanova.df)
     }
     ordination.gg <- gmaio::plot_ordination(ordination, metadata.df, colour_by.s, project.l$palettes[[colour_by.s]],

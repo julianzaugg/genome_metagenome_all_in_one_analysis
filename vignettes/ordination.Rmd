@@ -80,6 +80,18 @@ permdisp.l$overall
 A significant PERMDISP means the groups differ in spread, which can also produce a significant PERMANOVA.
 `permanova_caption()` summarises both for a figure caption.
 
+With more than two levels, the overall test says only that some levels differ.
+`run_pairwise_permanova()` repeats the test for each pair of levels on just those samples, with BH-adjusted p values; `code/ordination.R` adds it to `Ordination_statistics.xlsx` whenever the group variable has more than two levels.
+Pairs where a group has fewer than `min_group_size` samples (default 3) are listed without a test.
+The example has four cages:
+
+```{r pairwise}
+gmaio::run_pairwise_permanova(pca$distance, metadata.df, "Cage", permutations = 999)
+```
+
+With few samples per group the number of distinct permutations is small, which limits the smallest possible p value (two groups of four have 35 distinct splits, so p cannot go below about 0.03).
+`run_permdisp()` returns pairwise dispersion tests in `permdisp.l$pairwise` to read alongside.
+
 ## The template figure
 
 ```{r template}

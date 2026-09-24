@@ -1,5 +1,6 @@
 # Ordinations of taxonomic, MAG and functional profiles with PERMANOVA and PERMDISP
-# on the primary group variable: one figure per dataset and method.
+# on the primary group variable (pairwise between levels when there are more than two):
+# one figure per dataset and method.
 # All plot_ordination() options (shapes, ellipses, hulls, spiders, loadings, envfit, styling):
 #   ?gmaio::plot_ordination and vignette("ordination", package = "gmaio")
 
@@ -43,6 +44,11 @@ for (i in seq_len(nrow(datasets.df))){
       permdisp.l <- gmaio::run_permdisp(ordination$distance, metadata.df, group.s, analysis.l$permutations,
                                         seed = analysis.l$seed, label = label.s)
       statistics.l$PERMANOVA <- rbind(statistics.l$PERMANOVA, permanova.df)
+      if (length(unique(stats::na.omit(metadata.df[[group.s]]))) > 2){
+        statistics.l$PERMANOVA_pairwise <- rbind(statistics.l$PERMANOVA_pairwise,
+          gmaio::run_pairwise_permanova(ordination$distance, metadata.df, group.s, analysis.l$permutations,
+                                        seed = analysis.l$seed, label = label.s))
+      }
       statistics.l$PERMDISP <- rbind(statistics.l$PERMDISP, permdisp.l$overall)
       statistics.l$PERMDISP_pairwise <- rbind(statistics.l$PERMDISP_pairwise, permdisp.l$pairwise)
       caption.s <- gmaio::permanova_caption(permanova.df, permdisp.l)

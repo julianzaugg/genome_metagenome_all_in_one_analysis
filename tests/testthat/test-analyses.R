@@ -50,6 +50,17 @@ test_that("differential abundance methods return one schema and a consensus", {
   expect_true(all(c("Feature_ID", "Enriched_in", "N_methods") %in% names(consensus.df)))
 })
 
+test_that("LinDA leaves out features nonzero in fewer than min_nonzero samples", {
+  skip_if_not_installed("MicrobiomeStat")
+  project.l <- processed_test_project()
+  profile <- aggregate_profile(get_profile(project.l, "sylph_taxonomic"), rank = "genus")
+  nonzero.v <- rowSums(profile$values != 0)
+  expect_true(any(nonzero.v > 0 & nonzero.v < 3))
+  linda.df <- run_linda(profile, analysis_metadata(project.l), "Treatment", min_prevalence = 0)
+  expect_setequal(linda.df$Feature_ID, names(nonzero.v)[nonzero.v >= 3])
+  expect_no_warning(run_linda(profile, analysis_metadata(project.l), "Treatment", min_prevalence = 0))
+})
+
 test_that("sPLS-DA stability is taken per component", {
   skip_if_not_installed("mixOmics")
   project.l <- processed_test_project()

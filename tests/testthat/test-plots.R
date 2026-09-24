@@ -113,3 +113,15 @@ test_that("metadata columns named like plot columns do not break figures", {
   expect_equal(long.df$Label, genus.p$features$Label[match(long.df$Feature_ID, genus.p$features$Feature_ID)])
   expect_s3_class(plot_stacked_barchart(genus.p, metadata.df, project.l$palettes$taxa), "ggplot")
 })
+
+test_that("barchart top_method = 'mean' keeps exactly top_n taxa", {
+  project.l <- processed_test_project()
+  genus.p <- aggregate_profile(get_profile(project.l, "sylph_taxonomic"), rank = "genus")
+  shown.f <- function(...){
+    barchart.gg <- plot_stacked_barchart(genus.p, analysis_metadata(project.l), top_n = 1, ...)
+    setdiff(unique(as.character(barchart.gg$data$Label)), c("Other", "Unassigned"))
+  }
+  expect_length(shown.f(top_method = "mean"), 1)
+  # Default per sample: the top taxon of every sample, several here
+  expect_gt(length(shown.f()), 1)
+})

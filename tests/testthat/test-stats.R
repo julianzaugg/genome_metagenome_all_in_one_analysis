@@ -30,3 +30,23 @@ test_that("group_tests chooses Wilcoxon for two groups", {
   expect_equal(tests.df$Test, "Wilcoxon")
   expect_lt(tests.df$P_value, 0.05)
 })
+
+test_that("pairwise PERMANOVA tests each pair of levels on its own samples", {
+  set.seed(1)
+  metadata.df <- data.frame(Sample_ID = paste0("S", 1:11), Group = rep(c("a", "b", "c"), c(4, 4, 3)))
+  values.m <- matrix(stats::rnorm(11 * 5), nrow = 11, dimnames = list(metadata.df$Sample_ID, NULL))
+  values.m[metadata.df$Group == "c", ] <- values.m[metadata.df$Group == "c", ] + 5
+  distance.d <- stats::dist(values.m)
+  pairwise.df <- run_pairwise_permanova(distance.d, metadata.df[11:1, ], "Group", permutations = 99, min_group_size = 4)
+  expect_equal(paste(pairwise.df$Group_1, pairwise.df$Group_2), c("a b", "a c", "b c"))
+  expect_equal(unname(pairwise.df$N_2), c(4, 3, 3))
+
+  keep.v <- metadata.df$Group %in% c("a", "b")
+  direct.df <- run_permanova(stats::as.dist(as.matrix(distance.d)[keep.v, keep.v]), metadata.df[keep.v, ], "Group",
+                             permutations = 99)
+  expect_equal(pairwise.df$R2[1], direct.df$R2[1])
+  expect_equal(pairwise.df$P_value[1], direct.df$P_value[1])
+  # Pairs with a group below min_group_size are reported but not tested
+  expect_true(all(is.na(pairwise.df$P_value[2:3])))
+  expect_equal(pairwise.df$P_adjusted[1], pairwise.df$P_value[1])
+})

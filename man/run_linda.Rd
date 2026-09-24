@@ -11,7 +11,8 @@ run_linda(
   covariates = character(),
   random_effects = character(),
   data_type = NULL,
-  min_prevalence = 0.1
+  min_prevalence = 0.1,
+  min_nonzero = 3
 )
 }
 \arguments{
@@ -28,6 +29,9 @@ run_linda(
 \item{data_type}{\code{"count"} for read counts, otherwise \code{"proportion"} (default from the value type).}
 
 \item{min_prevalence}{Minimum fraction of samples with the feature.}
+
+\item{min_nonzero}{Features nonzero in fewer samples are left out before fitting; LinDA
+flags features below 3 as having virtually no statistical power.}
 }
 \value{
 Tidy data frame (see \code{\link[=run_differential_abundance]{run_differential_abundance()}}).

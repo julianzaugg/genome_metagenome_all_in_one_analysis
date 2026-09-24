@@ -22,4 +22,7 @@ load_processed(config_path = "config.yml", path = NULL)
 \description{
 \code{main.R} saves the processed project to \code{Result_other/processed.rds}; every analysis
 script loads it with \code{load_processed()}.
+The file records the gmaio build that made it; \code{load_processed()} warns when that differs
+from the running build (rerun \code{main.R}), or when gmaio was reinstalled after the R session
+loaded it (restart R).
 }

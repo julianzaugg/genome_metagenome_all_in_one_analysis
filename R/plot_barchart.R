@@ -5,6 +5,9 @@
 #' @param colours.v Named colours by feature label, usually the project taxa palette
 #'   (`project.l$palettes$taxa`); labels without a colour get unused colours.
 #' @param top_n,min_abundance,merge_unassigned Passed to [collapse_top_n()].
+#' @param top_method How [collapse_top_n()] picks features: `"per_sample"` keeps the `top_n` most
+#'   abundant of every sample, so the legend can hold many more than `top_n` taxa when samples
+#'   differ; `"mean"` keeps exactly the `top_n` highest by mean.
 #' @param facet_variable Optional metadata column splitting samples into panels.
 #' @param annotation_variables Optional metadata columns drawn as colour strips under the bars.
 #' @param annotation_colours Named list of colour vectors for `annotation_variables`.
@@ -13,9 +16,11 @@
 #' @return A ggplot (or patchwork when annotation strips are drawn).
 #' @export
 plot_stacked_barchart <- function(profile, metadata.df, colours.v = NULL, top_n = 10, min_abundance = 0,
-                                  merge_unassigned = TRUE, facet_variable = NULL, annotation_variables = NULL,
-                                  annotation_colours = list(), y_label = NULL, legend_title = NULL){
-  collapsed.p <- collapse_top_n(profile, top_n = top_n, min_abundance = min_abundance, merge_unassigned = merge_unassigned)
+                                  top_method = c("per_sample", "mean"), merge_unassigned = TRUE, facet_variable = NULL,
+                                  annotation_variables = NULL, annotation_colours = list(), y_label = NULL,
+                                  legend_title = NULL){
+  collapsed.p <- collapse_top_n(profile, top_n = top_n, min_abundance = min_abundance, method = match.arg(top_method),
+                                merge_unassigned = merge_unassigned)
   metadata.df <- metadata.df[metadata.df$Sample_ID %in% profile_samples(collapsed.p), , drop = FALSE]
   long.df <- profile_to_long(collapsed.p, metadata.df)
 

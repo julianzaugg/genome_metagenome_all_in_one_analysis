@@ -62,6 +62,9 @@ print.gm_project <- function(x, ...){
 #'
 #' `main.R` saves the processed project to `Result_other/processed.rds`; every analysis
 #' script loads it with `load_processed()`.
+#' The file records the gmaio build that made it; `load_processed()` warns when that differs
+#' from the running build (rerun `main.R`), or when gmaio was reinstalled after the R session
+#' loaded it (restart R).
 #'
 #' @param project.l A `gm_project`.
 #' @param path Path to the rds file; defaults to the project's `Result_other/processed.rds`.
@@ -70,6 +73,7 @@ print.gm_project <- function(x, ...){
 #' @export
 save_processed <- function(project.l, path = NULL){
   path <- path %||% output_path(project.l$config, "other", "processed.rds")
+  project.l$gmaio_build <- gm_build$loaded
   saveRDS(project.l, path)
   cli::cli_inform(c("v" = "Saved processed project to {.path {path}}"))
   invisible(path)
@@ -82,6 +86,7 @@ load_processed <- function(config_path = "config.yml", path = NULL){
   path <- path %||% output_path(config.l, "other", "processed.rds")
   if (!file.exists(path)) cli::cli_abort(c("{.path {path}} not found", "i" = "Run {.file code/main.R} first"))
   project.l <- readRDS(path)
+  check_build(project.l)
   project.l$config <- config.l
   if (length(project.l$palettes) > 0){
     project.l$palettes <- refresh_palettes(project.l)
