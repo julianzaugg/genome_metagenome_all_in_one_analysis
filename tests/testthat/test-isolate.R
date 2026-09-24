@@ -1,18 +1,3 @@
-isolate_fixture_dir <- function() system.file("extdata", "isolate", package = "gmaio", mustWork = TRUE)
-
-processed_isolate_project <- function(env = parent.frame()){
-  project_dir.s <- withr::local_tempdir(.local_envir = env)
-  yaml::write_yaml(list(mode = "isolate", pipeline_results = file.path(isolate_fixture_dir(), "results"),
-                        metadata = list(file = file.path(isolate_fixture_dir(), "metadata.csv"), label_column = "Isolate"),
-                        analysis = list(group_variables = list("Source"), reference_levels = list(Source = "Clinical"))),
-                   file.path(project_dir.s, "config.yml"))
-  project.l <- suppressMessages(start_project(read_config(file.path(project_dir.s, "config.yml"))))
-  project.l <- suppressMessages(add_isolate_genomes(project.l))
-  project.l <- suppressMessages(add_comparisons(project.l))
-  project.l <- suppressMessages(add_mobile_elements(project.l))
-  suppressMessages(add_palettes(project.l))
-}
-
 test_that("isolate readers link genomes and build the genome summary", {
   project.l <- processed_isolate_project()
   summary.df <- project.l$tables$genome_summary

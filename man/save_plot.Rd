@@ -26,4 +26,6 @@ The path, invisibly.
 Saves ggplot/patchwork objects and ComplexHeatmap objects (or lists of heatmaps
 and legends drawn with \code{\link[ComplexHeatmap:draw]{ComplexHeatmap::draw()}}) with sizes in centimetres.
 The format comes from the file extension.
+Figures saved to one of the gmaio figure folders (see \code{\link[=figure_catalogue]{figure_catalogue()}}) keep a
+\code{README.md} index of the figure directory up to date.
 }

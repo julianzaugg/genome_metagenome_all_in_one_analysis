@@ -15,6 +15,7 @@ gmaio turns the output of the [genome_metagenome_all_in_one](https://github.com/
 This guide explains how a project fits together and the handful of objects and functions everything else builds on.
 The worked examples for individual figures are in the other vignettes:
 
+- `vignette("outputs", package = "gmaio")`: what every table and figure file contains, and which MAG genome set to use
 - `vignette("barcharts", package = "gmaio")`: stacked barcharts, and where colours come from and how to change them
 - `vignette("heatmaps", package = "gmaio")`
 - `vignette("ordination", package = "gmaio")`: ordinations, PERMANOVA and PERMDISP

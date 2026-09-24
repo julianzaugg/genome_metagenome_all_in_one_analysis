@@ -29,6 +29,8 @@ theme_gmaio <- function(base_size = 9, legend_position = "right"){
 #' Saves ggplot/patchwork objects and ComplexHeatmap objects (or lists of heatmaps
 #' and legends drawn with [ComplexHeatmap::draw()]) with sizes in centimetres.
 #' The format comes from the file extension.
+#' Figures saved to one of the gmaio figure folders (see [figure_catalogue()]) keep a
+#' `README.md` index of the figure directory up to date.
 #'
 #' @param plot A ggplot, patchwork, `Heatmap`, `HeatmapList`, or a function that draws the figure.
 #' @param path Output path (`.pdf`, `.svg` or `.png`); the directory is created.
@@ -56,6 +58,7 @@ save_plot <- function(plot, path, width = NULL, height = NULL, dpi = 300, ...){
     device.x <- if (ext.s == "pdf") pdf_device() else NULL
     ggplot2::ggsave(path, plot, width = width, height = height, units = "cm", device = device.x,
                     dpi = dpi, limitsize = FALSE)
+    update_figure_index(path)
     return(invisible(path))
   }
   open_device(path, ext.s, width_in.n, height_in.n, dpi)
@@ -71,7 +74,15 @@ save_plot <- function(plot, path, width = NULL, height = NULL, dpi = 300, ...){
   } else {
     cli::cli_abort("Cannot save an object of class {.cls {class(plot)}}")
   }
+  update_figure_index(path)
   invisible(path)
+}
+
+# Figures saved to a gmaio figure folder keep the figure directory's README.md index current
+update_figure_index <- function(path){
+  folder.s <- basename(dirname(path))
+  if (folder.s %in% figure_catalogue()$Folder) write_figure_index(dirname(dirname(path)))
+  invisible(NULL)
 }
 
 # ComplexHeatmap measures text while building heatmaps and legends; with no device open R

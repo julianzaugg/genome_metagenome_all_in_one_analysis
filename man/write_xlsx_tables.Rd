@@ -8,7 +8,8 @@ write_xlsx_tables(
   tables.l,
   path,
   freeze_first_column = TRUE,
-  number_format = NULL
+  number_format = NULL,
+  about = TRUE
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ write_xlsx_tables(
 \item{freeze_first_column}{Freeze the first column as well as the header.}
 
 \item{number_format}{Optional Excel number format for numeric columns, e.g. \code{"0.0000"}.}
+
+\item{about}{Add the \code{About} sheet and update \code{README.md} for gmaio table files.}
 }
 \value{
 The path, or \code{NULL} when there was nothing to write, invisibly.
@@ -27,4 +30,9 @@ The path, or \code{NULL} when there was nothing to write, invisibly.
 One sheet per list element: bold header, frozen header row (and first column when
 \code{freeze_first_column}), auto column widths and filters. Empty data frames are
 written as a header-only sheet. An empty list writes nothing.
+}
+\details{
+For the table files gmaio writes (see \code{\link[=output_catalogue]{output_catalogue()}}), an \code{About} sheet describing
+the file, its sheets and key columns is added first, and the directory's \code{README.md}
+index is rewritten (\code{\link[=write_output_index]{write_output_index()}}).
 }

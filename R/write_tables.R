@@ -4,13 +4,18 @@
 #' `freeze_first_column`), auto column widths and filters. Empty data frames are
 #' written as a header-only sheet. An empty list writes nothing.
 #'
+#' For the table files gmaio writes (see [output_catalogue()]), an `About` sheet describing
+#' the file, its sheets and key columns is added first, and the directory's `README.md`
+#' index is rewritten ([write_output_index()]).
+#'
 #' @param tables.l Named list of data frames (names become sheet names, max 31 characters).
 #' @param path Output `.xlsx` path; the directory is created.
 #' @param freeze_first_column Freeze the first column as well as the header.
 #' @param number_format Optional Excel number format for numeric columns, e.g. `"0.0000"`.
+#' @param about Add the `About` sheet and update `README.md` for gmaio table files.
 #' @return The path, or `NULL` when there was nothing to write, invisibly.
 #' @export
-write_xlsx_tables <- function(tables.l, path, freeze_first_column = TRUE, number_format = NULL){
+write_xlsx_tables <- function(tables.l, path, freeze_first_column = TRUE, number_format = NULL, about = TRUE){
   if (is.data.frame(tables.l)) tables.l <- list(Sheet1 = tables.l)
   if (length(tables.l) == 0){
     cli::cli_inform(c("i" = "No tables to write to {.path {path}}"))
@@ -49,7 +54,10 @@ write_xlsx_tables <- function(tables.l, path, freeze_first_column = TRUE, number
                          cols = numeric_columns.v, gridExpand = TRUE)
     }
   }
+  entry.l <- if (about && !"About" %in% sheet_names.v) describe_output(path) else NULL
+  if (!is.null(entry.l)) add_about_sheet(workbook, entry.l, sheet_names.v)
   openxlsx::saveWorkbook(workbook, path, overwrite = TRUE)
+  if (!is.null(entry.l)) write_output_index(dirname(path))
   invisible(path)
 }
 

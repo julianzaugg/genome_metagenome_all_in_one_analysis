@@ -1,0 +1,148 @@
+---
+title: "Output files"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Output files}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+# Names as code (so <Set> and <dataset> placeholders show), other text with < and > escaped
+show_table <- function(x.df){
+  for (column.s in names(x.df)){
+    values.v <- as.character(x.df[[column.s]])
+    if (column.s == "Written_by") values.v <- sub("^code/", "", values.v)
+    x.df[[column.s]] <- if (column.s %in% c("File", "Sheet", "Folder", "Column", "Set", "Written_by")){
+      paste0("`", values.v, "`")
+    } else if (column.s == "Files"){
+      vapply(strsplit(values.v, ", ", fixed = TRUE), function(x) paste0("`", x, "`", collapse = ", "), character(1))
+    } else {
+      gsub("(--[a-z_]+)", "`\\1`", gsub(">", "&gt;", gsub("<", "&lt;", values.v)))
+    }
+  }
+  knitr::kable(x.df, row.names = FALSE)
+}
+```
+
+A gmaio project writes three folders, set in `outputs:` of `config.yml`:
+
+| Folder | Contents |
+|---|---|
+| `Result_tables/` | Excel tables: the data from `main.R`, and the statistics from each analysis script |
+| `Result_figures/` | One subfolder of figures per analysis script |
+| `Result_other/` | `processed.rds` (the processed project the scripts load) and the working files of some methods (e.g. `maaslin3/`) |
+
+This vignette explains what is in each file, and in particular the MAG files, which come in one version per genome set.
+You do not need it open while working: the same descriptions travel with the files.
+
+- Every workbook gmaio writes has an **`About`** sheet first, describing the file, each of its sheets and the columns that need explaining (and, for MAG files, which genome set it is).
+- `Result_tables/README.md` and `Result_figures/README.md` list every file or folder present with what it contains.
+  They are rewritten whenever gmaio writes a table or saves a figure, so they match the files there.
+
+In R, `output_catalogue()`, `figure_catalogue()`, `mag_set_catalogue()` and `describe_output()` return the same information.
+
+## MAG genome sets
+
+The pipeline maps every sample's reads to up to six sets of genomes.
+Each set gives its own `MAG_<set>_abundances.xlsx` and `MAG_<set>_taxonomy_relative_abundance.xlsx`, and its own `Reads_mapped_<label>` columns in the read statistics.
+The sets differ in two ways: which bins they keep (any quality, or high quality only) and whether genomes are pooled across samples.
+
+```
+All bins, all samples ──┬── dereplicate at 95% ANI ──────────────────────────► derep_bins
+                        │        └── keep the representatives that are HQ ────► hq_bins
+                        ├── keep HQ bins ── dereplicate at 95% ANI ──────────► hq_derep_bins
+                        └── keep HQ bins + reference genomes ── dereplicate ──► hq_ref_bins
+
+Each sample's own bins ─┬── dereplicate within the sample ───────────────────► ws_derep_bins
+                        └── keep HQ bins ── dereplicate within the sample ───► ws_hq_bins
+```
+
+HQ means completeness - 3 x contamination >= 50, in CheckM2 or CheckM1 (pipeline `--hq_quality_source`).
+
+```{r sets, echo = FALSE}
+sets.df <- gmaio::mag_set_catalogue()
+show_table(sets.df[, c("Set", "Name", "Genomes", "Use_for")])
+```
+
+The `Name` column is how each set is labelled in figures, e.g. in `reads_mapped_to_mags`.
+
+### Which one to use
+
+- **To compare samples** (barcharts, heatmaps, ordination, differential abundance), use **`hq_derep_bins`**.
+  Its genomes are pooled across samples and all high quality, so a genome absent from a sample really was not detected there.
+  The templates use it.
+- **`hq_bins` vs `hq_derep_bins`**: both hold HQ genomes pooled across samples, but they are built in opposite orders.
+  `hq_bins` dereplicates all bins first and keeps the representatives that happen to be HQ, so a cluster whose chosen representative is a poorer bin is lost even when it contains an HQ bin.
+  `hq_derep_bins` keeps the HQ bins first and then dereplicates them, so every HQ genome is represented.
+  `hq_derep_bins` therefore has at least as many genomes; often the two are nearly the same, but they differ when HQ genomes cluster with poorer bins.
+- **`derep_bins`** keeps genomes of any quality: the most complete picture of what was assembled, and the most reads explained, but low-quality genomes have unreliable taxonomy and functions.
+- **`ws_derep_bins` and `ws_hq_bins`** (only with the pipeline's `--within_sample_dereplication`) map each sample only to the genomes assembled from it.
+  They answer "how much of this sample do its own MAGs explain?", shown in `MAG_per_sample_recovery.xlsx` and the `reads_mapped_to_mags` figure.
+  A genome can only be found in the sample it came from, so these sets say nothing about differences between samples; gmaio warns if you ordinate or test them.
+
+### The four measures in each abundance file
+
+| Sheet | What it is | Sums to |
+|---|---|---|
+| `relative_abundance` | Mean coverage of each genome as a share of all genomes in the set: the share of genome copies | 100 per sample |
+| `coverm_relative_abundance` | CoverM relative abundance: % of the sample's reads (after QC and host removal) that map to the genome | the % of reads mapped to the set |
+| `coverage` | Mean read depth over the genome (x) | - |
+| `read_count` | Reads mapped to the genome | reads mapped |
+
+Use `relative_abundance` to compare composition between samples; it is what the templates plot and test.
+Use `coverm_relative_abundance` when the unmapped share matters, e.g. "this genome is 5% of all the reads in the sample".
+`MAG_<set>_taxonomy_relative_abundance.xlsx` is `relative_abundance` summed to each GTDB rank.
+
+### Finding a MAG across sets
+
+`MAG_summary.xlsx` has every bin from every sample, with its quality and taxonomy.
+For each set it has two columns: `Is_representative_<set>` (the bin is in that set) and `Representative_<set>` (the bin that represents its cluster there).
+So to follow one genome from its sample into the pooled catalogue:
+
+```r
+bins.df <- readxl::read_excel("Result_tables/MAG_summary.xlsx", "Bins")
+bins.df[bins.df$Bin_ID == "<a bin>", c("High_quality", "Representative_hq_derep_bins")]
+```
+
+In the abundance tables, the first column (`genome`) is the `Bin_ID` of each representative, and `Short_ID` (`MAG001`, ...) is the short name used in figures.
+
+## Tables
+
+The files `main.R` writes (the data) and those the analysis scripts write (the statistics):
+
+```{r tables-metagenome, echo = FALSE}
+show_table(gmaio::output_catalogue("metagenome")[, c("File", "Written_by", "Description")])
+```
+
+Isolate projects write:
+
+```{r tables-isolate, echo = FALSE}
+isolate.df <- gmaio::output_catalogue("isolate")
+show_table(isolate.df[isolate.df$Mode == "isolate" | isolate.df$File == "Metadata_and_read_stats.xlsx",
+                      c("File", "Written_by", "Description")])
+```
+
+`describe_output()` gives the sheets and key columns of any of them; this is what the `About` sheet shows:
+
+```{r describe}
+about.l <- gmaio::describe_output("MAG_summary.xlsx")
+show_table(about.l$Sheets[, c("Sheet", "Description")])
+show_table(utils::head(about.l$Columns[, c("Column", "Description")], 8))
+```
+
+Taxonomic tables (sylph, SingleM and the MAG taxonomy files) have one sheet per rank, from phylum to species.
+Rows are taxa, named by their full GTDB lineage in the first column with a short `Label`, and columns are samples by `Sample_ID`.
+The `Metadata` sheet of `Metadata_and_read_stats.xlsx` links each `Sample_ID` to its label and metadata.
+
+## Figures
+
+Each analysis script saves to its own folder of `Result_figures/`.
+`<dataset>` is a profile and rank, such as `sylph_taxonomic__genus`, or a MAG profile such as `mags_hq_derep_bins_relative_abundance`.
+
+```{r figures, echo = FALSE}
+show_table(gmaio::figure_catalogue()[, c("Folder", "Written_by", "Files", "Description")])
+```
+
+To change a figure, edit the plot function call in the script that writes it; the other vignettes explain the options.
