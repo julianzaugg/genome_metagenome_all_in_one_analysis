@@ -29,5 +29,9 @@ for (i in seq_len(nrow(datasets.df))){
   tables.l[[paste0(dataset.s, "_tests")]] <- diversity.l$tests
   if (!is.null(diversity.l$pairwise)) tables.l[[paste0(dataset.s, "_pairwise")]] <- diversity.l$pairwise
 }
-names(tables.l) <- gsub("mags_hq_derep_bins_relative_abundance", "mags_hq_derep", names(tables.l))
+# Short dataset names keep sheet names within Excel's 31 characters (e.g. singlem__species_pairwise)
+names(tables.l) <- names(tables.l) |>
+  gsub(pattern = "mags_hq_derep_bins_relative_abundance", replacement = "mags_hq_derep") |>
+  gsub(pattern = "sylph_taxonomic", replacement = "sylph") |>
+  gsub(pattern = "singlem_relative", replacement = "singlem")
 gmaio::write_xlsx_tables(tables.l, gmaio::output_path(config.l, "tables", "Alpha_diversity.xlsx"))
