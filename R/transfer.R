@@ -3,6 +3,10 @@
 #' Builds include rules from the `transfer` patterns in [pipeline_registry()], followed by
 #' rules that descend every directory and exclude everything else.
 #' Patterns are not anchored, so they work whether or not the rsync source ends in `/`.
+#' GNU rsync matches unanchored patterns against the end of each path, but openrsync (the
+#' `rsync` of recent macOS) matches patterns containing `**` from the start, so without a
+#' trailing `/` the source directory name comes first and they fail; each such pattern is
+#' therefore also given with a leading `*/`.
 #'
 #' @param mode `"all"`, `"metagenome"` or `"isolate"`.
 #' @return Character vector of filter lines.
@@ -11,6 +15,7 @@ rsync_filter <- function(mode = c("all", "metagenome", "isolate")){
   mode <- match.arg(mode)
   registry.df <- if (mode == "all") pipeline_registry() else registry_for_mode(mode)
   patterns.v <- unique(unlist(strsplit(stats::na.omit(registry.df$transfer), " ", fixed = TRUE)))
+  patterns.v <- unlist(lapply(patterns.v, function(x) if (grepl("**", x, fixed = TRUE)) c(x, paste0("*/", x)) else x))
   c(paste0("# Pipeline outputs read by gmaio ", utils::packageVersion("gmaio"), " (", mode, " mode)"),
     paste("+", patterns.v), "+ */", "- *")
 }

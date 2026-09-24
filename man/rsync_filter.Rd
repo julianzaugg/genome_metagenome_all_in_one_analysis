@@ -16,4 +16,8 @@ Character vector of filter lines.
 Builds include rules from the \code{transfer} patterns in \code{\link[=pipeline_registry]{pipeline_registry()}}, followed by
 rules that descend every directory and exclude everything else.
 Patterns are not anchored, so they work whether or not the rsync source ends in \code{/}.
+GNU rsync matches unanchored patterns against the end of each path, but openrsync (the
+\code{rsync} of recent macOS) matches patterns containing \verb{**} from the start, so without a
+trailing \code{/} the source directory name comes first and they fail; each such pattern is
+therefore also given with a leading \verb{*/}.
 }
