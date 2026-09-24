@@ -3,7 +3,8 @@
 #' The configured `sample_id_column` becomes `Sample_ID` (an existing, different
 #' `Sample_ID` column is kept as `Sample_ID_original`).
 #' Adds `Sample_label` (display label) and `Excluded` (logical), orders rows by
-#' `sample_order`, and makes group variables factors with the reference level first.
+#' `sample_order`, and makes group variables factors with the reference level first (or in the
+#' order given, when `reference_levels` lists several levels, e.g. `{Group: [raw, IgA+, FT]}`).
 #'
 #' @param config.l A `gm_config`.
 #' @return Data frame with row names set to `Sample_ID`.
@@ -20,7 +21,9 @@ read_metadata <- function(config.l){
   if (id_col.s != "Sample_ID"){
     if ("Sample_ID" %in% names(metadata.df)){
       names(metadata.df)[names(metadata.df) == "Sample_ID"] <- "Sample_ID_original"
-      cli::cli_inform("Metadata column {.field Sample_ID} renamed to {.field Sample_ID_original}")
+      cli::cli_inform(c("Metadata column {.field Sample_ID} renamed to {.field Sample_ID_original}",
+                        "i" = paste("{.field Sample_ID} is gmaio's sample identifier, taken from {.field {id_col.s}};",
+                                    "give your column another name (e.g. {.field Subject}) to use it as a variable")))
     }
     names(metadata.df)[names(metadata.df) == id_col.s] <- "Sample_ID"
   }
@@ -74,12 +77,14 @@ set_group_levels <- function(metadata.df, config.l){
     values.v <- metadata.df[[variable.s]]
     if (is.numeric(values.v)) next
     levels.v <- sort(unique(stats::na.omit(as.character(values.v))))
-    reference.s <- config.l$analysis$reference_levels[[variable.s]]
-    if (!is.null(reference.s)){
-      if (!reference.s %in% levels.v){
-        cli::cli_abort("Reference level {.val {reference.s}} not found in {.field {variable.s}}")
+    reference.v <- as.character(unlist(config.l$analysis$reference_levels[[variable.s]]))
+    if (length(reference.v) > 0){
+      missing.v <- setdiff(reference.v, levels.v)
+      if (length(missing.v) > 0){
+        cli::cli_abort(c("{.field reference_levels} for {.field {variable.s}}: {.val {missing.v}} not found",
+                         "i" = "{.field {variable.s}} has {.val {levels.v}}"))
       }
-      levels.v <- c(reference.s, setdiff(levels.v, reference.s))
+      levels.v <- c(reference.v, setdiff(levels.v, reference.v))
     }
     metadata.df[[variable.s]] <- factor(as.character(values.v), levels = levels.v)
   }

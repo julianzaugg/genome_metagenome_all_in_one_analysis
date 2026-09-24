@@ -16,5 +16,6 @@ Data frame with row names set to \code{Sample_ID}.
 The configured \code{sample_id_column} becomes \code{Sample_ID} (an existing, different
 \code{Sample_ID} column is kept as \code{Sample_ID_original}).
 Adds \code{Sample_label} (display label) and \code{Excluded} (logical), orders rows by
-\code{sample_order}, and makes group variables factors with the reference level first.
+\code{sample_order}, and makes group variables factors with the reference level first (or in the
+order given, when \code{reference_levels} lists several levels, e.g. \verb{\{Group: [raw, IgA+, FT]\}}).
 }

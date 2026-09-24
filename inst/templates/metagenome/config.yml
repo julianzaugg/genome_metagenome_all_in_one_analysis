@@ -28,7 +28,7 @@ metadata:
 
 analysis:
   group_variables: []              # e.g. [Treatment]; first is used for grouping in figures and tests
-  reference_levels: {}             # e.g. {Treatment: Control}
+  reference_levels: {}             # e.g. {Treatment: Control}, or a full order {Fraction: [raw, IgA+, FT]}
   covariates: []                   # extra model terms for differential abundance
   ranks: [phylum, genus]           # taxonomic ranks for figures and statistics
   permutations: 999

@@ -31,3 +31,24 @@ test_that("a different ID column keeps the original Sample_ID column", {
   expect_equal(metadata.df$Sample_ID, c("S1", "S2"))
   expect_equal(metadata.df$Sample_ID_original, c("x", "y"))
 })
+
+test_that("reference_levels can give the full level order", {
+  path.s <- withr::local_tempfile(fileext = ".csv")
+  utils::write.csv(data.frame(ID = paste0("S", 1:6), Fraction = rep(c("raw", "IgA+", "FT"), 2),
+                              Subject = rep(c("T1", "T0"), each = 3)), path.s, row.names = FALSE)
+  config.l <- make_test_project(metadata = list(file = path.s, sample_id_column = "ID", label_column = NULL,
+                                                exclude_column = NULL, sample_order = c("Subject", "Fraction")),
+                                analysis = list(group_variables = c("Fraction", "Subject"),
+                                                reference_levels = list(Fraction = c("raw", "IgA+", "FT"))))
+  metadata.df <- read_metadata(config.l)
+  expect_equal(levels(metadata.df$Fraction), c("raw", "IgA+", "FT"))
+  expect_equal(metadata.df$Sample_ID, c("S4", "S5", "S6", "S1", "S2", "S3"))
+  config.l$analysis$reference_levels <- list(Fraction = c("raw", "Flow"))
+  expect_error(read_metadata(config.l), "Flow")
+})
+
+test_that("Sample_ID cannot be a group variable", {
+  config.l <- make_test_project()
+  config.l$analysis$group_variables <- c("Treatment", "Sample_ID")
+  expect_error(validate_config(config.l, check_paths = FALSE), "Sample_ID_original")
+})

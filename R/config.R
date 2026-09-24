@@ -95,6 +95,14 @@ validate_config <- function(config.l, check_paths = TRUE){
   if (!config.l$outputs$figure_format %in% c("pdf", "svg", "png")){
     cli::cli_abort("{.field outputs$figure_format} must be one of {.val pdf}, {.val svg}, {.val png}")
   }
+  # Sample_ID and Sample_label identify single samples, so they cannot group or model samples
+  reserved.v <- intersect(c(config.l$analysis$group_variables, config.l$analysis$covariates), c("Sample_ID", "Sample_label"))
+  if (length(reserved.v) > 0){
+    cli::cli_abort(c("{.val {reserved.v}} cannot be a group variable or covariate: it names each sample individually",
+                     "i" = paste("{.field Sample_ID} is gmaio's sample identifier, taken from {.field metadata$sample_id_column};",
+                                 "a metadata column of that name is renamed {.field Sample_ID_original}"),
+                     "i" = "Rename the metadata column (e.g. to {.field Subject}) and use that name"))
+  }
   unknown.v <- setdiff(names(config.l$files), pipeline_registry()$key)
   if (length(unknown.v) > 0){
     cli::cli_abort(c("Unknown {.field files} key{?s}: {.val {unknown.v}}",

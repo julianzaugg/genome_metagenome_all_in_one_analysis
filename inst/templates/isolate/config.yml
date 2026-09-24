@@ -28,7 +28,7 @@ metadata:
 
 analysis:
   group_variables: []              # e.g. [Source]; first is used for colours, tests and associations
-  reference_levels: {}             # e.g. {Treatment: Control}
+  reference_levels: {}             # e.g. {Treatment: Control}, or a full order {Fraction: [raw, IgA+, FT]}
   covariates: []                   # extra model terms for differential abundance
   permutations: 999
   seed: 1234
