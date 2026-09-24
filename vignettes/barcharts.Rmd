@@ -1,0 +1,234 @@
+---
+title: "Barcharts and colours"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Barcharts and colours}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.align = "center")
+# Show each figure exactly as save_plot() writes it, at its automatic size
+show_plot <- function(plot, ...){
+  path.s <- knitr::fig_path(".png")
+  gmaio::save_plot(plot, path.s, dpi = 110, ...)
+  knitr::include_graphics(path.s, dpi = 110)
+}
+```
+
+`plot_stacked_barchart()` draws the composition of each sample as a stacked bar: the most abundant taxa in colour, the rest summed into a grey `Other`.
+This vignette follows `code/barcharts.R`, goes through the options for changing the figure, and then explains where the colours come from and how to change them.
+It uses the synthetic example project; see `vignette("gmaio", package = "gmaio")` for how projects and profiles work.
+
+```{r project}
+project.l <- gmaio::example_project()
+metadata.df <- gmaio::analysis_metadata(project.l)
+```
+
+## Choosing the data
+
+A barchart shows one profile at one rank.
+`code/barcharts.R` loops over the taxonomic profiles and the ranks in `analysis: ranks` of `config.yml`, aggregating each profile to the rank first:
+
+```{r data}
+genus.p <- gmaio::get_profile(project.l, "sylph_taxonomic") |>
+  gmaio::aggregate_profile(rank = "genus")
+genus.p
+```
+
+The profile is not filtered first: taxa that are not shown still count towards `Other`, so every bar adds up to 100%.
+
+## The template barchart
+
+```{r template}
+barchart.gg <- gmaio::plot_stacked_barchart(genus.p, metadata.df, project.l$palettes$taxa,
+                                            top_n = 8,
+                                            facet_variable = "Treatment",
+                                            legend_title = "Genus")
+```
+
+```{r template-show, echo = FALSE}
+show_plot(barchart.gg)
+```
+
+Samples are drawn in metadata order (`sample_order` in `config.yml`) and labelled by `Sample_label` (`label_column`).
+`facet_variable` splits the samples into panels; panel widths follow the number of samples in each.
+The legend lists taxa by mean abundance, with `Unassigned` and `Other` last.
+
+In a project, edit the `gmaio::plot_stacked_barchart()` call in `code/barcharts.R` and rerun the script.
+
+## Which taxa are shown
+
+By default a taxon is shown when it is among the `top_n` most abundant in **any** sample (`top_method = "per_sample"`).
+Every sample then shows its own dominant taxa, but when samples differ the legend can list many more than `top_n` taxa: above, `top_n = 8` gave `r sum(!gmaio::collapse_top_n(genus.p, top_n = 8, merge_unassigned = TRUE)$features$Label %in% c("Other", "Unassigned"))` genera.
+`top_method = "mean"` shows exactly the `top_n` taxa with the highest mean, which keeps the legend short but can hide a taxon that dominates only a few samples:
+
+```{r mean}
+barchart.gg <- gmaio::plot_stacked_barchart(genus.p, metadata.df, project.l$palettes$taxa,
+                                            top_n = 12, top_method = "mean",
+                                            facet_variable = "Treatment", legend_title = "Genus")
+```
+
+```{r mean-show, echo = FALSE}
+show_plot(barchart.gg)
+```
+
+`min_abundance` additionally requires a shown taxon to reach that value (in %) in the sample where it is counted, so `top_n = 15, min_abundance = 1` shows up to 15 taxa per sample but only those at 1% or more.
+
+Taxa with nothing assigned below domain (`Unassigned`, `Unclassified d__Bacteria`) are merged into one grey `Unassigned` segment; `merge_unassigned = FALSE` keeps them separate.
+`collapse_top_n()` does the selection, so you can check what a barchart will show:
+
+```{r collapse}
+shown.p <- gmaio::collapse_top_n(genus.p, top_n = 5, method = "mean", merge_unassigned = TRUE)
+round(rowMeans(shown.p$values), 1) |> stats::setNames(shown.p$features$Label)
+```
+
+## Annotation strips
+
+`annotation_variables` adds a colour strip per metadata column under the bars, which helps when samples are split by one variable but vary in others.
+Strip colours come from `annotation_colours`, usually the project palettes; `annotation_height` sets the height of each strip in cm.
+
+```{r strips}
+barchart.gg <- gmaio::plot_stacked_barchart(genus.p, metadata.df, project.l$palettes$taxa,
+                                            top_n = 12, top_method = "mean",
+                                            facet_variable = "Treatment",
+                                            annotation_variables = c("Time", "Cage"),
+                                            annotation_colours = project.l$palettes,
+                                            legend_title = "Genus")
+```
+
+```{r strips-show, echo = FALSE}
+show_plot(barchart.gg)
+```
+
+With annotation strips the result is a patchwork (two plots stacked) rather than a single ggplot.
+
+## Legend, bars and text
+
+| Argument | Controls | Default |
+|---|---|---|
+| `legend_title` | Legend title | none |
+| `legend_ncol` | Legend columns | 1, or 2 above 25 entries |
+| `legend_position` | `"right"`, `"bottom"`, `"top"` or `"none"` | right |
+| `bar_width` | Bar width; 1 leaves no gap | 0.85 |
+| `outline_colour`, `outline_width` | Segment outlines; `NA` for none | grey20, 0.1 |
+| `x_text_angle` | Sample label angle | 90 |
+| `base_size` | Base font size (pt) | 9 |
+| `y_label` | Y axis title | from the value type |
+
+A legend below the bars suits many samples with long taxon names:
+
+```{r bottom}
+barchart.gg <- gmaio::plot_stacked_barchart(genus.p, metadata.df, project.l$palettes$taxa,
+                                            top_n = 12, top_method = "mean",
+                                            facet_variable = "Treatment",
+                                            annotation_variables = "Time",
+                                            annotation_colours = project.l$palettes,
+                                            legend_title = "Genus", legend_position = "bottom", legend_ncol = 3,
+                                            bar_width = 1, outline_colour = NA)
+```
+
+```{r bottom-show, echo = FALSE}
+show_plot(barchart.gg)
+```
+
+The figure is sized for its samples and legend, so changing these needs no change to `save_plot()`.
+Without annotation strips the result is an ordinary ggplot, so other ggplot2 changes can be added, e.g. `barchart.gg + ggplot2::labs(title = "sylph genera")`.
+
+## Other profiles
+
+Any profile works, as long as it is at the level you want to show.
+SingleM at phylum level:
+
+```{r singlem}
+singlem.p <- gmaio::get_profile(project.l, "singlem_relative") |>
+  gmaio::aggregate_profile(rank = "phylum")
+barchart.gg <- gmaio::plot_stacked_barchart(singlem.p, metadata.df, project.l$palettes$taxa,
+                                            top_n = 6, facet_variable = "Treatment", legend_title = "Phylum")
+```
+
+```{r singlem-show, echo = FALSE}
+show_plot(barchart.gg)
+```
+
+For function profiles, aggregate by an annotation column (`aggregate_profile(profile, by = "Category")`) and convert to percentages with `as_relative_abundance()`, as `code/functional_profiles.R` does for CAZyme substrates.
+
+## Colours
+
+### Where colours come from
+
+`main.R` assigns colours once and saves them to `palettes.yml` in the project directory, so a taxon or group keeps its colour in every figure and every run, including runs after more samples are added.
+For every variable and for taxa, colours are taken in this order:
+
+1. `colours:` in `config.yml`.
+2. `palettes.yml`, which you can edit; your edits are kept on the next run.
+3. New colours for anything not yet coloured, chosen to differ from those already in use.
+
+`project.l$palettes` holds them all: one named vector per metadata variable and one for taxa (by label, at every rank).
+
+```{r palettes}
+names(project.l$palettes)
+project.l$palettes$Treatment
+utils::head(project.l$palettes$taxa, 4)
+gmaio::special_colours()
+```
+
+`Other`, `Unassigned`, missing values and reference genomes always get these fixed greys, so they never look like a real group.
+
+### Taxa colour schemes
+
+Phyla get the most distinct colours in order of abundance.
+Below phylum there are two schemes, set by `outputs: taxa_colour_scheme` in `config.yml`:
+
+- `distinct` (default): every taxon gets its own colour in order of overall abundance, so the most abundant taxa are easiest to tell apart.
+- `hierarchical`: taxa get shades of their phylum colour, which groups them visually but gives similar shades when a phylum has many taxa.
+
+`assign_taxa_colours()` makes either scheme; the hierarchical one for the genera above looks like this:
+
+```{r hierarchical}
+taxa.df <- data.frame(Label = genus.p$features$Label, Phylum = genus.p$features$Phylum,
+                      Abundance = apply(genus.p$values, 1, max))
+hierarchical.v <- gmaio::assign_taxa_colours(taxa.df, scheme = "hierarchical")
+barchart.gg <- gmaio::plot_stacked_barchart(genus.p, metadata.df, hierarchical.v,
+                                            top_n = 12, top_method = "mean",
+                                            facet_variable = "Treatment", legend_title = "Genus")
+```
+
+```{r hierarchical-show, echo = FALSE}
+show_plot(barchart.gg)
+```
+
+In a project, set the scheme in `config.yml` and delete the taxa entries of `palettes.yml` (or the whole file) before rerunning `main.R`, since saved colours are kept.
+
+### Changing colours
+
+For one figure, pass modified colours:
+
+```{r override}
+taxa.v <- project.l$palettes$taxa
+taxa.v[["(p__Verrucomicrobiota) g__Akkermansia"]] <- "#D7191C"
+barchart.gg <- gmaio::plot_stacked_barchart(genus.p, metadata.df, taxa.v, top_n = 12, top_method = "mean")
+```
+
+To change them everywhere, set them in `config.yml`, using the labels as they appear in figures:
+
+```yaml
+colours:
+  Treatment: {Control: "#4E79A7", Treated: "#E15759"}
+  taxa: {"(p__Verrucomicrobiota) g__Akkermansia": "#D7191C", p__Bacillota: "#59A14F"}
+```
+
+or edit `palettes.yml` directly, then rerun `main.R`.
+`get_palette(project.l, "taxa", labels)` looks colours up and gives any taxon without one a new colour; plot functions do this for you.
+To colour a new metadata column, add it to `metadata: colour_variables` in `config.yml`.
+
+`qualitative_palette(n)` and `assign_colours(values)` give the generated colours on their own, for your own figures.
+
+## Saving
+
+```r
+gmaio::save_plot(barchart.gg, gmaio::figure_path(project.l$config, "barcharts", "sylph_taxonomic__genus"))
+```
+
+The size is set from the number of samples and legend entries; pass `width` and `height` (cm) to fix it instead.

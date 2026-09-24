@@ -1,0 +1,189 @@
+---
+title: "Alpha diversity"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Alpha diversity}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.align = "center")
+# Show each figure exactly as save_plot() writes it, at its automatic size
+show_plot <- function(plot, ...){
+  path.s <- knitr::fig_path(".png")
+  gmaio::save_plot(plot, path.s, dpi = 110, ...)
+  knitr::include_graphics(path.s, dpi = 110)
+}
+```
+
+Alpha diversity summarises each sample on its own: how many taxa it has and how evenly they are spread.
+`code/diversity.R` computes it with `alpha_diversity()` and compares groups with `plot_alpha_diversity()`, which draws the figure and returns the test tables.
+This vignette follows that script, explains the tests, and goes through the options for changing the figure.
+It uses the synthetic example project; see `vignette("gmaio", package = "gmaio")` for how projects and profiles work.
+
+```{r project}
+project.l <- gmaio::example_project()
+metadata.df <- gmaio::analysis_metadata(project.l)
+```
+
+## Measures
+
+`alpha_diversity()` takes a profile and returns one row per sample:
+
+```{r measures}
+genus.p <- gmaio::get_profile(project.l, "sylph_taxonomic") |>
+  gmaio::aggregate_profile(rank = "genus")
+diversity.df <- gmaio::alpha_diversity(genus.p)
+head(diversity.df)
+```
+
+| Measure | What it is |
+|---|---|
+| `Richness` | Number of taxa above zero |
+| `Shannon` | Shannon entropy (natural log): richness and evenness together |
+| `Simpson` | Gini-Simpson, 1 - sum of squared proportions: the chance two random reads come from different taxa |
+| `Pielou` | Evenness, Shannon / log(Richness), from 0 (one taxon dominates) to 1 (all equal) |
+| `Chao1` | Estimated richness including unseen taxa; integer read counts only |
+
+Shannon, Simpson and Pielou are computed on proportions, so they suit relative abundance, coverage and counts alike.
+Richness depends on sequencing depth: for read counts (e.g. the `mags_*_read_count` profiles), `rarefy_depth` subsamples every sample to the same number of reads first, dropping samples below it:
+
+```r
+counts.p <- gmaio::get_profile(project.l, "mags_hq_derep_bins_read_count")
+diversity.df <- gmaio::alpha_diversity(counts.p, rarefy_depth = 100000, seed = 1234)
+```
+
+Relative abundance profiles from sylph or SingleM cannot be rarefied, since they have no read counts; their richness reflects each tool's detection threshold, which is applied the same way to every sample.
+
+## The template figure
+
+`code/diversity.R` does this for sylph and SingleM species, SingleM genera and the HQ MAGs, comparing the primary group:
+
+```{r template}
+diversity.l <- gmaio::plot_alpha_diversity(diversity.df, metadata.df, "Treatment", project.l$palettes$Treatment)
+```
+
+```{r template-show, echo = FALSE}
+show_plot(diversity.l$plot)
+```
+
+Each panel is one measure with its own y axis; boxes show the median and quartiles and points the samples.
+Groups are drawn in factor level order, so `reference_levels` in `config.yml` puts the reference group first.
+In a project, edit the `gmaio::plot_alpha_diversity()` call in `code/diversity.R` and rerun the script.
+
+## Tests
+
+With two groups every panel shows a Wilcoxon rank-sum test; with more it shows a Kruskal-Wallis test.
+`diversity.l$tests` has them all, with a BH adjustment across the measures in `P_adjusted`:
+
+```{r tests}
+diversity.l$tests
+```
+
+In the example, treated mice lose rare genera by week 4, but pooling both time points hides much of that.
+Comparing the four Treatment and Time combinations shows it, and with more than two groups the pairs that differ get brackets:
+
+```{r groups}
+metadata.df$Group <- factor(paste(metadata.df$Treatment, metadata.df$Time))
+diversity.l <- gmaio::plot_alpha_diversity(diversity.df, metadata.df, "Group")
+```
+
+```{r groups-show, echo = FALSE}
+show_plot(diversity.l$plot)
+```
+
+The pairwise tests are Dunn's test by default, the standard follow-up to Kruskal-Wallis: it ranks all samples together, so it agrees with the omnibus test.
+P values are BH adjusted within each measure, and only pairs with an adjusted p below `bracket_alpha` (0.05) get a bracket, marked `*` (< 0.05), `**` (< 0.01) or `***` (< 0.001).
+`diversity.l$pairwise` has every pair, with group sizes, means and medians:
+
+```{r pairwise}
+pairwise.df <- diversity.l$pairwise
+pairwise.df[pairwise.df$Measure == "Richness", c("Group_1", "Group_2", "N_1", "N_2", "Mean_1", "Mean_2",
+                                                 "Statistic", "P_adjusted", "Significance")]
+```
+
+`code/diversity.R` writes the values, tests and pairwise tables to `Alpha_diversity.xlsx`.
+
+The tests treat samples as independent.
+Here each mouse was sampled twice, so for a strict comparison test one time point at a time (`metadata.df[metadata.df$Time == "Week_4", ]`), or model the repeated measures yourself from `diversity.df`.
+
+## Test options
+
+| Argument | Controls | Default |
+|---|---|---|
+| `pairwise_test` | `"dunn"` or `"wilcoxon"` (separate rank-sum test per pair) | dunn |
+| `p_adjust_method` | Correction within each measure, see `stats::p.adjust()` | BH |
+| `brackets` | Draw brackets for significant pairs | `TRUE` |
+| `bracket_alpha` | Adjusted p below which a pair gets a bracket | 0.05 |
+| `bracket_label` | `"stars"` or `"p"` (the adjusted p value) | stars |
+| `bracket_size` | Bracket label size (pt) | 8 |
+| `show_test` | Print the panel test above the boxes | `TRUE` |
+
+```{r test-options}
+diversity.l <- gmaio::plot_alpha_diversity(diversity.df, metadata.df, "Group",
+                                           measures = c("Richness", "Pielou"),
+                                           pairwise_test = "wilcoxon", bracket_label = "p")
+```
+
+```{r test-options-show, echo = FALSE}
+show_plot(diversity.l$plot)
+```
+
+## Figure options
+
+| Argument | Controls | Default |
+|---|---|---|
+| `measures` | Measures shown, in order | Richness, Shannon, Simpson, Pielou |
+| `panel_labels` | Panel titles, e.g. `c(Richness = "Observed genera")` | measure names |
+| `shape_by`, `shapes` | Point shape by a metadata column, and the shapes | none |
+| `box_width`, `box_alpha` | Box width and fill transparency | 0.6, 0.5 |
+| `point_size`, `point_alpha`, `jitter_width` | Points | 1.8, 1, 0.12 |
+| `ncol` | Panel columns | up to 4 |
+| `free_y` | A y axis per panel | `TRUE` |
+| `x_label`, `y_label` | Axis titles | none |
+| `x_text_angle` | Group label angle | 30 |
+| `base_size`, `legend_position` | Font size (pt) and legend position | 9, right |
+
+For example, Treatment on the x axis with time point as the point shape, two panels per row and clearer panel titles:
+
+```{r figure-options}
+diversity.l <- gmaio::plot_alpha_diversity(diversity.df, metadata.df, "Treatment", project.l$palettes$Treatment,
+                                           shape_by = "Time", ncol = 2, x_text_angle = 0,
+                                           panel_labels = c(Richness = "Observed genera", Shannon = "Shannon index",
+                                                            Simpson = "Gini-Simpson index", Pielou = "Pielou evenness"))
+```
+
+```{r figure-options-show, echo = FALSE}
+show_plot(diversity.l$plot)
+```
+
+The result is a ggplot, so further ggplot2 changes can be added to `diversity.l$plot`.
+
+## Other per-sample values
+
+`plot_group_boxplots()` draws the same figure, with the same tests, for any per-sample values in long format (a `Value` column and one column naming the panel).
+For example, the share of reads SingleM assigns to bacteria and archaea:
+
+```{r other}
+fraction.df <- merge(project.l$tables$singlem_fraction[, c("Sample_ID", "read_fraction")], metadata.df, by = "Sample_ID")
+fraction.df$Measure <- "Prokaryotic fraction (%)"
+fraction.df$Value <- fraction.df$read_fraction
+boxplots.l <- gmaio::plot_group_boxplots(fraction.df, "Measure", "Group")
+```
+
+```{r other-show, echo = FALSE}
+show_plot(boxplots.l$plot)
+```
+
+`plot_nonpareil_metrics()` uses it for Nonpareil coverage and diversity, and takes the same options.
+
+## Saving
+
+```r
+gmaio::save_plot(diversity.l$plot, gmaio::figure_path(project.l$config, "diversity", "sylph_taxonomic__genus"))
+gmaio::write_xlsx_tables(list(Values = diversity.df, Tests = diversity.l$tests, Pairwise = diversity.l$pairwise),
+                         gmaio::output_path(project.l$config, "tables", "Alpha_diversity.xlsx"))
+```
+
+The figure is sized from the number of panels and groups; pass `width` and `height` (cm) to fix it instead.

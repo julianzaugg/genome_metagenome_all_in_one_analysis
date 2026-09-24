@@ -92,8 +92,11 @@ run_linda <- function(profile, metadata.df, variable, covariates = character(), 
   if (nrow(inputs.l$values) == 0) cli::cli_abort("No features are nonzero in at least {min_nonzero} samples")
   data_type <- data_type %||% if (profile$value_type == "read_count") "count" else "proportion"
   formula.s <- da_formula(variable, covariates, random_effects)
-  fit.l <- MicrobiomeStat::linda(inputs.l$values, inputs.l$metadata, formula = formula.s, feature.dat.type = data_type,
-                                 prev.filter = min_prevalence, verbose = FALSE)
+  # With random effects lme4 reports every feature with no between-subject variance; that is expected, not a problem
+  fit.l <- withCallingHandlers(
+    MicrobiomeStat::linda(inputs.l$values, inputs.l$metadata, formula = formula.s, feature.dat.type = data_type,
+                          prev.filter = min_prevalence, verbose = FALSE),
+    message = function(m) if (grepl("boundary \\(singular\\) fit", conditionMessage(m))) invokeRestart("muffleMessage"))
   terms.v <- names(fit.l$output)
   terms.v <- terms.v[startsWith(terms.v, variable)]
   result.df <- do.call(rbind, lapply(terms.v, function(term.s){
@@ -255,51 +258,155 @@ da_consensus <- function(results.df, alpha = 0.05, min_stability = 0.7){
   keys.df$N_methods <- rowSums(!is.na(keys.df[, grep("_effect$", names(keys.df)), drop = FALSE]))
   conflict.v <- keys.df$Feature_ID[duplicated(keys.df$Feature_ID)]
   keys.df$Conflicting_direction <- keys.df$Feature_ID %in% conflict.v
-  keys.df[order(-keys.df$N_methods, keys.df$Enriched_in, keys.df$Label), , drop = FALSE]
+  keys.df <- keys.df[order(-keys.df$N_methods, keys.df$Enriched_in, keys.df$Label), , drop = FALSE]
+  rownames(keys.df) <- NULL
+  keys.df
 }
 
 #' Plot consensus differential abundance effects
 #'
+#' One bar per method and feature, coloured by the group the feature is higher in.
+#'
 #' @param consensus.df Result of [da_consensus()].
 #' @param colours.v Named colours for the enriched groups.
 #' @param min_methods Minimum number of agreeing methods to show a feature.
-#' @param max_features Maximum number of features shown.
+#' @param max_features Maximum number of features shown (most methods first).
+#' @param methods Methods shown, as panels in this order.
+#' @param bar_width Bar width.
+#' @param label_width Wrap feature labels longer than this many characters; `NULL` for no wrapping.
+#' @param x_label X axis title.
+#' @param legend_title Legend title.
+#' @param base_size Base font size, in points.
+#' @param legend_position Legend position.
 #' @return A ggplot, or `NULL` when nothing passes.
 #' @export
-plot_da_consensus <- function(consensus.df, colours.v = NULL, min_methods = 2, max_features = 40){
+plot_da_consensus <- function(consensus.df, colours.v = NULL, min_methods = 2, max_features = 40,
+                              methods = c("MaAsLin3", "LinDA", "sPLS-DA"), bar_width = 0.7, label_width = NULL,
+                              x_label = "Effect (log2 coefficient, log2 fold change or loading)", legend_title = "Higher in",
+                              base_size = 9, legend_position = "right"){
   if (nrow(consensus.df) == 0) return(NULL)
   shown.df <- utils::head(consensus.df[consensus.df$N_methods >= min_methods, , drop = FALSE], max_features)
   if (nrow(shown.df) == 0) return(NULL)
-  effect_columns.v <- c(MaAsLin3 = "MaAsLin3_effect", LinDA = "LinDA_effect", `sPLS-DA` = "sPLSDA_effect")
+  effect_columns.v <- da_effect_columns()[methods]
   long.df <- do.call(rbind, lapply(names(effect_columns.v), function(method.s){
     data.frame(Label = shown.df$Label, Enriched_in = shown.df$Enriched_in, Method = method.s,
-               Effect = shown.df[[effect_columns.v[[method.s]]]])
+               Effect = shown.df[[effect_columns.v[[method.s]]]] %||% NA_real_)
   }))
   long.df <- long.df[!is.na(long.df$Effect), , drop = FALSE]
-  long.df$Label <- factor(long.df$Label, levels = rev(unique(shown.df$Label)))
+  if (nrow(long.df) == 0) return(NULL)
+  if (!is.null(label_width)) long.df$Label <- wrap_labels(long.df$Label, label_width)
+  shown_labels.v <- if (is.null(label_width)) shown.df$Label else wrap_labels(shown.df$Label, label_width)
+  long.df$Label <- factor(long.df$Label, levels = rev(unique(shown_labels.v)))
+  long.df$Method <- factor(long.df$Method, levels = methods)
   if (is.null(colours.v)) colours.v <- assign_colours(long.df$Enriched_in)
   consensus.gg <- ggplot2::ggplot(long.df, ggplot2::aes(x = .data$Effect, y = .data$Label, fill = .data$Enriched_in)) +
     ggplot2::geom_vline(xintercept = 0, colour = "grey60", linewidth = 0.3) +
-    ggplot2::geom_col(width = 0.7) +
+    ggplot2::geom_col(width = bar_width) +
     ggplot2::facet_grid(~Method, scales = "free_x") +
-    ggplot2::scale_fill_manual(values = colours.v, name = "Higher in") +
-    ggplot2::labs(x = "Effect (log2 coefficient, log2 fold change or loading)", y = NULL) +
-    theme_gmaio()
-  with_size(consensus.gg, 22, 3 + 0.4 * length(unique(long.df$Label)))
+    ggplot2::scale_fill_manual(values = colours.v, name = legend_title) +
+    ggplot2::labs(x = x_label, y = NULL) +
+    theme_gmaio(base_size = base_size, legend_position = legend_position)
+  with_size(consensus.gg, 8 + 5 * length(unique(long.df$Method)), 3 + 0.4 * length(unique(long.df$Label)))
+}
+
+da_effect_columns <- function(){
+  c(MaAsLin3 = "MaAsLin3_effect", LinDA = "LinDA_effect", `sPLS-DA` = "sPLSDA_effect")
+}
+
+wrap_labels <- function(labels.v, width){
+  vapply(labels.v, function(x) paste(strwrap(x, width = width), collapse = "\n"), character(1), USE.NAMES = FALSE)
+}
+
+#' Heatmap of differentially abundant features
+#'
+#' Abundance of every feature called by at least `min_methods` methods, with row tracks for
+#' the group the feature is higher in, the group each method called it for (so disagreement
+#' between methods shows as a colour mismatch) and features whose methods conflict in direction.
+#' Built on [plot_heatmap()]; any of its options can be passed to change the figure.
+#'
+#' @param profile The `gm_profile` the differential abundance was run on.
+#' @param consensus.df Result of [da_consensus()].
+#' @param metadata.df Metadata.
+#' @param group Metadata column that was tested; used for the column split and the track colours.
+#' @param palettes.l Project palettes (`project.l$palettes`).
+#' @param min_methods Minimum number of methods calling a feature.
+#' @param max_features Maximum number of features shown (most methods first).
+#' @param methods Methods drawn as tracks.
+#' @param rank_annotation Feature column drawn as the first track (e.g. `"Phylum"`), when present.
+#' @param not_called_colour Track colour where a method did not call the feature.
+#' @param conflict_colour Track colour for features called higher in different groups.
+#' @param ... Options passed to [plot_heatmap()], overriding the defaults set here
+#'   (`column_split = group`, `row_split = "Higher_in"`).
+#' @return A `Heatmap`, or `NULL` when fewer than two features pass.
+#' @export
+plot_da_heatmap <- function(profile, consensus.df, metadata.df, group, palettes.l = list(), min_methods = 1,
+                            max_features = 60, methods = c("MaAsLin3", "LinDA", "sPLS-DA"), rank_annotation = "Phylum",
+                            not_called_colour = "#F2F2F2", conflict_colour = "#D7191C", ...){
+  if (nrow(consensus.df) == 0) return(NULL)
+  shown.df <- consensus.df[consensus.df$N_methods >= min_methods, , drop = FALSE]
+  shown.df <- shown.df[order(-shown.df$N_methods), , drop = FALSE]
+  features.v <- utils::head(unique(shown.df$Feature_ID), max_features)
+  features.v <- intersect(features.v, rownames(profile$values))
+  if (length(features.v) < 2) return(NULL)
+
+  subset.p <- subset_features(profile, features.v)
+  features.df <- subset.p$features
+  best.df <- shown.df[match(features.df$Feature_ID, shown.df$Feature_ID), , drop = FALSE]
+  features.df$Higher_in <- best.df$Enriched_in
+  effect_columns.v <- da_effect_columns()[methods]
+  effect_columns.v <- effect_columns.v[effect_columns.v %in% names(consensus.df)]
+  effect_columns.v <- effect_columns.v[vapply(effect_columns.v, function(x) any(!is.na(consensus.df[[x]])), logical(1))]
+  for (method.s in names(effect_columns.v)){
+    called.df <- consensus.df[!is.na(consensus.df[[effect_columns.v[[method.s]]]]), , drop = FALSE]
+    called.v <- called.df$Enriched_in[match(features.df$Feature_ID, called.df$Feature_ID)]
+    features.df[[method.s]] <- ifelse(is.na(called.v), "Not called", called.v)
+  }
+  conflict.v <- features.df$Feature_ID %in% consensus.df$Feature_ID[consensus.df$Conflicting_direction]
+  features.df$Conflict <- ifelse(conflict.v, "Yes", "No")
+  subset.p$features <- features.df
+
+  group_levels.v <- unique(stats::na.omit(c(as.character(metadata.df[[group]]), features.df$Higher_in)))
+  group_colours.v <- if (is.null(palettes.l[[group]])) assign_colours(group_levels.v) else
+    get_palette(palettes.l, group, group_levels.v)
+  track_colours.l <- c(list(Higher_in = group_colours.v, Conflict = c(Yes = conflict_colour, No = not_called_colour)),
+                       stats::setNames(rep(list(c(group_colours.v, `Not called` = not_called_colour)),
+                                           length(effect_columns.v)), names(effect_columns.v)))
+  rank.v <- intersect(rank_annotation, names(features.df))
+  tracks.v <- c(rank.v, "Higher_in", names(effect_columns.v), "Conflict")
+  defaults.l <- list(profile = subset.p, metadata.df = metadata.df, palettes.l = palettes.l, column_split = group,
+                     row_split = "Higher_in", row_annotation = tracks.v, row_annotation_colours = track_colours.l,
+                     row_annotation_legends = c(rank.v, "Conflict"),
+                     legend_title = sub(" (", "\n(", value_type_label(profile$value_type), fixed = TRUE))
+  do.call(plot_heatmap, utils::modifyList(defaults.l, list(...)))
 }
 
 #' Boxplots of feature abundance by group
 #'
+#' One panel per feature, e.g. the features that several differential abundance methods agree on.
+#'
 #' @param profile A `gm_profile`.
 #' @param metadata.df Metadata.
-#' @param feature_ids.v Features to show.
-#' @param group Metadata column.
+#' @param feature_ids.v Features to show, in panel order.
+#' @param group Metadata column on the x axis.
 #' @param colours.v Named colours for `group`.
 #' @param log_scale Use a log10 y axis (zeros are shown at half the smallest non-zero value).
 #' @param ncol Facet columns.
+#' @param shape_by Optional metadata column shown as point shape.
+#' @param shapes Named point shapes for `shape_by`; filled shapes (21-25) take the group colour.
+#' @param box_width,box_alpha Box width and fill transparency.
+#' @param point_size,jitter_width Point size and horizontal jitter.
+#' @param label_width Wrap panel titles longer than this many characters.
+#' @param free_y Give every panel its own y axis.
+#' @param x_label,y_label Axis titles; `y_label` defaults from the profile value type.
+#' @param x_text_angle Angle of the group labels.
+#' @param base_size Base font size, in points.
+#' @param legend_position Legend position when `shape_by` is used.
 #' @return A ggplot.
 #' @export
-plot_feature_boxplots <- function(profile, metadata.df, feature_ids.v, group, colours.v = NULL, log_scale = TRUE, ncol = 4){
+plot_feature_boxplots <- function(profile, metadata.df, feature_ids.v, group, colours.v = NULL, log_scale = TRUE, ncol = 4,
+                                  shape_by = NULL, shapes = NULL, box_width = 0.6, box_alpha = 0.5, point_size = 1.5,
+                                  jitter_width = 0.12, label_width = 22, free_y = TRUE, x_label = NULL, y_label = NULL,
+                                  x_text_angle = 30, base_size = 8, legend_position = "right"){
   subset.p <- subset_features(profile, feature_ids.v)
   long.df <- profile_to_long(subset.p, metadata.df[metadata.df$Sample_ID %in% profile_samples(subset.p), , drop = FALSE])
   long.df$Label <- factor(long.df$Label, levels = subset.p$features$Label[match(feature_ids.v, subset.p$features$Feature_ID)])
@@ -308,16 +415,28 @@ plot_feature_boxplots <- function(profile, metadata.df, feature_ids.v, group, co
     long.df$Value[long.df$Value == 0] <- floor.n
   }
   if (is.null(colours.v)) colours.v <- assign_colours(long.df[[group]])
-  boxplots.gg <- ggplot2::ggplot(long.df, ggplot2::aes(x = .data[[group]], y = .data$Value, fill = .data[[group]])) +
-    ggplot2::geom_boxplot(outlier.shape = NA, width = 0.6, alpha = 0.5, linewidth = 0.3) +
-    ggplot2::geom_point(shape = 21, size = 1.5, colour = "grey15", stroke = 0.3,
-                        position = ggplot2::position_jitter(width = 0.12, height = 0, seed = 1)) +
-    ggplot2::facet_wrap(~Label, scales = "free_y", ncol = ncol, labeller = ggplot2::label_wrap_gen(22)) +
+  point_aes <- if (is.null(shape_by)) ggplot2::aes(fill = .data[[group]]) else
+    ggplot2::aes(fill = .data[[group]], shape = .data[[shape_by]])
+  boxplots.gg <- ggplot2::ggplot(long.df, ggplot2::aes(x = .data[[group]], y = .data$Value)) +
+    ggplot2::geom_boxplot(ggplot2::aes(fill = .data[[group]]), outlier.shape = NA, width = box_width, alpha = box_alpha,
+                          linewidth = 0.3) +
+    do.call(ggplot2::geom_point, c(list(mapping = point_aes, size = point_size, colour = "grey15", stroke = 0.3,
+                                        position = ggplot2::position_jitter(width = jitter_width, height = 0, seed = 1)),
+                                   if (is.null(shape_by)) list(shape = 21))) +
+    ggplot2::facet_wrap(~Label, scales = if (free_y) "free_y" else "fixed", ncol = ncol,
+                        labeller = ggplot2::label_wrap_gen(label_width)) +
     ggplot2::scale_fill_manual(values = colours.v, guide = "none") +
-    ggplot2::labs(x = NULL, y = value_type_label(profile$value_type)) +
-    theme_gmaio(base_size = 8) +
-    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 30, hjust = 1))
+    ggplot2::labs(x = x_label, y = y_label %||% value_type_label(profile$value_type)) +
+    theme_gmaio(base_size = base_size, legend_position = legend_position) +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = x_text_angle, hjust = if (x_text_angle == 0) 0.5 else 1))
+  if (!is.null(shape_by)){
+    shape_levels.v <- levels(as.factor(long.df[[shape_by]]))
+    shapes.v <- shapes %||% stats::setNames(rep_len(c(21, 24, 22, 23, 25), length(shape_levels.v)), shape_levels.v)
+    boxplots.gg <- boxplots.gg + ggplot2::scale_shape_manual(values = shapes.v, name = variable_label(shape_by)) +
+      ggplot2::guides(shape = ggplot2::guide_legend(override.aes = list(fill = "grey60")))
+  }
   if (log_scale) boxplots.gg <- boxplots.gg + ggplot2::scale_y_log10(labels = plain_number)
-  n_rows.n <- ceiling(length(feature_ids.v) / ncol)
-  with_size(boxplots.gg, 4.5 * ncol + 1, 4.5 * n_rows.n + 1)
+  n_panels.n <- length(feature_ids.v)
+  n_columns.n <- min(ncol, n_panels.n)
+  with_size(boxplots.gg, 4.5 * n_columns.n + 1 + if (is.null(shape_by)) 0 else 2.5, 4.5 * ceiling(n_panels.n / ncol) + 1)
 }

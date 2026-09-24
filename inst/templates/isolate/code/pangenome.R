@@ -1,12 +1,13 @@
 # Pangenome (Panaroo) gene categories, accessory gene heatmap, accessory gene Jaccard PCoA
 # and gene associations with the primary group variable.
+# Figure options: vignette("isolates", package = "gmaio") and the plot function help pages
 
 project.l <- gmaio::load_processed()
 if (length(project.l$tables$comparisons) == 0) gmaio::skip_analysis("No comparison group results in the processed project")
 config.l <- project.l$config
 analysis.l <- config.l$analysis
 group.s <- gmaio::primary_group(project.l)
-annotation_variables.v <- c("Entry_type", group.s)
+annotation_variables.v <- c("Entry_type", "ST", group.s)
 
 tables.l <- list()
 for (comparison.s in names(project.l$tables$comparisons)){
@@ -15,7 +16,8 @@ for (comparison.s in names(project.l$tables$comparisons)){
   genomes.df <- gmaio::genome_metadata(project.l, comparison.s, gmaio::profile_samples(pangenome.p))
   gmaio::save_plot(gmaio::plot_pangenome_categories(pangenome.p),
                    gmaio::figure_path(config.l, "pangenome", paste0(comparison.s, "__gene_categories")))
-  heatmap.ht <- gmaio::plot_presence_heatmap(pangenome.p, genomes.df, project.l$palettes, annotation_variables.v)
+  heatmap.ht <- gmaio::plot_presence_heatmap(pangenome.p, genomes.df, project.l$palettes,
+                                             intersect(annotation_variables.v, names(genomes.df)))
   gmaio::save_plot(heatmap.ht, gmaio::figure_path(config.l, "pangenome", paste0(comparison.s, "__accessory_heatmap")))
 
   accessory.v <- pangenome.p$features$Feature_ID[pangenome.p$features$Category %in% c("Shell", "Cloud")]

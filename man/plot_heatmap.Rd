@@ -27,6 +27,7 @@ plot_heatmap(
   annotation_colours = NULL,
   row_annotation = NULL,
   row_annotation_colours = NULL,
+  row_annotation_legends = NULL,
   column_annotation_side = "top",
   row_annotation_side = "left",
   annotation_size = 0.35,
@@ -108,6 +109,9 @@ the project palettes; numeric columns get a continuous colour scale.}
 
 \item{row_annotation_colours}{Colours for \code{row_annotation}: a named vector (one annotation) or
 a named list of them. Defaults to the taxa palette for rank columns, else generated colours.}
+
+\item{row_annotation_legends}{Row annotations that get a legend; \code{NULL} for all. Useful when
+several tracks share one set of colours.}
 
 \item{column_annotation_side, row_annotation_side}{Where annotations are drawn.}
 

@@ -21,6 +21,7 @@ Named character vector of colours.
 }
 \description{
 Values keep colours from \code{fixed.v} (user config) first, then \code{existing.v} (saved
-palette), and any remaining values get unused colours from \code{\link[=qualitative_palette]{qualitative_palette()}}
-in level order, so the result is deterministic.
+palette); \code{Other}, \code{Unassigned} and \code{Reference} get their \code{\link[=special_colours]{special_colours()}}, and any
+remaining values get unused colours from \code{\link[=qualitative_palette]{qualitative_palette()}} in level order, so the
+result is deterministic.
 }

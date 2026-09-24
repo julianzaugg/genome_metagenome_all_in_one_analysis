@@ -35,62 +35,30 @@ alpha_diversity <- function(profile, rarefy_depth = NULL, seed = 1234){
   diversity.df
 }
 
-#' Pairwise Wilcoxon tests between group levels
-#'
-#' @param long.df Long data with `Value`.
-#' @param by Column defining separate test families (e.g. metric).
-#' @param group Grouping column.
-#' @param p_adjust_method Correction within each family.
-#' @return Data frame with one row per pair and family.
-#' @export
-pairwise_tests <- function(long.df, by, group, p_adjust_method = "BH"){
-  do.call(rbind, lapply(split(long.df, long.df[[by]], drop = TRUE), function(x.df){
-    groups.v <- droplevels(as.factor(x.df[[group]]))
-    if (nlevels(groups.v) < 2) return(NULL)
-    pairs.m <- utils::combn(levels(groups.v), 2)
-    result.df <- data.frame(By = as.character(x.df[[by]][1]), Group_1 = pairs.m[1, ], Group_2 = pairs.m[2, ])
-    result.df$P_value <- apply(pairs.m, 2, function(pair.v){
-      suppressWarnings(stats::wilcox.test(x.df$Value[groups.v == pair.v[1]], x.df$Value[groups.v == pair.v[2]],
-                                          exact = FALSE)$p.value)
-    })
-    result.df$P_adjusted <- stats::p.adjust(result.df$P_value, method = p_adjust_method)
-    names(result.df)[1] <- by
-    result.df
-  }))
-}
-
 #' Plot alpha diversity by group
 #'
+#' One panel per measure with a box per group, the Wilcoxon (two groups) or Kruskal-Wallis
+#' p value, and with more than two groups brackets for the pairs that differ (Dunn's test,
+#' BH adjusted within each measure). All figure options of [plot_group_boxplots()] can be
+#' passed, e.g. `bracket_label = "p"`, `shape_by = "Time"` or `panel_labels`.
+#'
 #' @param diversity.df Result of [alpha_diversity()].
-#' @param metadata.df Metadata.
+#' @param metadata.df Metadata; groups are drawn in factor level order.
 #' @param group Metadata column.
 #' @param colours.v Named colours for `group`.
-#' @param measures Measures to plot.
-#' @return List with `plot`, `tests` (per measure) and `pairwise` (pairwise Wilcoxon, when more than two groups).
+#' @param measures Measures to plot, in order.
+#' @param ... Figure and test options passed to [plot_group_boxplots()].
+#' @return List with `plot`, `tests` (per measure) and `pairwise` (pairwise tests with group
+#'   sizes, means and medians, when more than two groups).
 #' @export
 plot_alpha_diversity <- function(diversity.df, metadata.df, group, colours.v = NULL,
-                                 measures = c("Richness", "Shannon", "Simpson", "Pielou")){
+                                 measures = c("Richness", "Shannon", "Simpson", "Pielou"), ...){
   measures <- intersect(measures, names(diversity.df))
   joined.df <- join_metadata(diversity.df, metadata.df, "inner")
   long.df <- do.call(rbind, lapply(measures, function(m){
-    data.frame(Sample_ID = joined.df$Sample_ID, Group = joined.df[[group]], Measure = m, Value = joined.df[[m]])
+    data.frame(joined.df[, setdiff(names(joined.df), measures), drop = FALSE], Measure = m, Value = joined.df[[m]],
+               check.names = FALSE)
   }))
   long.df$Measure <- factor(long.df$Measure, levels = measures)
-  tests.df <- group_tests(long.df, "Measure", "Group")
-  pairwise.df <- if (length(unique(stats::na.omit(long.df$Group))) > 2) pairwise_tests(long.df, "Measure", "Group") else NULL
-  if (is.null(colours.v)) colours.v <- assign_colours(long.df$Group)
-
-  diversity.gg <- ggplot2::ggplot(long.df, ggplot2::aes(x = .data$Group, y = .data$Value, fill = .data$Group)) +
-    ggplot2::geom_boxplot(outlier.shape = NA, width = 0.6, alpha = 0.5, linewidth = 0.3) +
-    ggplot2::geom_point(shape = 21, size = 1.8, colour = "grey15", stroke = 0.3,
-                        position = ggplot2::position_jitter(width = 0.12, height = 0, seed = 1)) +
-    ggplot2::geom_text(data = tests.df, ggplot2::aes(x = -Inf, y = Inf, label = .data$Test_label), inherit.aes = FALSE,
-                       hjust = -0.05, vjust = 1.4, size = 2.5) +
-    ggplot2::facet_wrap(~Measure, scales = "free_y", nrow = 1) +
-    ggplot2::scale_fill_manual(values = colours.v, guide = "none") +
-    ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0.05, 0.15))) +
-    ggplot2::labs(x = NULL, y = NULL) +
-    theme_gmaio() +
-    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 30, hjust = 1))
-  list(plot = with_size(diversity.gg, 5 + 5 * length(measures), 9), tests = tests.df, pairwise = pairwise.df)
+  plot_group_boxplots(long.df, "Measure", group, colours.v, ...)
 }

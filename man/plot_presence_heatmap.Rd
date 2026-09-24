@@ -11,7 +11,20 @@ plot_presence_heatmap(
   annotation_variables = NULL,
   categories = c("Shell", "Cloud"),
   max_features = 150,
-  row_split = NULL
+  row_split = NULL,
+  column_split = NULL,
+  colours = c(Absent = "#F7F7F7", Present = "#2171B5"),
+  cluster_rows = TRUE,
+  cluster_columns = TRUE,
+  show_row_dend = TRUE,
+  show_column_dend = TRUE,
+  show_row_names = NULL,
+  label_by = "Sample_label",
+  cell_width = 0.4,
+  cell_height = 0.3,
+  row_names_size = 6,
+  column_names_size = 7,
+  row_title = NULL
 )
 }
 \arguments{
@@ -28,6 +41,24 @@ plot_presence_heatmap(
 \item{max_features}{Keep the most variable features (prevalence closest to 50\%).}
 
 \item{row_split}{Optional feature column splitting the rows (e.g. \code{"Class"} for AMR genes).}
+
+\item{column_split}{Optional metadata column splitting the genomes (e.g. \code{"ST"}).}
+
+\item{colours}{Colours for absent and present.}
+
+\item{cluster_rows, cluster_columns}{Cluster features and genomes (binary distance).}
+
+\item{show_row_dend, show_column_dend}{Draw the dendrograms.}
+
+\item{show_row_names}{Show feature labels; by default for up to 80 features.}
+
+\item{label_by}{Metadata column used for genome labels.}
+
+\item{cell_width, cell_height}{Cell size in cm.}
+
+\item{row_names_size, column_names_size}{Font sizes of feature and genome labels.}
+
+\item{row_title}{Title for the feature axis (with \code{row_split}, the block names are shown instead).}
 }
 \value{
 A ComplexHeatmap \code{Heatmap}.

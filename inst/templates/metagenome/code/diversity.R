@@ -1,4 +1,6 @@
-# Alpha diversity of taxonomic and MAG profiles, compared between groups.
+# Alpha diversity of taxonomic and MAG profiles, compared between groups (Wilcoxon or Kruskal-Wallis,
+# with Dunn's pairwise tests and brackets for more than two groups).
+# All options: ?gmaio::plot_alpha_diversity and vignette("diversity", package = "gmaio")
 
 project.l <- gmaio::load_processed()
 config.l <- project.l$config

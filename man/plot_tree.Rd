@@ -9,7 +9,20 @@ plot_tree(
   genomes.df,
   colour_by = NULL,
   colours.v = NULL,
-  midpoint = TRUE
+  midpoint = TRUE,
+  shape_by = NULL,
+  shapes = NULL,
+  label_by = "Sample_label",
+  label_size = 2.4,
+  align_labels = FALSE,
+  point_size = 2,
+  layout = c("rectangular", "circular"),
+  ladderize = TRUE,
+  scale_bar = FALSE,
+  x_label = "Substitutions per site",
+  label_space = NULL,
+  width = NULL,
+  height = NULL
 )
 }
 \arguments{
@@ -17,11 +30,36 @@ plot_tree(
 
 \item{genomes.df}{Genome metadata from \code{\link[=genome_metadata]{genome_metadata()}}.}
 
-\item{colour_by}{Optional metadata column for tip points.}
+\item{colour_by}{Optional metadata column for tip point colour.}
 
 \item{colours.v}{Named colours for \code{colour_by}.}
 
-\item{midpoint}{Midpoint-root the tree first.}
+\item{midpoint}{Midpoint-root the tree first (needs phangorn).}
+
+\item{shape_by}{Optional metadata column for tip point shape (e.g. \code{"Entry_type"}).}
+
+\item{shapes}{Named filled shapes (21-25) for \code{shape_by}.}
+
+\item{label_by}{Metadata column used for tip labels; \code{NULL} for no labels.}
+
+\item{label_size}{Font size of tip labels, in mm (ggplot text size).}
+
+\item{align_labels}{Line the labels up at the right, joined to their tips by dotted lines.}
+
+\item{point_size}{Size of tip points.}
+
+\item{layout}{\code{"rectangular"} or \code{"circular"}.}
+
+\item{ladderize}{Ladderize the tree.}
+
+\item{scale_bar}{Draw a scale bar instead of an x axis.}
+
+\item{x_label}{Axis title (or scale bar caption).}
+
+\item{label_space}{Room for labels as a fraction of the tree width; by default from the
+longest label, so labels are not cut off.}
+
+\item{width, height}{Figure size in cm; by default from the number of tips.}
 }
 \value{
 A ggplot (ggtree).

@@ -11,8 +11,20 @@ plot_genome_matrix(
   annotation_variables = NULL,
   type = c("ani", "distance"),
   breaks = NULL,
+  colours = NULL,
+  legend_title = NULL,
+  split_by = NULL,
+  cluster = TRUE,
+  show_dend = TRUE,
+  label_by = "Sample_label",
   show_values = nrow(values.m) <= 25,
-  cell_size = 0.45
+  value_digits = 1,
+  value_size = NULL,
+  cell_size = 0.45,
+  names_size = 7,
+  row_title = NULL,
+  column_title = NULL,
+  annotation_names = TRUE
 )
 }
 \arguments{
@@ -22,15 +34,40 @@ plot_genome_matrix(
 
 \item{palettes.l}{Project palettes.}
 
-\item{annotation_variables}{Metadata columns shown as annotations.}
+\item{annotation_variables}{Metadata columns shown as annotations (above and left).}
 
 \item{type}{\code{"ani"} (high is similar) or \code{"distance"} (low is similar).}
 
 \item{breaks}{Colour breaks; defaults suit ANI (85 to 100) or allele distances.}
 
-\item{show_values}{Print values in cells (useful for small groups).}
+\item{colours}{Colours at \code{breaks}, from least to most similar for ANI and from 0 upwards
+for distances; defaults to blues (ANI) or yellow-orange-red (distances).}
+
+\item{legend_title}{Legend title.}
+
+\item{split_by}{Metadata column splitting rows and columns into blocks (e.g. \code{"ST"});
+genomes are then clustered within blocks.}
+
+\item{cluster}{Cluster genomes (average linkage on the distances); \code{FALSE} keeps the
+\code{genomes.df} order.}
+
+\item{show_dend}{Draw the dendrograms.}
+
+\item{label_by}{Metadata column used for row and column labels.}
+
+\item{show_values}{Print values in cells (by default for up to 25 genomes).}
+
+\item{value_digits}{Decimals for ANI values (distances are whole numbers).}
+
+\item{value_size}{Font size of printed values; by default fitted to the cell size.}
 
 \item{cell_size}{Cell size in centimetres.}
+
+\item{names_size}{Font size of genome labels.}
+
+\item{row_title, column_title}{Axis titles.}
+
+\item{annotation_names}{Show annotation names beside the column annotations.}
 }
 \value{
 A ComplexHeatmap \code{Heatmap}.

@@ -11,7 +11,20 @@ plot_feature_boxplots(
   group,
   colours.v = NULL,
   log_scale = TRUE,
-  ncol = 4
+  ncol = 4,
+  shape_by = NULL,
+  shapes = NULL,
+  box_width = 0.6,
+  box_alpha = 0.5,
+  point_size = 1.5,
+  jitter_width = 0.12,
+  label_width = 22,
+  free_y = TRUE,
+  x_label = NULL,
+  y_label = NULL,
+  x_text_angle = 30,
+  base_size = 8,
+  legend_position = "right"
 )
 }
 \arguments{
@@ -19,19 +32,39 @@ plot_feature_boxplots(
 
 \item{metadata.df}{Metadata.}
 
-\item{feature_ids.v}{Features to show.}
+\item{feature_ids.v}{Features to show, in panel order.}
 
-\item{group}{Metadata column.}
+\item{group}{Metadata column on the x axis.}
 
 \item{colours.v}{Named colours for \code{group}.}
 
 \item{log_scale}{Use a log10 y axis (zeros are shown at half the smallest non-zero value).}
 
 \item{ncol}{Facet columns.}
+
+\item{shape_by}{Optional metadata column shown as point shape.}
+
+\item{shapes}{Named point shapes for \code{shape_by}; filled shapes (21-25) take the group colour.}
+
+\item{box_width, box_alpha}{Box width and fill transparency.}
+
+\item{point_size, jitter_width}{Point size and horizontal jitter.}
+
+\item{label_width}{Wrap panel titles longer than this many characters.}
+
+\item{free_y}{Give every panel its own y axis.}
+
+\item{x_label, y_label}{Axis titles; \code{y_label} defaults from the profile value type.}
+
+\item{x_text_angle}{Angle of the group labels.}
+
+\item{base_size}{Base font size, in points.}
+
+\item{legend_position}{Legend position when \code{shape_by} is used.}
 }
 \value{
 A ggplot.
 }
 \description{
-Boxplots of feature abundance by group
+One panel per feature, e.g. the features that several differential abundance methods agree on.
 }

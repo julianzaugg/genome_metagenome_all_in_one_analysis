@@ -242,4 +242,5 @@ Printing the object also draws it, but without the stored titles and legend layo
 
 ## Other heatmaps
 
-Presence/absence and genome heatmaps (`plot_presence_heatmap()`, `plot_genome_matrix()`, `plot_dram_heatmap()`) are separate functions for isolate and MAG data; see their help pages.
+`plot_da_heatmap()` builds on `plot_heatmap()` to show differentially abundant features (see `vignette("differential_abundance", package = "gmaio")`), and takes the same options.
+Presence/absence and genome heatmaps (`plot_presence_heatmap()`, `plot_genome_matrix()`) are separate functions for isolate data (see `vignette("isolates", package = "gmaio")`); `plot_dram_heatmap()` draws DRAM results for MAGs.

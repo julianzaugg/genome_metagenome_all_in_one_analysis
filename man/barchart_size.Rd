@@ -4,7 +4,14 @@
 \alias{barchart_size}
 \title{Suggested barchart size in centimetres}
 \usage{
-barchart_size(n_samples, n_legend, legend_chars = 30)
+barchart_size(
+  n_samples,
+  n_legend,
+  legend_chars = 30,
+  legend_ncol = 1,
+  legend_position = "right",
+  strip_levels.v = numeric()
+)
 }
 \arguments{
 \item{n_samples}{Number of samples.}
@@ -12,10 +19,18 @@ barchart_size(n_samples, n_legend, legend_chars = 30)
 \item{n_legend}{Number of legend entries.}
 
 \item{legend_chars}{Longest legend label (characters).}
+
+\item{legend_ncol}{Legend columns.}
+
+\item{legend_position}{Legend position, as in \code{\link[=plot_stacked_barchart]{plot_stacked_barchart()}}.}
+
+\item{strip_levels.v}{Number of levels of each annotation strip variable.}
 }
 \value{
-Named numeric vector with \code{width} and \code{height}.
+Named numeric vector with \code{width} and \code{height} of the figure and \code{bars}, the height
+of the bar panel.
 }
 \description{
-Suggested barchart size in centimetres
+Legends on the right sit beside the bars, with annotation strip legends below the taxa
+legend; legends at the top or bottom add to the height.
 }

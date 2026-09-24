@@ -47,6 +47,8 @@
 #' @param row_annotation Feature columns drawn as row annotations (e.g. `"Phylum"`).
 #' @param row_annotation_colours Colours for `row_annotation`: a named vector (one annotation) or
 #'   a named list of them. Defaults to the taxa palette for rank columns, else generated colours.
+#' @param row_annotation_legends Row annotations that get a legend; `NULL` for all. Useful when
+#'   several tracks share one set of colours.
 #' @param column_annotation_side,row_annotation_side Where annotations are drawn.
 #' @param annotation_size Height (column) or width (row) of each annotation track, in cm.
 #'
@@ -86,7 +88,7 @@ plot_heatmap <- function(profile, metadata.df, palettes.l = list(), transform = 
                          row_labels = "Label", column_labels = "Sample_label",
                          row_title = NULL, column_title = NULL, row_title_side = "left", column_title_side = "bottom",
                          column_split = NULL, row_split = NULL, column_annotations = NULL, annotation_colours = NULL,
-                         row_annotation = NULL, row_annotation_colours = NULL,
+                         row_annotation = NULL, row_annotation_colours = NULL, row_annotation_legends = NULL,
                          column_annotation_side = "top", row_annotation_side = "left", annotation_size = 0.35,
                          cluster_rows = TRUE, cluster_columns = FALSE, show_row_dend = FALSE, show_column_dend = FALSE,
                          clustering_distance = "euclidean", clustering_method = "average",
@@ -129,7 +131,8 @@ plot_heatmap <- function(profile, metadata.df, palettes.l = list(), transform = 
                                                    annotation_colours, column_annotation_side, annotation_size,
                                                    annotation_name_size, legend_param.l)
     row_annotation.ha <- heatmap_row_annotation(features.df, row_annotation, palettes.l, row_annotation_colours,
-                                                row_annotation_side, annotation_size, legend_param.l)
+                                                row_annotation_legends %||% row_annotation,
+                                                row_annotation_side, annotation_size, annotation_name_size, legend_param.l)
 
     cell_fun <- NULL
     if (show_values){
@@ -341,8 +344,8 @@ annotation_legend_params <- function(variables.v, colours.l, legend_param.l){
   })
 }
 
-heatmap_row_annotation <- function(features.df, variables.v, palettes.l, row_annotation_colours, side,
-                                   annotation_size, legend_param.l){
+heatmap_row_annotation <- function(features.df, variables.v, palettes.l, row_annotation_colours, legend_variables.v,
+                                   side, annotation_size, annotation_name_size, legend_param.l){
   if (length(variables.v) == 0) return(NULL)
   if (!is.null(row_annotation_colours) && !is.list(row_annotation_colours)){
     row_annotation_colours <- stats::setNames(list(row_annotation_colours), variables.v[1])
@@ -364,6 +367,7 @@ heatmap_row_annotation <- function(features.df, variables.v, palettes.l, row_ann
   colours.l <- annotation_colour_list(annotation.df, list(), overrides.l)
   ComplexHeatmap::HeatmapAnnotation(
     df = annotation.df, col = colours.l, which = "row", show_annotation_name = length(variables.v) > 1,
+    show_legend = variables.v %in% legend_variables.v, annotation_name_gp = grid::gpar(fontsize = annotation_name_size),
     annotation_label = vapply(variables.v, variable_label, character(1)),
     simple_anno_size = grid::unit(annotation_size * 0.85, "cm"), na_col = special_colours()[["Missing"]],
     annotation_legend_param = annotation_legend_params(variables.v, colours.l, legend_param.l))

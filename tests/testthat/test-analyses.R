@@ -70,3 +70,22 @@ test_that("sPLS-DA stability is taken per component", {
   expect_equal(unique(splsda.l$results$Method), "sPLS-DA")
   expect_true(all(splsda.l$results$Stability >= 0 & splsda.l$results$Stability <= 1, na.rm = TRUE))
 })
+
+test_that("the DA heatmap shows each method's call as a track", {
+  consensus.df <- data.frame(Feature_ID = c("f1", "f2", "f3"), Label = c("A", "B", "C"), Variable = "Treatment",
+                             Enriched_in = c("Treated", "Control", "Treated"), MaAsLin3_effect = c(1, NA, 2),
+                             MaAsLin3_q = c(0.01, NA, 0.02), LinDA_effect = c(1.5, -1, NA), LinDA_q = c(0.01, 0.03, NA),
+                             sPLSDA_effect = NA_real_, sPLSDA_stability = NA_real_, N_methods = c(2, 1, 1),
+                             Conflicting_direction = FALSE)
+  metadata.df <- data.frame(Sample_ID = paste0("S", 1:4), Sample_label = paste0("L", 1:4),
+                            Treatment = c("Control", "Control", "Treated", "Treated"))
+  profile <- new_profile(matrix(c(1, 2, 3, 4, 5, 0, 7, 8, 9, 10, 0, 12), nrow = 3,
+                                dimnames = list(c("f1", "f2", "f3"), metadata.df$Sample_ID)), value_type = "relative_abundance",
+                         source = "test", feature_level = "genus")
+  heatmap.ht <- plot_da_heatmap(profile, consensus.df, metadata.df, "Treatment")
+  tracks.v <- names(heatmap.ht@left_annotation@anno_list)
+  expect_equal(tracks.v, c("Higher_in", "MaAsLin3", "LinDA", "Conflict"))
+  expect_setequal(heatmap.ht@left_annotation@anno_list$MaAsLin3@color_mapping@levels, c("Treated", "Not called"))
+  expect_null(plot_da_heatmap(profile, consensus.df[1, ], metadata.df, "Treatment"))
+  expect_null(plot_da_consensus(consensus.df, methods = "sPLS-DA", min_methods = 1))
+})

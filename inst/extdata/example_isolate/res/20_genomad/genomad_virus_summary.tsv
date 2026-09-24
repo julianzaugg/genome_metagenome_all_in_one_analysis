@@ -1,0 +1,9 @@
+seq_name	length	topology	coordinates	n_genes	genetic_code	virus_score	fdr	n_hallmarks	marker_enrichment	taxonomy
+ISO04.scaffolds__genomad__contig_1	43680	Provirus	1-40000	50	11	0.95		5	20	Viruses;Duplodnaviria;Heunggongvirae;Uroviricota;Caudoviricetes;;
+ISO05.scaffolds__genomad__contig_2	34174	Provirus	1-40000	50	11	0.95		5	20	Viruses;Monodnaviria;Loebvirae;Hofneiviricota;Faserviricetes;Tubulavirales;Inoviridae
+ISO06.scaffolds__genomad__contig_3	41974	Provirus	1-40000	50	11	0.95		5	20	Viruses;Duplodnaviria;Heunggongvirae;Uroviricota;Caudoviricetes;;
+ISO09.scaffolds__genomad__contig_4	20059	Provirus	1-40000	50	11	0.95		5	20	Viruses;Monodnaviria;Loebvirae;Hofneiviricota;Faserviricetes;Tubulavirales;Inoviridae
+ISO12.scaffolds__genomad__contig_5	36823	Provirus	1-40000	50	11	0.95		5	20	Viruses;Duplodnaviria;Heunggongvirae;Uroviricota;Caudoviricetes;;
+ISO16.scaffolds__genomad__contig_6	37900	Provirus	1-40000	50	11	0.95		5	20	Viruses;Duplodnaviria;Heunggongvirae;Uroviricota;Caudoviricetes;;
+ISO18.scaffolds__genomad__contig_7	30327	Provirus	1-40000	50	11	0.95		5	20	Viruses;Duplodnaviria;Heunggongvirae;Uroviricota;Caudoviricetes;;
+ISO20.scaffolds__genomad__contig_8	27212	Provirus	1-40000	50	11	0.95		5	20	Viruses;Duplodnaviria;Heunggongvirae;Uroviricota;Caudoviricetes;;

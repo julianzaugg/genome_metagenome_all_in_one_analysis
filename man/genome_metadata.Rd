@@ -18,5 +18,7 @@ Data frame with \code{Sample_ID} set to the genome ID used by the comparative to
 }
 \description{
 Samples take their metadata; references get \code{Entry_type = "Reference"}, their ID as label
-and \code{"Reference"} for the group variables (which has a fixed colour).
+and \code{"Reference"} for the group variables (which has a fixed colour). The MLST sequence
+type (\code{ST}, e.g. \code{"ST131"}) and GTDB-Tk \code{Species} of each sample are added when available
+(\code{"Reference"} for references), for splitting or colouring figures.
 }

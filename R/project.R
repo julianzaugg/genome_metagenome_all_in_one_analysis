@@ -160,34 +160,52 @@ taxonomic_profile_names <- function(project.l){
 
 #' Example processed project
 #'
-#' Builds a processed metagenome project from the synthetic pipeline output shipped with
-#' gmaio, running the same steps as the template `main.R`. The data mimic an early partial
-#' pipeline run (sylph and SingleM only) on 16 mouse samples: `Treatment` (Control, Treated)
-#' by `Time` (Week_0, Week_4), with `Age_weeks` and `Cage`. Some genera respond to treatment
-#' and others to time. Used in the vignettes and handy for trying out functions.
+#' Builds a processed project from synthetic pipeline output shipped with gmaio, running the
+#' same steps as the template `main.R`. Used in the vignettes and handy for trying out functions.
+#'
+#' * `mode = "metagenome"`: an early partial pipeline run (sylph and SingleM only) on 24 samples
+#'   from 12 mice, `Treatment` (Control, Treated) by `Time` (Week_0, Week_4), with `Mouse`,
+#'   `Age_weeks` and `Cage`. Some genera respond to treatment and others to time, and treated
+#'   mice lose rare genera by week 4.
+#' * `mode = "isolate"`: 20 *Escherichia coli* isolates from four sequence types and three
+#'   `Source`s (Clinical, Animal, Environmental) with `Year`, plus two reference genomes, with
+#'   quality, typing, AMR genes, insertion sequences, a pangenome, ANI, cgMLST and a tree.
 #'
 #' @param path Project directory for the config, palettes and any outputs; a new temporary
 #'   directory by default.
+#' @param mode `"metagenome"` or `"isolate"`.
 #' @return A processed `gm_project`, as returned by [load_processed()] in an analysis script.
 #' @export
-example_project <- function(path = tempfile("gmaio_example_")){
-  example.s <- system.file("extdata", "example", package = "gmaio", mustWork = TRUE)
+example_project <- function(path = tempfile("gmaio_example_"), mode = c("metagenome", "isolate")){
+  mode <- match.arg(mode)
+  example.s <- system.file("extdata", if (mode == "metagenome") "example" else "example_isolate", package = "gmaio",
+                           mustWork = TRUE)
   dir.create(path, recursive = TRUE, showWarnings = FALSE)
-  config.l <- list(
-    project_name = "gmaio example", mode = "metagenome",
-    pipeline_results = file.path(example.s, "results"),
-    metadata = list(file = file.path(example.s, "metadata.csv"), sample_id_column = "Sample_ID", label_column = "Name",
-                    exclude_column = "Exclude", sample_order = list("Treatment", "Time", "Sample_ID"),
-                    colour_variables = list("Time", "Cage")),
-    analysis = list(group_variables = list("Treatment"), reference_levels = list(Treatment = "Control"),
-                    ranks = list("phylum", "genus"), permutations = 999)
-  )
+  metadata.l <- list(file = file.path(example.s, "metadata.csv"), sample_id_column = "Sample_ID", label_column = "Name",
+                     exclude_column = "Exclude")
+  config.l <- if (mode == "metagenome"){
+    list(project_name = "gmaio example", mode = "metagenome", pipeline_results = file.path(example.s, "results"),
+         metadata = c(metadata.l, list(sample_order = list("Treatment", "Time", "Sample_ID"),
+                                       colour_variables = list("Time", "Cage"))),
+         analysis = list(group_variables = list("Treatment"), reference_levels = list(Treatment = "Control"),
+                         ranks = list("phylum", "genus"), permutations = 999))
+  } else {
+    list(project_name = "gmaio isolate example", mode = "isolate", pipeline_results = file.path(example.s, "res"),
+         metadata = c(metadata.l, list(sample_order = list("Source", "Sample_ID"))),
+         analysis = list(group_variables = list("Source"), permutations = 999))
+  }
   yaml::write_yaml(config.l, file.path(path, "config.yml"))
   config.l <- read_config(file.path(path, "config.yml"))
   suppressMessages({
     project.l <- start_project(config.l)
-    project.l <- add_sylph(project.l)
-    project.l <- add_singlem(project.l)
+    if (mode == "metagenome"){
+      project.l <- add_sylph(project.l)
+      project.l <- add_singlem(project.l)
+    } else {
+      project.l <- add_isolate_genomes(project.l)
+      project.l <- add_comparisons(project.l)
+      project.l <- add_mobile_elements(project.l)
+    }
     project.l <- add_palettes(project.l)
   })
   project.l

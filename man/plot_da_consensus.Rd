@@ -8,7 +8,14 @@ plot_da_consensus(
   consensus.df,
   colours.v = NULL,
   min_methods = 2,
-  max_features = 40
+  max_features = 40,
+  methods = c("MaAsLin3", "LinDA", "sPLS-DA"),
+  bar_width = 0.7,
+  label_width = NULL,
+  x_label = "Effect (log2 coefficient, log2 fold change or loading)",
+  legend_title = "Higher in",
+  base_size = 9,
+  legend_position = "right"
 )
 }
 \arguments{
@@ -18,11 +25,25 @@ plot_da_consensus(
 
 \item{min_methods}{Minimum number of agreeing methods to show a feature.}
 
-\item{max_features}{Maximum number of features shown.}
+\item{max_features}{Maximum number of features shown (most methods first).}
+
+\item{methods}{Methods shown, as panels in this order.}
+
+\item{bar_width}{Bar width.}
+
+\item{label_width}{Wrap feature labels longer than this many characters; \code{NULL} for no wrapping.}
+
+\item{x_label}{X axis title.}
+
+\item{legend_title}{Legend title.}
+
+\item{base_size}{Base font size, in points.}
+
+\item{legend_position}{Legend position.}
 }
 \value{
 A ggplot, or \code{NULL} when nothing passes.
 }
 \description{
-Plot consensus differential abundance effects
+One bar per method and feature, coloured by the group the feature is higher in.
 }

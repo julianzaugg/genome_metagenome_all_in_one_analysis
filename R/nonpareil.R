@@ -49,68 +49,25 @@ plot_nonpareil_curves <- function(nonpareil.l, metadata.df, colour_by = "Sample_
 #'
 #' Coverage at the sequenced depth, Nonpareil diversity (Nd) and the effort needed for
 #' 95% coverage (LR*), compared between groups with Wilcoxon (two groups) or
-#' Kruskal-Wallis tests.
+#' Kruskal-Wallis tests, with pairwise brackets for more than two groups.
 #'
 #' @param summary.df `project.l$tables$nonpareil$summary`.
 #' @param metadata.df Metadata.
 #' @param group Metadata column.
 #' @param colours.v Named colours for `group`.
-#' @return List with `plot` and `tests`.
+#' @param ... Figure and test options passed to [plot_group_boxplots()].
+#' @return List with `plot`, `tests` and `pairwise` (more than two groups).
 #' @export
-plot_nonpareil_metrics <- function(summary.df, metadata.df, group, colours.v = NULL){
+plot_nonpareil_metrics <- function(summary.df, metadata.df, group, colours.v = NULL, ...){
   metrics.v <- c(C = "Coverage at sequenced depth (%)", diversity = "Nonpareil diversity (Nd)",
                  LRstar = "Effort for 95% coverage (Gbp)")
   joined.df <- join_metadata(summary.df, metadata.df, "inner")
   joined.df$C <- joined.df$C * 100
   joined.df$LRstar <- joined.df$LRstar / 1e9
   long.df <- do.call(rbind, lapply(names(metrics.v), function(m){
-    data.frame(Sample_ID = joined.df$Sample_ID, Group = joined.df[[group]], Metric = metrics.v[[m]], Value = joined.df[[m]])
+    data.frame(joined.df[, setdiff(names(joined.df), names(metrics.v)), drop = FALSE], Metric = metrics.v[[m]],
+               Value = joined.df[[m]], check.names = FALSE)
   }))
   long.df$Metric <- factor(long.df$Metric, levels = metrics.v)
-  tests.df <- group_tests(long.df, "Metric", "Group")
-  if (is.null(colours.v)) colours.v <- assign_colours(long.df$Group)
-
-  metrics.gg <- ggplot2::ggplot(long.df, ggplot2::aes(x = .data$Group, y = .data$Value, fill = .data$Group)) +
-    ggplot2::geom_boxplot(outlier.shape = NA, width = 0.6, alpha = 0.5, linewidth = 0.3) +
-    ggplot2::geom_point(shape = 21, size = 1.8, colour = "grey15", stroke = 0.3,
-                        position = ggplot2::position_jitter(width = 0.12, height = 0, seed = 1)) +
-    ggplot2::geom_text(data = tests.df, ggplot2::aes(x = -Inf, y = Inf, label = .data$Test_label), inherit.aes = FALSE,
-                       hjust = -0.05, vjust = 1.4, size = 2.5) +
-    ggplot2::facet_wrap(~Metric, scales = "free_y") +
-    ggplot2::scale_fill_manual(values = colours.v, guide = "none") +
-    ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0.05, 0.15))) +
-    ggplot2::labs(x = NULL, y = NULL) +
-    theme_gmaio() +
-    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 30, hjust = 1))
-  list(plot = metrics.gg, tests = tests.df)
-}
-
-#' Test a value between groups for each level of a facet variable
-#'
-#' @param long.df Long data with the value in `Value`.
-#' @param by Column defining separate tests (e.g. metric or feature).
-#' @param group Grouping column.
-#' @return Data frame with the test used, statistic, p value, BH-adjusted p value and a label.
-#' @export
-group_tests <- function(long.df, by, group){
-  tests.df <- do.call(rbind, lapply(split(long.df, long.df[[by]], drop = TRUE), function(x.df){
-    x.df <- x.df[!is.na(x.df$Value) & !is.na(x.df[[group]]), , drop = FALSE]
-    groups.v <- droplevels(as.factor(x.df[[group]]))
-    if (nlevels(groups.v) < 2) return(NULL)
-    if (nlevels(groups.v) == 2){
-      test <- suppressWarnings(stats::wilcox.test(x.df$Value ~ groups.v, exact = FALSE))
-      method.s <- "Wilcoxon"
-    } else {
-      test <- stats::kruskal.test(x.df$Value ~ groups.v)
-      method.s <- "Kruskal-Wallis"
-    }
-    data.frame(By = as.character(x.df[[by]][1]), Test = method.s, Statistic = unname(test$statistic),
-               P_value = test$p.value, N = nrow(x.df))
-  }))
-  if (is.null(tests.df)) return(data.frame())
-  names(tests.df)[1] <- by
-  tests.df[[by]] <- factor(tests.df[[by]], levels = levels(as.factor(long.df[[by]])))
-  tests.df$P_adjusted <- stats::p.adjust(tests.df$P_value, method = "BH")
-  tests.df$Test_label <- sprintf("%s p = %s", tests.df$Test, format_p(tests.df$P_value))
-  tests.df
+  plot_group_boxplots(long.df, "Metric", group, colours.v, ...)
 }

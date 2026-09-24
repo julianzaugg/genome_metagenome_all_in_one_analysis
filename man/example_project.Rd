@@ -4,19 +4,32 @@
 \alias{example_project}
 \title{Example processed project}
 \usage{
-example_project(path = tempfile("gmaio_example_"))
+example_project(
+  path = tempfile("gmaio_example_"),
+  mode = c("metagenome", "isolate")
+)
 }
 \arguments{
 \item{path}{Project directory for the config, palettes and any outputs; a new temporary
 directory by default.}
+
+\item{mode}{\code{"metagenome"} or \code{"isolate"}.}
 }
 \value{
 A processed \code{gm_project}, as returned by \code{\link[=load_processed]{load_processed()}} in an analysis script.
 }
 \description{
-Builds a processed metagenome project from the synthetic pipeline output shipped with
-gmaio, running the same steps as the template \code{main.R}. The data mimic an early partial
-pipeline run (sylph and SingleM only) on 16 mouse samples: \code{Treatment} (Control, Treated)
-by \code{Time} (Week_0, Week_4), with \code{Age_weeks} and \code{Cage}. Some genera respond to treatment
-and others to time. Used in the vignettes and handy for trying out functions.
+Builds a processed project from synthetic pipeline output shipped with gmaio, running the
+same steps as the template \code{main.R}. Used in the vignettes and handy for trying out functions.
+}
+\details{
+\itemize{
+\item \code{mode = "metagenome"}: an early partial pipeline run (sylph and SingleM only) on 24 samples
+from 12 mice, \code{Treatment} (Control, Treated) by \code{Time} (Week_0, Week_4), with \code{Mouse},
+\code{Age_weeks} and \code{Cage}. Some genera respond to treatment and others to time, and treated
+mice lose rare genera by week 4.
+\item \code{mode = "isolate"}: 20 \emph{Escherichia coli} isolates from four sequence types and three
+\code{Source}s (Clinical, Animal, Environmental) with \code{Year}, plus two reference genomes, with
+quality, typing, AMR genes, insertion sequences, a pangenome, ANI, cgMLST and a tree.
+}
 }

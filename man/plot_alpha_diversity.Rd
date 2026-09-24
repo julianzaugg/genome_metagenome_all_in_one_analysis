@@ -9,23 +9,30 @@ plot_alpha_diversity(
   metadata.df,
   group,
   colours.v = NULL,
-  measures = c("Richness", "Shannon", "Simpson", "Pielou")
+  measures = c("Richness", "Shannon", "Simpson", "Pielou"),
+  ...
 )
 }
 \arguments{
 \item{diversity.df}{Result of \code{\link[=alpha_diversity]{alpha_diversity()}}.}
 
-\item{metadata.df}{Metadata.}
+\item{metadata.df}{Metadata; groups are drawn in factor level order.}
 
 \item{group}{Metadata column.}
 
 \item{colours.v}{Named colours for \code{group}.}
 
-\item{measures}{Measures to plot.}
+\item{measures}{Measures to plot, in order.}
+
+\item{...}{Figure and test options passed to \code{\link[=plot_group_boxplots]{plot_group_boxplots()}}.}
 }
 \value{
-List with \code{plot}, \code{tests} (per measure) and \code{pairwise} (pairwise Wilcoxon, when more than two groups).
+List with \code{plot}, \code{tests} (per measure) and \code{pairwise} (pairwise tests with group
+sizes, means and medians, when more than two groups).
 }
 \description{
-Plot alpha diversity by group
+One panel per measure with a box per group, the Wilcoxon (two groups) or Kruskal-Wallis
+p value, and with more than two groups brackets for the pairs that differ (Dunn's test,
+BH adjusted within each measure). All figure options of \code{\link[=plot_group_boxplots]{plot_group_boxplots()}} can be
+passed, e.g. \code{bracket_label = "p"}, \code{shape_by = "Time"} or \code{panel_labels}.
 }

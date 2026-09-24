@@ -1,4 +1,5 @@
 # Phylogenetic trees (IQ-TREE) for each comparison group with tips coloured by the primary group.
+# Figure options: vignette("isolates", package = "gmaio") and the plot function help pages
 
 project.l <- gmaio::load_processed()
 if (length(project.l$tables$comparisons) == 0) gmaio::skip_analysis("No comparison group results in the processed project")
@@ -10,6 +11,6 @@ for (comparison.s in names(project.l$tables$comparisons)){
   tree <- project.l$tables$comparisons[[comparison.s]]$tree
   if (is.null(tree)) next
   genomes.df <- gmaio::genome_metadata(project.l, comparison.s, tree$tip.label)
-  tree.gg <- gmaio::plot_tree(tree, genomes.df, colour_by.s, project.l$palettes[[colour_by.s]])
+  tree.gg <- gmaio::plot_tree(tree, genomes.df, colour_by.s, project.l$palettes[[colour_by.s]], shape_by = "Entry_type")
   gmaio::save_plot(tree.gg, gmaio::figure_path(config.l, "phylogeny", paste0(comparison.s, "__tree")))
 }

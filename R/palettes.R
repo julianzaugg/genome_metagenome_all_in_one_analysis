@@ -45,8 +45,9 @@ qualitative_palette <- function(n){
 #' Assign colours to the values of a variable
 #'
 #' Values keep colours from `fixed.v` (user config) first, then `existing.v` (saved
-#' palette), and any remaining values get unused colours from [qualitative_palette()]
-#' in level order, so the result is deterministic.
+#' palette); `Other`, `Unassigned` and `Reference` get their [special_colours()], and any
+#' remaining values get unused colours from [qualitative_palette()] in level order, so the
+#' result is deterministic.
 #'
 #' @param values.v Vector (factor levels are respected, otherwise sorted unique values).
 #' @param existing.v Named vector of previously assigned colours.
@@ -59,7 +60,7 @@ assign_colours <- function(values.v, existing.v = NULL, fixed.v = NULL, avoid.v 
   levels.v <- if (is.factor(values.v)) levels(droplevels(values.v)) else sort(unique(as.character(stats::na.omit(values.v))))
   special.v <- special_colours()
   colours.v <- stats::setNames(rep(NA_character_, length(levels.v)), levels.v)
-  for (source.v in list(fixed.v, existing.v, special.v[c("Other", "Unassigned")])){
+  for (source.v in list(fixed.v, existing.v, special.v[c("Other", "Unassigned", "Reference")])){
     if (length(source.v) == 0) next
     hit.v <- levels.v[is.na(colours.v[levels.v]) & levels.v %in% names(source.v)]
     colours.v[hit.v] <- unlist(source.v)[hit.v]

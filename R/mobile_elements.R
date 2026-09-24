@@ -83,7 +83,7 @@ plot_virus_taxonomy <- function(virus_summary.df, metadata.df, rank_index = 5, f
   taxonomy.gg <- ggplot2::ggplot(counts.df, ggplot2::aes(x = .data$Sample_label, y = .data$Freq, fill = .data$Taxon)) +
     ggplot2::geom_col(width = 0.8, colour = "grey20", linewidth = 0.1) +
     ggplot2::scale_fill_manual(values = colours.v, breaks = taxa_levels.v, name = "Virus class") +
-    ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0, 0.05))) +
+    ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0, 0.05)), breaks = integer_breaks) +
     ggplot2::labs(x = NULL, y = "Viral sequences") +
     theme_gmaio() +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1, vjust = 0.5),

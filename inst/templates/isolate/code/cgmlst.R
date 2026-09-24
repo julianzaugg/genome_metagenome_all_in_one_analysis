@@ -1,9 +1,10 @@
 # cgMLST (chewBBACA) allele distance heatmaps for each comparison group and threshold.
+# Figure options: vignette("isolates", package = "gmaio") and the plot function help pages
 
 project.l <- gmaio::load_processed()
 if (length(project.l$tables$comparisons) == 0) gmaio::skip_analysis("No comparison group results in the processed project")
 config.l <- project.l$config
-annotation_variables.v <- c("Entry_type", gmaio::primary_group(project.l))
+annotation_variables.v <- c("Entry_type", "ST", gmaio::primary_group(project.l))
 
 tables.l <- list()
 for (comparison.s in names(project.l$tables$comparisons)){
@@ -11,7 +12,8 @@ for (comparison.s in names(project.l$tables$comparisons)){
   for (schema.s in names(cgmlst.l)){
     distance.m <- gmaio::cgmlst_distances(cgmlst.l[[schema.s]])
     genomes.df <- gmaio::genome_metadata(project.l, comparison.s, rownames(distance.m))
-    heatmap.ht <- gmaio::plot_genome_matrix(distance.m, genomes.df, project.l$palettes, annotation_variables.v, type = "distance")
+    heatmap.ht <- gmaio::plot_genome_matrix(distance.m, genomes.df, project.l$palettes,
+                                            intersect(annotation_variables.v, names(genomes.df)), type = "distance")
     gmaio::save_plot(heatmap.ht, gmaio::figure_path(config.l, "cgmlst", paste0(comparison.s, "__", schema.s)))
     tables.l[[substr(paste0(comparison.s, "_", schema.s), 1, 31)]] <- gmaio::m2df(distance.m, "Genome")
   }

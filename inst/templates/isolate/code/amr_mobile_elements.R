@@ -1,5 +1,6 @@
 # Antimicrobial resistance genes (AMRFinderPlus), insertion sequences (ISEScan) and
 # geNomad mobile elements per isolate, with associations to the primary group variable.
+# Figure options: vignette("isolates", package = "gmaio") and the plot function help pages
 
 project.l <- gmaio::load_processed()
 config.l <- project.l$config

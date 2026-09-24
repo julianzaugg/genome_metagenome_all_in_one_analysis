@@ -33,8 +33,8 @@ test_that("plot_heatmap options change the drawn heatmap", {
   ordered.ht <- plot_heatmap(genus.p, metadata.df, project.l$palettes, cluster_rows = FALSE, order_rows_by = "label",
                              order_columns_by = c("Time", "Treatment"), row_labels = "Genus")
   expect_equal(rownames(ordered.ht@matrix), sort(rownames(ordered.ht@matrix)))
-  expect_equal(colnames(ordered.ht@matrix)[1:4], metadata.df$Sample_label[metadata.df$Time == "Week_0" &
-                                                                          metadata.df$Treatment == "Control"])
+  first.v <- metadata.df$Sample_label[metadata.df$Time == "Week_0" & metadata.df$Treatment == "Control"]
+  expect_equal(colnames(ordered.ht@matrix)[seq_along(first.v)], first.v)
 
   # Zeros are drawn in zero_colour, not the ramp; legend breaks are in original units
   capped.ht <- plot_heatmap(genus.p, metadata.df, legend_breaks = c(0.1, 1, 10, 40),
@@ -124,4 +124,16 @@ test_that("barchart top_method = 'mean' keeps exactly top_n taxa", {
   expect_length(shown.f(top_method = "mean"), 1)
   # Default per sample: the top taxon of every sample, several here
   expect_gt(length(shown.f()), 1)
+})
+
+test_that("barchart sizes leave room for legends and keep strip heights", {
+  project.l <- example_project()
+  metadata.df <- analysis_metadata(project.l)
+  genus.p <- aggregate_profile(get_profile(project.l, "sylph_taxonomic"), rank = "genus")
+  right.gg <- plot_stacked_barchart(genus.p, metadata.df, top_n = 8, top_method = "mean", annotation_variables = "Time")
+  bottom.gg <- plot_stacked_barchart(genus.p, metadata.df, top_n = 8, top_method = "mean", annotation_variables = "Time",
+                                     legend_position = "bottom", legend_ncol = 3)
+  # Legends below the bars add height; strips keep 0.4 cm each next to 7 cm of bars
+  expect_gt(attr(bottom.gg, "gm_size")[["height"]], attr(right.gg, "gm_size")[["height"]])
+  expect_equal(bottom.gg$patches$layout$heights, c(7, 0.4))
 })

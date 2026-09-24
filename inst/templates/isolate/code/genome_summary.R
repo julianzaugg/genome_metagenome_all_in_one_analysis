@@ -1,4 +1,5 @@
 # Assembly, quality and annotation summary for each isolate.
+# Figure options: vignette("isolates", package = "gmaio") and the plot function help pages
 
 project.l <- gmaio::load_processed()
 if (is.null(project.l$tables$genome_summary)) gmaio::skip_analysis("No genome summary in the processed project")

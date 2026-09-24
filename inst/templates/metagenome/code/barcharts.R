@@ -1,4 +1,6 @@
 # Stacked barcharts of the most abundant taxa per sample, for each taxonomic profile and rank.
+# All plot_stacked_barchart() options and how to change colours:
+#   ?gmaio::plot_stacked_barchart and vignette("barcharts", package = "gmaio")
 
 project.l <- gmaio::load_processed()
 config.l <- project.l$config

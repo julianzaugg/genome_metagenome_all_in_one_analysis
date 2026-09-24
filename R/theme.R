@@ -84,13 +84,22 @@ with_measure_device <- function(expr){
   expr
 }
 
+# Legends are packed into columns to fit the device height, so a figure measured on a tall
+# device can come out wider on its own (shorter) device. Measure again on a device of the
+# measured size until the size settles.
 measure_heatmap <- function(plot, ...){
-  grDevices::pdf(NULL)
-  on.exit(grDevices::dev.off(), add = TRUE)
-  drawn <- draw_heatmap(plot, ...)
-  width.n <- grid::convertWidth(ComplexHeatmap::width.HeatmapList(drawn), "cm", valueOnly = TRUE)
-  height.n <- grid::convertHeight(ComplexHeatmap::height.HeatmapList(drawn), "cm", valueOnly = TRUE)
-  list(width = width.n + 1, height = height.n + 1)
+  size.v <- c(width = 7 * 2.54, height = 7 * 2.54)
+  for (i in 1:4){
+    grDevices::pdf(NULL, width = size.v[["width"]] / 2.54, height = size.v[["height"]] / 2.54)
+    measured.v <- tryCatch({
+      drawn <- draw_heatmap(plot, ...)
+      c(width = grid::convertWidth(ComplexHeatmap::width.HeatmapList(drawn), "cm", valueOnly = TRUE) + 1,
+        height = grid::convertHeight(ComplexHeatmap::height.HeatmapList(drawn), "cm", valueOnly = TRUE) + 1)
+    }, finally = grDevices::dev.off())
+    if (all(abs(measured.v - size.v) < 0.05)) break
+    size.v <- measured.v
+  }
+  as.list(measured.v)
 }
 
 open_device <- function(path, ext.s, width_in.n, height_in.n, dpi = 300){
@@ -148,6 +157,25 @@ ordered_levels <- function(values.v, colours.v = NULL){
 }
 
 plain_number <- function(x) format(x, scientific = FALSE, drop0trailing = TRUE, trim = TRUE)
+
+# Axis breaks for counts: whole numbers only
+integer_breaks <- function(limits){
+  breaks.v <- pretty(limits)
+  unique(round(breaks.v[abs(breaks.v - round(breaks.v)) < 1e-8]))
+}
+
+# Blocks of genomes by a metadata column, with references and unassigned genomes last
+split_factor <- function(values.v){
+  values.v <- ifelse(is.na(values.v), "Unassigned", as.character(values.v))
+  levels.v <- sort(unique(values.v))
+  # Numbered levels such as sequence types in numeric order (ST10 before ST131)
+  numbered.v <- grepl("[0-9]+$", levels.v)
+  if (any(numbered.v)){
+    number.v <- suppressWarnings(as.numeric(sub("^.*?([0-9]+)$", "\\1", levels.v)))
+    levels.v <- levels.v[order(sub("[0-9]+$", "", levels.v), ifelse(numbered.v, number.v, -Inf), levels.v)]
+  }
+  factor(values.v, levels = c(setdiff(levels.v, c("Reference", "Unassigned")), intersect(c("Reference", "Unassigned"), levels.v)))
+}
 
 facet_by_group <- function(variable){
   ggplot2::facet_grid(stats::as.formula(paste("~", variable)), scales = "free_x", space = "free_x")

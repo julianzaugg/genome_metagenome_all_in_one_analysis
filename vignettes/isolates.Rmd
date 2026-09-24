@@ -1,0 +1,270 @@
+---
+title: "Isolate genomes"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Isolate genomes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.align = "center")
+# Show each figure exactly as save_plot() writes it, at its automatic size
+show_plot <- function(plot, ...){
+  path.s <- knitr::fig_path(".png")
+  gmaio::save_plot(plot, path.s, dpi = 110, ...)
+  knitr::include_graphics(path.s, dpi = 110)
+}
+has_tree.b <- requireNamespace("ggtree", quietly = TRUE) && requireNamespace("ape", quietly = TRUE)
+```
+
+In isolate mode the pipeline assembles, types and annotates each genome, and compares genomes within comparison groups (ANI, cgMLST, pangenome and a tree).
+An isolate project is created with `gmaio::create_project(path, mode = "isolate")` and has its own scripts: `main.R`, then one script per analysis.
+This vignette goes through them on a synthetic example: 20 *Escherichia coli* isolates from four sequence types and three sources, plus two reference genomes.
+See `vignette("gmaio", package = "gmaio")` for how projects, profiles and colours work; they are the same in both modes.
+
+```{r project}
+project.l <- gmaio::example_project(mode = "isolate")
+project.l
+metadata.df <- gmaio::analysis_metadata(project.l)
+head(metadata.df)
+```
+
+`Source` is the primary group (`analysis: group_variables`), used for colours and tests.
+
+## What main.R loads
+
+| Step | Function | Result |
+|---|---|---|
+| Quality, taxonomy, annotation, typing | `add_isolate_genomes()` | `tables`: `checkm2`, `gtdbtk`, `bakta`, `mlst`, `amrfinder`, `isescan` and a one-row-per-isolate `genome_summary`; `profiles`: `amr_genes`, `amr_classes`, `is_families` |
+| Comparison groups | `add_comparisons()` | `tables$comparisons[[group]]`: `entries`, `pangenome`, `ani`, `cgmlst`, `tree` |
+| Mobile elements | `add_mobile_elements()` | `tables$virus_summary` (geNomad) and plasmid tables |
+| Traits | `add_genomespot()` | GenomeSPOT predictions, when run |
+
+`write_isolate_tables()` writes them to `Result_tables/`.
+
+## Genome summary
+
+`code/genome_summary.R` draws assembly and quality metrics side by side:
+
+```{r summary}
+summary.gg <- gmaio::plot_genome_summary(project.l$tables$genome_summary, metadata.df, fill_by = "Source",
+                                         colours.v = project.l$palettes$Source)
+```
+
+```{r summary-show, echo = FALSE}
+show_plot(summary.gg)
+```
+
+Isolates follow the metadata order (`sample_order`).
+`metrics` chooses and orders the panels (any of `Genome_size`, `Contigs`, `Contig_N50`, `GC_content`, `Completeness`, `Contamination`, `Mean_coverage`, `CDS`), and `bar_width` and `base_size` change the bars and text.
+
+## Genome metadata and sequence types
+
+Comparison figures cover samples and references, so they take `genome_metadata()` rather than the analysis metadata.
+It adds `Entry_type` (Sample or Reference), gives references their accession as label and `"Reference"` for the group variables, and adds each isolate's MLST sequence type (`ST`) and GTDB species:
+
+```{r genome-metadata}
+group.l <- project.l$tables$comparisons$all
+genomes.df <- gmaio::genome_metadata(project.l, "all")
+table(genomes.df$ST, genomes.df$Source)
+```
+
+Any of these columns can be used to annotate, split or colour the figures below.
+
+## AMR genes and insertion sequences
+
+`code/amr_mobile_elements.R` draws AMRFinderPlus genes as presence/absence, split by drug class:
+
+```{r amr}
+amr.p <- gmaio::get_profile(project.l, "amr_genes")
+amr.ht <- gmaio::plot_presence_heatmap(amr.p, genomes.df, project.l$palettes, c("ST", "Source"), row_split = "Class")
+```
+
+```{r amr-show, echo = FALSE}
+show_plot(amr.ht)
+```
+
+`plot_presence_heatmap()` options: `column_split` (e.g. `"ST"`), `colours` (absent and present), `cluster_rows` and `cluster_columns`, `show_row_dend` and `show_column_dend`, `show_row_names`, `label_by`, `cell_width` and `cell_height`, `row_names_size` and `column_names_size`, and `max_features`.
+
+```{r amr-split}
+amr.ht <- gmaio::plot_presence_heatmap(amr.p, genomes.df, project.l$palettes, "Source",
+                                       row_split = "Class", column_split = "ST", show_row_dend = FALSE,
+                                       colours = c(Absent = "grey95", Present = "#B2182B"))
+```
+
+```{r amr-split-show, echo = FALSE}
+show_plot(amr.ht)
+```
+
+`gene_association()` tests each gene against a variable with Fisher's exact test (BH adjusted).
+The script tests the primary group; here AMR genes follow the sequence type much more than the source:
+
+```{r association}
+by_st.df <- gmaio::gene_association(amr.p, genomes.df, "ST")
+utils::head(by_st.df[, c("Feature_ID", "N_present", "Prevalence_ST131", "Prevalence_ST10", "Enriched_in", "Q_value")])
+```
+
+Gene counts per drug class (`amr_classes`) and insertion sequences per family (`is_families`) are count profiles, drawn with `plot_heatmap()` and printed values:
+
+```{r is}
+is.ht <- gmaio::plot_heatmap(gmaio::get_profile(project.l, "is_families"), metadata.df, project.l$palettes,
+                             transform = "none", column_split = "Source", cluster_rows = FALSE, show_values = TRUE,
+                             legend_title = "Copies", cell_size = 0.6, colours = c("#F7F7F7", "#6BAED6", "#08306B"))
+```
+
+```{r is-show, echo = FALSE}
+show_plot(is.ht)
+```
+
+All `plot_heatmap()` options are described in `vignette("heatmaps", package = "gmaio")`.
+
+## Average nucleotide identity
+
+`code/ani.R` turns fastANI results into a matrix (both directions averaged) and draws it:
+
+```{r ani}
+ani.m <- gmaio::ani_matrix(group.l$ani)
+ani.ht <- gmaio::plot_genome_matrix(ani.m, genomes.df, project.l$palettes, c("Entry_type", "ST", "Source"))
+```
+
+```{r ani-show, echo = FALSE}
+show_plot(ani.ht)
+```
+
+Genomes are clustered on 100 - ANI.
+Values are printed for up to 25 genomes, sized to fit the cells.
+
+| Argument | Controls | Default |
+|---|---|---|
+| `split_by` | Split rows and columns into blocks (e.g. `"ST"`), clustering within blocks | none |
+| `cluster`, `show_dend` | Cluster genomes, and draw the dendrograms | `TRUE`, `TRUE` |
+| `breaks`, `colours` | Colour breaks and the colours at them | 85, 95, 97, 99, 100 in blues |
+| `legend_title` | Legend title | ANI (%) |
+| `show_values`, `value_digits`, `value_size` | Printed values | up to 25 genomes, 1, fitted |
+| `label_by` | Genome labels | `Sample_label` |
+| `cell_size`, `names_size` | Cell size (cm) and label font size | 0.45, 7 |
+| `row_title`, `column_title` | Axis titles | none |
+
+Genomes of one species share at least about 95% ANI, and these are all between 97 and 100%, so narrower breaks show more detail:
+
+```{r ani-split}
+ani.ht <- gmaio::plot_genome_matrix(ani.m, genomes.df, project.l$palettes, "Source", split_by = "ST",
+                                    breaks = c(97, 98, 99, 99.5, 100), show_values = FALSE, cell_size = 0.35)
+```
+
+```{r ani-split-show, echo = FALSE}
+show_plot(ani.ht)
+```
+
+The script also ordinates the ANI distances.
+`ordinate_distance()` turns any distance matrix into an ordination for `plot_ordination()` and the PERMANOVA functions (see `vignette("ordination", package = "gmaio")`):
+
+```{r ani-pcoa}
+ordination <- gmaio::ordinate_distance(100 - ani.m, "100 - ANI")
+pcoa.gg <- gmaio::plot_ordination(ordination, genomes.df, "ST", shape_by = "Source", title = "ANI")
+```
+
+```{r ani-pcoa-show, echo = FALSE}
+show_plot(pcoa.gg, width = 16, height = 13)
+```
+
+Isolates of one sequence type sit on top of each other, so labels are left out here; the script adds them with `label_by = "Sample_label"`, which suits more diverse collections.
+
+## cgMLST
+
+`code/cgmlst.R` counts allele differences between genomes from chewBBACA's cgMLST matrix, ignoring loci missing in either genome:
+
+```{r cgmlst}
+distance.m <- gmaio::cgmlst_distances(group.l$cgmlst$cgMLST95)
+cgmlst.ht <- gmaio::plot_genome_matrix(distance.m, genomes.df, project.l$palettes, c("ST", "Source"), type = "distance")
+```
+
+```{r cgmlst-show, echo = FALSE}
+show_plot(cgmlst.ht)
+```
+
+For distances, breaks default to 0, 5, 10, 25, 50, 100 and 200 alleles in yellow to red; set `breaks` to highlight the threshold you use for transmission clusters, e.g. `breaks = c(0, 10, 50, 300)`.
+
+## Pangenome
+
+`code/pangenome.R` classifies Panaroo gene clusters by prevalence (core in at least 99% of genomes, soft core 95%, shell 15%, cloud below):
+
+```{r categories}
+pangenome.p <- group.l$pangenome
+categories.gg <- gmaio::plot_pangenome_categories(pangenome.p)
+```
+
+```{r categories-show, echo = FALSE}
+show_plot(categories.gg)
+```
+
+The accessory genes (shell and cloud) are drawn as presence/absence, keeping the `max_features` (150) most variable:
+
+```{r accessory}
+accessory.ht <- gmaio::plot_presence_heatmap(pangenome.p, genomes.df, project.l$palettes, c("ST", "Source"),
+                                             show_row_names = FALSE, cell_height = 0.08)
+```
+
+```{r accessory-show, echo = FALSE}
+show_plot(accessory.ht)
+```
+
+The script also ordinates the accessory genes (Jaccard PCoA) and tests them against the primary group with `gene_association()`.
+
+## Phylogeny
+
+`code/phylogeny.R` draws the IQ-TREE tree of each comparison group, midpoint rooted, with tips coloured by the primary group:
+
+```{r tree, eval = has_tree.b}
+tree_genomes.df <- gmaio::genome_metadata(project.l, "all", group.l$tree$tip.label)
+tree.gg <- gmaio::plot_tree(group.l$tree, tree_genomes.df, "Source", project.l$palettes$Source, shape_by = "Entry_type")
+```
+
+```{r tree-show, echo = FALSE, eval = has_tree.b}
+show_plot(tree.gg)
+```
+
+| Argument | Controls | Default |
+|---|---|---|
+| `colour_by`, `colours.v` | Tip point fill | none |
+| `shape_by`, `shapes` | Tip point shape (samples circles and references diamonds for `Entry_type`) | none |
+| `label_by`, `label_size` | Tip labels (`NULL` for none) and their size | `Sample_label`, 2.4 |
+| `align_labels` | Line labels up at the right with dotted leaders | `FALSE` |
+| `point_size` | Tip point size | 2 |
+| `layout` | `"rectangular"` or `"circular"` | rectangular |
+| `midpoint`, `ladderize` | Midpoint root (needs phangorn), ladderize | `TRUE`, `TRUE` |
+| `scale_bar`, `x_label` | Scale bar instead of an axis, and the axis title | `FALSE`, substitutions per site |
+| `label_space` | Room for labels, as a fraction of the tree width | from the longest label |
+| `width`, `height` | Figure size (cm) | from the number of tips |
+
+```{r tree-options, eval = has_tree.b}
+tree.gg <- gmaio::plot_tree(group.l$tree, tree_genomes.df, "ST", shape_by = "Source", align_labels = TRUE,
+                            scale_bar = TRUE)
+```
+
+```{r tree-options-show, echo = FALSE, eval = has_tree.b}
+show_plot(tree.gg)
+```
+
+The result is a ggtree plot, so ggtree layers can be added, e.g. `tree.gg + ggtree::geom_nodelab(size = 2)` to show node support.
+
+## Prophages and plasmids
+
+geNomad results are summarised by virus taxonomy per isolate:
+
+```{r viruses}
+virus.gg <- gmaio::plot_virus_taxonomy(project.l$tables$virus_summary, metadata.df, facet_variable = "Source")
+```
+
+```{r viruses-show, echo = FALSE}
+show_plot(virus.gg)
+```
+
+## Saving
+
+Every figure is saved with `save_plot()`, sized automatically:
+
+```r
+gmaio::save_plot(ani.ht, gmaio::figure_path(project.l$config, "ani", "all__ani_heatmap"))
+```

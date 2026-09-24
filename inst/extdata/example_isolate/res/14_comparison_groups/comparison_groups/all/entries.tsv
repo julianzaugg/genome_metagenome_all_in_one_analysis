@@ -1,0 +1,23 @@
+comparison_group	entry_type	id	fasta	gff	faa	parsnp_reference
+all	sample	ISO01	/work/comparison_groups/all/fastas/ISO01.fasta			false
+all	sample	ISO02	/work/comparison_groups/all/fastas/ISO02.fasta			false
+all	sample	ISO03	/work/comparison_groups/all/fastas/ISO03.fasta			false
+all	sample	ISO04	/work/comparison_groups/all/fastas/ISO04.fasta			false
+all	sample	ISO05	/work/comparison_groups/all/fastas/ISO05.fasta			false
+all	sample	ISO06	/work/comparison_groups/all/fastas/ISO06.fasta			false
+all	sample	ISO07	/work/comparison_groups/all/fastas/ISO07.fasta			false
+all	sample	ISO08	/work/comparison_groups/all/fastas/ISO08.fasta			false
+all	sample	ISO09	/work/comparison_groups/all/fastas/ISO09.fasta			false
+all	sample	ISO10	/work/comparison_groups/all/fastas/ISO10.fasta			false
+all	sample	ISO11	/work/comparison_groups/all/fastas/ISO11.fasta			false
+all	sample	ISO12	/work/comparison_groups/all/fastas/ISO12.fasta			false
+all	sample	ISO13	/work/comparison_groups/all/fastas/ISO13.fasta			false
+all	sample	ISO14	/work/comparison_groups/all/fastas/ISO14.fasta			false
+all	sample	ISO15	/work/comparison_groups/all/fastas/ISO15.fasta			false
+all	sample	ISO16	/work/comparison_groups/all/fastas/ISO16.fasta			false
+all	sample	ISO17	/work/comparison_groups/all/fastas/ISO17.fasta			false
+all	sample	ISO18	/work/comparison_groups/all/fastas/ISO18.fasta			false
+all	sample	ISO19	/work/comparison_groups/all/fastas/ISO19.fasta			false
+all	sample	ISO20	/work/comparison_groups/all/fastas/ISO20.fasta			false
+all	reference	GCF_000005845.2	/work/comparison_groups/all/fastas/GCF_000005845.2.fasta			true
+all	reference	GCF_000010485.1	/work/comparison_groups/all/fastas/GCF_000010485.1.fasta			false

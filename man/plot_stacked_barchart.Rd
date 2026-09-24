@@ -15,8 +15,16 @@ plot_stacked_barchart(
   facet_variable = NULL,
   annotation_variables = NULL,
   annotation_colours = list(),
+  annotation_height = 0.4,
   y_label = NULL,
-  legend_title = NULL
+  legend_title = NULL,
+  legend_ncol = NULL,
+  legend_position = "right",
+  bar_width = 0.85,
+  outline_colour = "grey20",
+  outline_width = 0.1,
+  x_text_angle = 90,
+  base_size = 9
 )
 }
 \arguments{
@@ -39,13 +47,30 @@ differ; \code{"mean"} keeps exactly the \code{top_n} highest by mean.}
 
 \item{annotation_colours}{Named list of colour vectors for \code{annotation_variables}.}
 
+\item{annotation_height}{Height of each annotation strip, in cm.}
+
 \item{y_label}{Y axis title; defaults from the profile value type.}
 
 \item{legend_title}{Legend title.}
+
+\item{legend_ncol}{Legend columns; by default two when there are more than 25 entries.}
+
+\item{legend_position}{Legend position (\code{"right"}, \code{"bottom"}, \code{"none"}, ...).}
+
+\item{bar_width}{Bar width (1 leaves no gap between samples).}
+
+\item{outline_colour, outline_width}{Colour and line width of the segment outlines;
+\code{outline_colour = NA} for none.}
+
+\item{x_text_angle}{Angle of the sample labels.}
+
+\item{base_size}{Base font size, in points.}
 }
 \value{
-A ggplot (or patchwork when annotation strips are drawn).
+A ggplot (or patchwork when annotation strips are drawn), sized for \code{\link[=save_plot]{save_plot()}}.
 }
 \description{
-Stacked barchart of the top features per sample
+Features outside the top ones are summed into \code{"Other"}; features with nothing below
+domain are merged into \code{"Unassigned"}. Both are drawn last, in grey. See
+\code{vignette("barcharts", package = "gmaio")} for worked examples.
 }

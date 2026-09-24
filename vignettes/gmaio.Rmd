@@ -15,8 +15,12 @@ gmaio turns the output of the [genome_metagenome_all_in_one](https://github.com/
 This guide explains how a project fits together and the handful of objects and functions everything else builds on.
 The worked examples for individual figures are in the other vignettes:
 
+- `vignette("barcharts", package = "gmaio")`: stacked barcharts, and where colours come from and how to change them
 - `vignette("heatmaps", package = "gmaio")`
-- `vignette("ordination", package = "gmaio")`
+- `vignette("ordination", package = "gmaio")`: ordinations, PERMANOVA and PERMDISP
+- `vignette("diversity", package = "gmaio")`: alpha diversity and group tests
+- `vignette("differential_abundance", package = "gmaio")`: MaAsLin3, LinDA, sPLS-DA and their consensus
+- `vignette("isolates", package = "gmaio")`: isolate mode, from genome summaries to ANI, cgMLST, pangenome and trees
 
 ## How a project fits together
 
@@ -40,7 +44,8 @@ An analysis script starts with:
 project.l <- gmaio::load_processed()
 ```
 
-In these vignettes, `example_project()` builds the same object from a small synthetic dataset shipped with the package: 16 mouse samples, Control vs Treated, sampled at week 0 and week 4, profiled with sylph and SingleM.
+In these vignettes, `example_project()` builds the same object from a small synthetic dataset shipped with the package: 24 samples from 12 mice, Control vs Treated, sampled at week 0 and week 4, profiled with sylph and SingleM.
+`example_project(mode = "isolate")` builds an isolate project instead (see the isolates vignette).
 
 ```{r project}
 project.l <- gmaio::example_project()
@@ -150,14 +155,25 @@ gmaio::write_xlsx_tables(list(PERMANOVA = permanova.df), gmaio::output_path(proj
 | `main.R` | `read_config()`, `start_project()`, `add_sylph()`, `add_singlem()`, `add_mags()`, `add_gene_catalogue_functions()`, `add_palettes()`, `write_project_tables()` |
 | `barcharts.R` | `plot_stacked_barchart()` |
 | `heatmaps.R` | `plot_heatmap()` |
-| `ordination.R` | `run_ordination()`, `plot_ordination()`, `run_permanova()`, `run_permdisp()`, `plot_loadings()` |
-| `diversity.R` | `alpha_diversity()`, `plot_alpha_diversity()` |
-| `differential_abundance.R` | `run_differential_abundance()`, `da_consensus()`, `plot_da_consensus()` |
+| `ordination.R` | `run_ordination()`, `plot_ordination()`, `run_permanova()`, `run_pairwise_permanova()`, `run_permdisp()`, `plot_loadings()` |
+| `diversity.R` | `alpha_diversity()`, `plot_alpha_diversity()` (built on `plot_group_boxplots()`) |
+| `differential_abundance.R` | `run_differential_abundance()`, `da_consensus()`, `plot_da_consensus()`, `plot_da_heatmap()`, `plot_feature_boxplots()` |
 | `functional_profiles.R` | `plot_heatmap()`, `plot_stacked_barchart()` |
 | `mag_summary.R` | `plot_mag_quality()`, `plot_mag_counts()`, `plot_mag_taxonomy()`, `within_sample_mag_summary()`, `plot_mag_mapping()` |
 | `nonpareil.R` | `plot_nonpareil_curves()`, `plot_nonpareil_metrics()` |
 | `mobile_elements.R` | `mobile_element_summary()`, `plot_mobile_prevalence()` |
 | `genomespot.R` | `community_weighted_traits()`, `plot_genomespot_traits()` |
+
+Isolate projects have their own scripts:
+
+| Script | Main functions |
+|---|---|
+| `main.R` | `add_isolate_genomes()`, `add_comparisons()`, `add_mobile_elements()`, `write_isolate_tables()` |
+| `genome_summary.R` | `plot_genome_summary()` |
+| `amr_mobile_elements.R` | `plot_presence_heatmap()`, `gene_association()`, `plot_virus_taxonomy()` |
+| `ani.R`, `cgmlst.R` | `ani_matrix()`, `cgmlst_distances()`, `plot_genome_matrix()`, `ordinate_distance()` |
+| `pangenome.R` | `plot_pangenome_categories()`, `plot_presence_heatmap()`, `gene_association()` |
+| `phylogeny.R` | `plot_tree()` |
 
 To change a figure, find its function in the script, look up its help page, and add the argument to the call.
 To make a figure the templates do not provide, add a script that starts with `gmaio::load_processed()` and uses the same building blocks.

@@ -50,3 +50,31 @@ test_that("pairwise PERMANOVA tests each pair of levels on its own samples", {
   expect_true(all(is.na(pairwise.df$P_value[2:3])))
   expect_equal(pairwise.df$P_adjusted[1], pairwise.df$P_value[1])
 })
+
+test_that("Dunn's test matches the reference implementation, ties included", {
+  set.seed(3)
+  long.df <- data.frame(M = "a", G = rep(c("x", "y", "z"), c(5, 6, 4)),
+                        Value = c(rnorm(5), rnorm(6, 1), round(rnorm(4, 2), 0)))
+  long.df$Value[1:3] <- 0
+  dunn.df <- pairwise_tests(long.df, "M", "G")
+  # Reference values from rstatix's dunn_test() with BH adjustment
+  expect_equal(dunn.df$Statistic, c(2.2399882, 2.2453946, 0.2321873), tolerance = 1e-6)
+  expect_equal(dunn.df$P_adjusted, c(0.03763753, 0.03763753, 0.81639253), tolerance = 1e-6)
+  expect_equal(dunn.df$Significance, c("*", "*", "ns"))
+  expect_equal(dunn.df$N_1, c(5, 5, 6))
+  expect_equal(dunn.df$Mean_2[1], mean(long.df$Value[long.df$G == "y"]))
+  expect_equal(unique(pairwise_tests(long.df, "M", "G", method = "wilcoxon")$Test), "Wilcoxon")
+})
+
+test_that("group boxplots bracket only significant pairs", {
+  long.df <- data.frame(Measure = rep(c("m1", "m2"), each = 18), Group = rep(rep(c("a", "b", "c"), each = 6), 2),
+                        Value = c(1:6, 3:8, 21:26, rep(c(1, 5, 3, 4, 2, 6), 3)))
+  boxplots.l <- plot_group_boxplots(long.df, "Measure", "Group", ncol = 2)
+  expect_named(boxplots.l, c("plot", "tests", "pairwise"))
+  significant.df <- boxplots.l$pairwise[boxplots.l$pairwise$P_adjusted < 0.05, ]
+  expect_true(all(significant.df$Measure == "m1"))
+  built.l <- ggplot2::ggplot_build(boxplots.l$plot)$data
+  bracket_labels.v <- unlist(lapply(built.l, function(x) if ("label" %in% names(x)) x$label))
+  expect_equal(sum(bracket_labels.v %in% c("*", "**", "***")), nrow(significant.df))
+  expect_null(plot_group_boxplots(long.df[long.df$Group != "c", ], "Measure", "Group")$pairwise)
+})

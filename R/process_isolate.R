@@ -157,7 +157,9 @@ classify_pangenome <- function(profile, core_threshold = 0.99, soft_core_thresho
 #' Metadata for the genomes of a comparison group
 #'
 #' Samples take their metadata; references get `Entry_type = "Reference"`, their ID as label
-#' and `"Reference"` for the group variables (which has a fixed colour).
+#' and `"Reference"` for the group variables (which has a fixed colour). The MLST sequence
+#' type (`ST`, e.g. `"ST131"`) and GTDB-Tk `Species` of each sample are added when available
+#' (`"Reference"` for references), for splitting or colouring figures.
 #'
 #' @param project.l A `gm_project`.
 #' @param group Comparison group name.
@@ -178,6 +180,13 @@ genome_metadata <- function(project.l, group, genomes.v = NULL){
   metadata.df$Entry_type <- ifelse(is.na(sample_ids.v), "Reference", "Sample")
   metadata.df$Sample_label <- ifelse(is.na(metadata.df$Sample_label), genomes.v, metadata.df$Sample_label)
   metadata.df$Excluded[is.na(metadata.df$Excluded)] <- FALSE
+  summary.df <- project.l$tables$genome_summary
+  for (column.s in intersect(c("ST", "Species"), setdiff(names(summary.df), names(metadata.df)))){
+    values.v <- summary.df[[column.s]][match(metadata.df$Metadata_sample_ID, summary.df$Sample_ID)]
+    if (column.s == "ST") values.v <- ifelse(is.na(values.v) | values.v %in% c("-", ""), NA, paste0("ST", values.v))
+    if (column.s == "Species") values.v <- sub("^s__", "", values.v)
+    metadata.df[[column.s]] <- ifelse(metadata.df$Entry_type == "Reference", "Reference", values.v)
+  }
   reference.v <- metadata.df$Entry_type == "Reference"
   for (variable.s in project.l$config$analysis$group_variables){
     values.v <- metadata.df[[variable.s]]

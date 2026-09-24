@@ -4,7 +4,16 @@
 \alias{plot_genome_summary}
 \title{Genome summary figure}
 \usage{
-plot_genome_summary(summary.df, metadata.df, fill_by = NULL, colours.v = NULL)
+plot_genome_summary(
+  summary.df,
+  metadata.df,
+  fill_by = NULL,
+  colours.v = NULL,
+  metrics = c("Genome_size", "Contigs", "Contig_N50", "GC_content", "Completeness",
+    "Contamination", "Mean_coverage", "CDS"),
+  bar_width = 0.75,
+  base_size = 8
+)
 }
 \arguments{
 \item{summary.df}{\code{project.l$tables$genome_summary}.}
@@ -14,6 +23,13 @@ plot_genome_summary(summary.df, metadata.df, fill_by = NULL, colours.v = NULL)
 \item{fill_by}{Optional metadata column for bar colour.}
 
 \item{colours.v}{Named colours for \code{fill_by}.}
+
+\item{metrics}{Columns of \code{summary.df} to show, in order: any of \code{"Genome_size"}, \code{"Contigs"},
+\code{"Contig_N50"}, \code{"GC_content"}, \code{"Completeness"}, \code{"Contamination"}, \code{"Mean_coverage"}, \code{"CDS"}.}
+
+\item{bar_width}{Bar width.}
+
+\item{base_size}{Base font size, in points.}
 }
 \value{
 A ggplot.

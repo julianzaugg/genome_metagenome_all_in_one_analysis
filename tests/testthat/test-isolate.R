@@ -79,3 +79,30 @@ test_that("isolate figures and tables are produced", {
   expect_true(all(file.exists(written.v)))
   expect_true(any(grepl("Comparison_all.xlsx$", written.v)))
 })
+
+test_that("the isolate example links typing to genomes and drives the isolate figures", {
+  project.l <- example_project(mode = "isolate")
+  expect_equal(nrow(project.l$metadata), 20)
+  group.l <- project.l$tables$comparisons$all
+  ani.m <- ani_matrix(group.l$ani)
+  genomes.df <- genome_metadata(project.l, "all", rownames(ani.m))
+  expect_setequal(unique(genomes.df$ST), c("ST131", "ST73", "ST10", "ST69", "Reference"))
+  expect_equal(genomes.df$ST[genomes.df$Entry_type == "Reference"], c("Reference", "Reference"))
+
+  split.ht <- plot_genome_matrix(ani.m, genomes.df, project.l$palettes, "Source", split_by = "ST")
+  expect_equal(levels(split.ht@matrix_param$row_split[[1]]), c("ST10", "ST69", "ST73", "ST131", "Reference"))
+  expect_error(plot_genome_matrix(ani.m, genomes.df, split_by = "Nope"), "Nope")
+  expect_error(plot_genome_matrix(ani.m, genomes.df, breaks = c(90, 100), colours = "red"), "one colour per break")
+  presence.ht <- plot_presence_heatmap(get_profile(project.l, "amr_genes"), analysis_metadata(project.l), project.l$palettes,
+                                       "Source", row_split = "Class", column_split = "Source")
+  expect_s4_class(presence.ht, "Heatmap")
+
+  skip_if_not_installed("ggtree")
+  tree_genomes.df <- genome_metadata(project.l, "all", group.l$tree$tip.label)
+  tree.gg <- plot_tree(group.l$tree, tree_genomes.df, "Source", project.l$palettes$Source, shape_by = "Entry_type",
+                       align_labels = TRUE)
+  expect_silent(built.l <- ggplot2::ggplot_build(tree.gg))
+  shape_scale <- tree.gg$scales$get_scales("shape")
+  expect_equal(shape_scale$palette(2)[c("Sample", "Reference")], c(Sample = 21, Reference = 23))
+  expect_s3_class(plot_tree(group.l$tree, tree_genomes.df, layout = "circular", label_by = NULL), "ggplot")
+})

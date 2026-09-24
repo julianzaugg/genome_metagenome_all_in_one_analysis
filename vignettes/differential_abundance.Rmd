@@ -1,0 +1,208 @@
+---
+title: "Differential abundance"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Differential abundance}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+# The methods are optional packages; without them the code is shown but not run
+methods_installed.b <- all(vapply(c("maaslin3", "MicrobiomeStat", "mixOmics"), requireNamespace, logical(1), quietly = TRUE))
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.align = "center", eval = methods_installed.b)
+# Show each figure exactly as save_plot() writes it, at its automatic size
+show_plot <- function(plot, ...){
+  path.s <- knitr::fig_path(".png")
+  gmaio::save_plot(plot, path.s, dpi = 110, ...)
+  knitr::include_graphics(path.s, dpi = 110)
+}
+```
+
+Differential abundance asks which features (taxa, MAGs or functions) differ between groups.
+No single method is reliable for compositional, sparse microbiome data, so `code/differential_abundance.R` runs three different ones and keeps the features they agree on:
+
+| Method | Approach | Effect reported |
+|---|---|---|
+| MaAsLin3 | Linear models on log abundance (`abundance` model) and on presence (`prevalence` model) | log2 coefficient |
+| LinDA | Linear models on centred log-ratios with a correction for compositional bias | log2 fold change |
+| sPLS-DA (mixOmics) | Sparse discriminant analysis on centred log-ratios, features picked by cross-validation | loading and selection stability |
+
+The three are in `Suggests`; install them with `BiocManager::install(c("maaslin3", "MicrobiomeStat", "mixOmics"))`.
+This vignette follows the script, then goes through the consensus and the figures.
+It uses the synthetic example project; see `vignette("gmaio", package = "gmaio")` for how projects and profiles work.
+
+```{r project}
+project.l <- gmaio::example_project()
+metadata.df <- gmaio::analysis_metadata(project.l)
+```
+
+## Choosing the data
+
+The script tests genus-level sylph and SingleM profiles, the HQ MAGs and the KEGG and CAZy function profiles.
+Rare features are removed first: those never reaching 0.01% and those present in fewer than 10% of samples.
+They carry little information and add to the multiple-testing burden.
+
+```{r data}
+genus.p <- gmaio::get_profile(project.l, "sylph_taxonomic") |>
+  gmaio::aggregate_profile(rank = "genus") |>
+  gmaio::filter_profile(min_abundance = 0.01) |>
+  gmaio::filter_profile(min_prevalence = 0.1)
+genus.p
+```
+
+## The design
+
+In the example, the treatment started after the week 0 samples, so treated and control mice differ only at week 4.
+Testing Treatment across all samples would dilute that effect with the week 0 samples, so here the test uses week 4 only:
+
+```{r week4}
+week4.df <- metadata.df[metadata.df$Time == "Week_4", ]
+table(week4.df$Treatment)
+```
+
+Think about the design before running the script: which samples answer the question, what else varies between the groups (`covariates`), and whether samples are repeated measures of the same subject (`random_effects`, see below).
+
+## Running the methods
+
+```{r run, message = FALSE}
+da.l <- gmaio::run_differential_abundance(genus.p, week4.df, "Treatment",
+                                          methods = c("maaslin3", "linda", "splsda"),
+                                          min_prevalence = 0.1, splsda_repeats = 20, seed = 1234)
+```
+
+`da.l$results` has every feature from every method in one table, significant or not:
+
+```{r results}
+results.df <- da.l$results
+head(results.df[results.df$Method == "LinDA", c("Method", "Label", "Contrast", "Reference", "Effect", "Q_value", "Enriched_in")])
+table(results.df$Method, results.df$Model)
+```
+
+| Column | Meaning |
+|---|---|
+| `Method`, `Model` | Method, and for MaAsLin3 the abundance or prevalence model (sPLS-DA: the component) |
+| `Contrast`, `Reference` | The level compared, and the reference level it is compared with |
+| `Effect`, `Effect_type`, `SE` | Effect size and its kind (see the table above) |
+| `P_value`, `Q_value` | Raw and FDR-adjusted p values (MaAsLin3 and LinDA) |
+| `Stability` | How often sPLS-DA picked the feature across cross-validation runs |
+| `Enriched_in` | The group in which the feature is higher |
+
+The reference level is the first factor level, set by `reference_levels` in `config.yml`.
+With more than two groups, MaAsLin3 and LinDA report one contrast per non-reference level.
+
+`splsda_repeats` sets the cross-validation repeats for sPLS-DA; the script uses 50, which is slower but gives more stable selection.
+
+## Consensus
+
+`da_consensus()` keeps the features each method calls significant: MaAsLin3 (abundance model) and LinDA with `Q_value <= alpha` (0.05), and sPLS-DA with `Stability >= min_stability` (0.7).
+Methods agree when they call a feature higher in the same group:
+
+```{r consensus}
+consensus.df <- gmaio::da_consensus(da.l$results, alpha = 0.05, min_stability = 0.7)
+consensus.df[, c("Label", "Enriched_in", "MaAsLin3_q", "LinDA_q", "sPLSDA_stability", "N_methods")]
+```
+
+`N_methods` counts the methods agreeing, and `Conflicting_direction` flags features called higher in different groups by different methods.
+Features found by two or three methods are the ones to report; those found by one are worth a look but less certain.
+The five genera that increase with treatment in the synthetic data are all found by at least two methods.
+Of the five that decrease, only two are found, each by one method: treated mice lose them entirely (zeros), which the log-ratio methods handle differently and which leaves little to test with six mice per group.
+
+`code/differential_abundance.R` writes every result to `Differential_abundance_all_results.xlsx` and the consensus to `Differential_abundance_consensus.xlsx`.
+
+## Figures
+
+### Effects
+
+`plot_da_consensus()` shows the effect from each method for features found by at least `min_methods`:
+
+```{r effects}
+effects.gg <- gmaio::plot_da_consensus(consensus.df, project.l$palettes$Treatment, min_methods = 1)
+```
+
+```{r effects-show, echo = FALSE}
+show_plot(effects.gg)
+```
+
+The effect scales differ between methods, so each panel has its own x axis.
+Options: `methods` (panels shown, in order), `max_features`, `bar_width`, `label_width` (wrap long labels), `x_label`, `legend_title`, `base_size` and `legend_position`.
+
+### Heatmap
+
+`plot_da_heatmap()` shows the abundance of every feature called by at least `min_methods` (default 1), with tracks for the group each method called it for, so disagreement between methods shows as a colour mismatch:
+
+```{r heatmap}
+heatmap.ht <- gmaio::plot_da_heatmap(genus.p, consensus.df, week4.df, "Treatment", project.l$palettes)
+```
+
+```{r heatmap-show, echo = FALSE}
+show_plot(heatmap.ht)
+```
+
+Rows are split by the group they are higher in and columns by the tested group.
+It is built on `plot_heatmap()`, so all of its options apply (see `vignette("heatmaps", package = "gmaio")`), for example:
+
+```{r heatmap-options}
+heatmap.ht <- gmaio::plot_da_heatmap(genus.p, consensus.df, week4.df, "Treatment", project.l$palettes,
+                                     min_methods = 2, row_labels = "Genus", colours = "Rocket",
+                                     cell_size = 0.5, row_split = NULL, column_annotations = "Cage")
+```
+
+```{r heatmap-options-show, echo = FALSE}
+show_plot(heatmap.ht)
+```
+
+`not_called_colour` and `conflict_colour` set the track colours, and `rank_annotation` the taxonomy track (`"Phylum"` by default).
+
+### Boxplots
+
+`plot_feature_boxplots()` shows the samples behind each call.
+The script draws the features found by at least two methods, 12 per page:
+
+```{r boxplots}
+agreed.v <- unique(consensus.df$Feature_ID[consensus.df$N_methods >= 2])
+boxplots.gg <- gmaio::plot_feature_boxplots(genus.p, metadata.df, agreed.v, "Treatment", project.l$palettes$Treatment,
+                                            shape_by = "Time", ncol = 3)
+```
+
+```{r boxplots-show, echo = FALSE}
+show_plot(boxplots.gg)
+```
+
+All samples are shown here, with week 0 and week 4 as shapes, which makes it clear the difference arises at week 4.
+Zeros are drawn at half the smallest non-zero value on the log scale; `log_scale = FALSE` shows the values as they are.
+Other options: `shapes`, `box_width`, `box_alpha`, `point_size`, `jitter_width`, `label_width` (panel title wrapping), `free_y`, `x_label`, `y_label`, `x_text_angle`, `base_size` and `legend_position`.
+
+## Covariates and repeated measures
+
+`covariates` adds fixed effects, such as age, sex or batch, that differ between groups and could explain differences.
+`random_effects` handles repeated measures: here each mouse was sampled twice, so all samples can be used with a random intercept per mouse.
+MaAsLin3 and LinDA fit mixed models; sPLS-DA cannot and uses the tested variable only.
+
+```{r mixed, message = FALSE}
+mixed.l <- gmaio::run_differential_abundance(genus.p, metadata.df, "Treatment", covariates = "Time",
+                                             random_effects = "Mouse", methods = c("maaslin3", "linda"))
+gmaio::da_consensus(mixed.l$results)[, c("Label", "Enriched_in", "N_methods")]
+```
+
+With Treatment and Time as separate terms, the treatment effect is averaged over both time points, so fewer genera pass than in the week 4 test above.
+The model that matches the example design would include a Treatment by Time interaction, which needs `maaslin3::maaslin3()` or `MicrobiomeStat::linda()` called directly (the profile's `values` and the metadata are their inputs).
+
+In a project, covariates come from `analysis: covariates` in `config.yml`.
+For random effects, add `random_effects = "Mouse"` to the `gmaio::run_differential_abundance()` call in `code/differential_abundance.R`.
+
+## Running one method
+
+Each method can be run on its own with the same arguments, returning the same columns: `run_maaslin3()`, `run_linda()` and `run_splsda()` (which also returns the fitted model and its cross-validated performance).
+`run_linda()` leaves out features nonzero in fewer than `min_nonzero` (3) samples, which LinDA cannot test.
+
+## Saving
+
+```r
+figure_path.f <- function(suffix.s) gmaio::figure_path(project.l$config, "differential_abundance", paste0("sylph_genus__", suffix.s))
+gmaio::save_plot(effects.gg, figure_path.f("consensus"))
+gmaio::save_plot(heatmap.ht, figure_path.f("heatmap"))
+gmaio::save_plot(boxplots.gg, figure_path.f("boxplots"))
+```
+
+All three are sized automatically; pass `width` and `height` (cm) to fix the size.

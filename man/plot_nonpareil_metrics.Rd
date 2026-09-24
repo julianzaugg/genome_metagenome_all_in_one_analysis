@@ -4,7 +4,7 @@
 \alias{plot_nonpareil_metrics}
 \title{Nonpareil metrics by group}
 \usage{
-plot_nonpareil_metrics(summary.df, metadata.df, group, colours.v = NULL)
+plot_nonpareil_metrics(summary.df, metadata.df, group, colours.v = NULL, ...)
 }
 \arguments{
 \item{summary.df}{\code{project.l$tables$nonpareil$summary}.}
@@ -14,12 +14,14 @@ plot_nonpareil_metrics(summary.df, metadata.df, group, colours.v = NULL)
 \item{group}{Metadata column.}
 
 \item{colours.v}{Named colours for \code{group}.}
+
+\item{...}{Figure and test options passed to \code{\link[=plot_group_boxplots]{plot_group_boxplots()}}.}
 }
 \value{
-List with \code{plot} and \code{tests}.
+List with \code{plot}, \code{tests} and \code{pairwise} (more than two groups).
 }
 \description{
 Coverage at the sequenced depth, Nonpareil diversity (Nd) and the effort needed for
 95\% coverage (LR*), compared between groups with Wilcoxon (two groups) or
-Kruskal-Wallis tests.
+Kruskal-Wallis tests, with pairwise brackets for more than two groups.
 }
