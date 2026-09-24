@@ -220,7 +220,9 @@ run_differential_abundance <- function(profile, metadata.df, variable, covariate
     splsda.l <- try_step(run_splsda(filtered.p, metadata.df, variable, n_repeats = splsda_repeats, seed = seed), "sPLS-DA")
     results.l$splsda <- splsda.l$results
   }
-  list(results = do.call(rbind, Filter(Negate(is.null), results.l)), splsda = splsda.l)
+  results.df <- do.call(rbind, unname(Filter(Negate(is.null), results.l)))
+  if (!is.null(results.df)) rownames(results.df) <- NULL
+  list(results = results.df, splsda = splsda.l)
 }
 
 #' Combine differential abundance results into a consensus
