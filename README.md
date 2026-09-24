@@ -124,15 +124,21 @@ The scripts set only the plot options that differ from the defaults; every optio
 
 ## Documentation
 
-The vignettes are worked examples on a synthetic example project (`gmaio::example_project()`):
+The vignettes are worked examples on synthetic example projects (`gmaio::example_project()`, and `mode = "isolate"`):
 
 | Vignette | Covers |
 |---|---|
 | `vignette("gmaio", package = "gmaio")` | How a project fits together: the processed project, profiles, palettes, saving, which functions each script uses |
 | `vignette("heatmaps", package = "gmaio")` | `plot_heatmap()`: choosing the data, annotations and splits, transforms, colours and legend breaks, ordering, cell values, sizes and fonts |
-| `vignette("ordination", package = "gmaio")` | `run_ordination()`, PERMANOVA and PERMDISP, and `plot_ordination()`: shapes, ellipses, hulls, spiders, loadings, envfit, combining panels |
+| `vignette("ordination", package = "gmaio")` | `run_ordination()`, PERMANOVA (overall and pairwise) and PERMDISP, and `plot_ordination()`: shapes, ellipses, hulls, spiders, loadings, envfit, combining panels |
+| `vignette("barcharts", package = "gmaio")` | `plot_stacked_barchart()`: which taxa are shown, annotation strips, legend and bar options; where colours come from and how to change them |
+| `vignette("diversity", package = "gmaio")` | `alpha_diversity()` and `plot_alpha_diversity()`: measures, rarefying, group and Dunn pairwise tests with brackets, figure options |
+| `vignette("differential_abundance", package = "gmaio")` | MaAsLin3, LinDA and sPLS-DA, the consensus, effect, heatmap and boxplot figures, covariates and random effects |
+| `vignette("isolates", package = "gmaio")` | Isolate mode: genome summary, AMR genes and insertion sequences, ANI, cgMLST, pangenome and trees |
 
-`browseVignettes("gmaio")` lists them; they are only installed when the package is installed with `build_vignettes = TRUE`.
+`browseVignettes("gmaio")` lists them.
+They are only installed when the package is installed with `build_vignettes = TRUE`; without it, `vignette("gmaio", package = "gmaio")` reports that the vignette is not found.
+The differential abundance vignette needs maaslin3, MicrobiomeStat and mixOmics installed to show its results.
 
 ## Working with the package directly
 
