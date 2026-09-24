@@ -28,6 +28,14 @@ test_that("GenomeSPOT, MAG and mobile element summaries are produced", {
   expect_true(all(c("ph_optimum", "Oxygen_tolerant_percent") %in% names(community.df)))
   expect_s3_class(plot_mag_quality(bins.df, project.l$palettes$taxa), "ggplot")
   expect_s3_class(plot_mag_counts(bins.df, metadata.df, "Treatment"), "ggplot")
+  # A bin CheckM could not assess is left out of the quality plot and counted as not assessed
+  unassessed.df <- bins.df
+  unassessed.df[1, c("Completeness_CheckM2", "Contamination_CheckM2", "MIMAG_tier")] <- NA
+  quality.gg <- expect_silent(plot_mag_quality(unassessed.df, project.l$palettes$taxa))
+  expect_match(quality.gg$labels$caption, "1 bin without CheckM2 estimates not shown")
+  expect_silent(ggplot2::ggplot_build(quality.gg))
+  counts.gg <- plot_mag_counts(unassessed.df, metadata.df)
+  expect_equal(sum(counts.gg$data$Freq[counts.gg$data$Tier == "Not assessed"]), 1)
   expect_s3_class(plot_mag_taxonomy(bins.df, rank = "family"), "ggplot")
   summary.l <- mobile_element_summary(get_profile(project.l, "virus_clusters"))
   expect_equal(sum(summary.l$prevalence$Samples), sum(get_profile(project.l, "virus_clusters")$values))

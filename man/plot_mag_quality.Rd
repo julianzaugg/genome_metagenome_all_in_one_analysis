@@ -25,5 +25,6 @@ plot_mag_quality(
 A ggplot.
 }
 \description{
-Plot MAG completeness against contamination
+Bins without estimates from \code{source} (e.g. too few marker genes for CheckM) cannot be
+placed and are left out; the caption says how many.
 }

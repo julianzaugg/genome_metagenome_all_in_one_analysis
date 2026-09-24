@@ -17,5 +17,5 @@ plot_mag_counts(bin_summary.df, metadata.df, facet_variable = NULL)
 A ggplot.
 }
 \description{
-Plot the number of bins per sample by quality tier
+Bins without quality estimates are counted as \code{"Not assessed"}.
 }

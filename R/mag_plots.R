@@ -1,5 +1,8 @@
 #' Plot MAG completeness against contamination
 #'
+#' Bins without estimates from `source` (e.g. too few marker genes for CheckM) cannot be
+#' placed and are left out; the caption says how many.
+#'
 #' @param bin_summary.df Bin summary from [add_mags()].
 #' @param colours.v Named phylum colours (the project taxa palette).
 #' @param source `"CheckM2"` or `"CheckM1"` estimates.
@@ -14,6 +17,13 @@ plot_mag_quality <- function(bin_summary.df, colours.v = NULL, source = c("Check
                         Phylum = ifelse(is.na(bin_summary.df$Phylum), "Unassigned", bin_summary.df$Phylum),
                         High_quality = bin_summary.df$High_quality)
   if (all(is.na(plot.df$Completeness))) cli::cli_abort("No {source} estimates in the bin summary")
+  estimated.v <- !is.na(plot.df$Completeness) & !is.na(plot.df$Contamination)
+  plot.df <- plot.df[estimated.v, , drop = FALSE]
+  caption.s <- sprintf("Dashed line: completeness - %s x contamination = %s", quality_weight, quality_threshold)
+  if (any(!estimated.v)){
+    caption.s <- paste0(caption.s, sprintf("; %d bin%s without %s estimates not shown", sum(!estimated.v),
+                                           if (sum(!estimated.v) == 1) "" else "s", source))
+  }
   phyla.v <- names(sort(table(plot.df$Phylum), decreasing = TRUE))
   colours.v <- if (is.null(colours.v)) assign_colours(factor(phyla.v, levels = phyla.v)) else
     get_palette(list(taxa = colours.v), "taxa", phyla.v)
@@ -28,12 +38,14 @@ plot_mag_quality <- function(bin_summary.df, colours.v = NULL, source = c("Check
     ggplot2::scale_fill_manual(values = colours.v, breaks = phyla.v, name = "Phylum") +
     ggplot2::guides(fill = ggplot2::guide_legend(override.aes = list(shape = 21), ncol = if (length(phyla.v) > 20) 2 else 1)) +
     ggplot2::labs(x = paste(source, "completeness (%)"), y = paste(source, "contamination (%)"),
-                  caption = sprintf("Dashed line: completeness - %s x contamination = %s", quality_weight, quality_threshold)) +
+                  caption = caption.s) +
     theme_gmaio()
   with_size(quality.gg, 20, 13)
 }
 
 #' Plot the number of bins per sample by quality tier
+#'
+#' Bins without quality estimates are counted as `"Not assessed"`.
 #'
 #' @param bin_summary.df Bin summary.
 #' @param metadata.df Metadata (sample order and labels).
@@ -41,15 +53,17 @@ plot_mag_quality <- function(bin_summary.df, colours.v = NULL, source = c("Check
 #' @return A ggplot.
 #' @export
 plot_mag_counts <- function(bin_summary.df, metadata.df, facet_variable = NULL){
-  counts.df <- as.data.frame(table(Sample_ID = bin_summary.df$Sample_ID, Tier = bin_summary.df$MIMAG_tier),
+  tier.v <- ifelse(is.na(bin_summary.df$MIMAG_tier), "Not assessed", as.character(bin_summary.df$MIMAG_tier))
+  tiers.v <- intersect(c("Not assessed", "Low", "Medium", "High"), tier.v)
+  counts.df <- as.data.frame(table(Sample_ID = bin_summary.df$Sample_ID, Tier = factor(tier.v, levels = tiers.v)),
                              stringsAsFactors = FALSE)
   counts.df <- join_metadata(counts.df, metadata.df, "inner")
   counts.df$Sample_label <- factor(counts.df$Sample_label, levels = metadata.df$Sample_label)
-  counts.df$Tier <- factor(counts.df$Tier, levels = c("Low", "Medium", "High"))
+  counts.df$Tier <- factor(counts.df$Tier, levels = tiers.v)
   counts.gg <- ggplot2::ggplot(counts.df, ggplot2::aes(x = .data$Sample_label, y = .data$Freq, fill = .data$Tier)) +
     ggplot2::geom_col(width = 0.8, colour = "grey20", linewidth = 0.1) +
-    ggplot2::scale_fill_manual(values = c(High = "#0072B2", Medium = "#56B4E9", Low = "#D9D9D9"), name = "MIMAG tier",
-                               breaks = c("High", "Medium", "Low")) +
+    ggplot2::scale_fill_manual(values = c(High = "#0072B2", Medium = "#56B4E9", Low = "#D9D9D9", `Not assessed` = "white"),
+                               name = "MIMAG tier", breaks = rev(tiers.v)) +
     ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0, 0.05))) +
     ggplot2::labs(x = NULL, y = "Bins") +
     theme_gmaio() +
