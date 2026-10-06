@@ -13,6 +13,14 @@ install.packages("remotes")
 remotes::install_github("julianzaugg/genome_metagenome_all_in_one_analysis", build_vignettes = TRUE)
 ```
 
+From a local clone (for example after changing the package), install from its folder, again building the vignettes:
+
+```r
+devtools::install("path/to/genome_metagenome_all_in_one_analysis", build_vignettes = TRUE, upgrade = FALSE)
+```
+
+`devtools::install(quick = TRUE)` and `devtools::load_all()` are faster but leave the vignettes out.
+
 Optional packages used by specific analyses:
 
 ```r
@@ -143,8 +151,9 @@ The vignettes are worked examples on synthetic example projects (`gmaio::example
 
 Each workbook gmaio writes also has an `About` sheet describing its sheets and columns, and `Result_tables/README.md` and `Result_figures/README.md` list the files present.
 
-`browseVignettes("gmaio")` lists them.
-They are only installed when the package is installed with `build_vignettes = TRUE`; without it, `vignette("gmaio", package = "gmaio")` reports that the vignette is not found.
+`vignette("<name>", package = "gmaio")` opens one as a web page (from RStudio, in the Help pane), and `browseVignettes("gmaio")` opens an index of them all in your browser.
+They are only installed when the package is installed with `build_vignettes = TRUE` (see Install); without it, `vignette()` reports that the vignette is not found and `browseVignettes()` lists none.
+The HTML files themselves are in the installed package, in the folder `system.file("doc", package = "gmaio")` returns.
 The differential abundance vignette needs maaslin3, MicrobiomeStat and mixOmics installed to show its results.
 
 ## Working with the package directly
