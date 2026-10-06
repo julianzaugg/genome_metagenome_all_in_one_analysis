@@ -16,11 +16,18 @@ representative_columns.v <- intersect(c("Is_representative_hq_derep_bins", "Is_r
 representatives.v <- if (length(representative_columns.v) > 0) bins.df$Bin_ID[bins.df[[representative_columns.v[1]]]] else
   bins.df$Bin_ID[bins.df$High_quality]
 
+# Figures shown in the summary report (outputs: report: true)
+summary_figures.l <- list()
+
 for (source.s in c("CheckM2", "CheckM1")){
   if (!paste0("Completeness_", source.s) %in% names(bins.df)) next
   quality.gg <- gmaio::plot_mag_quality(bins.df, project.l$palettes$taxa, source = source.s,
                                         quality_weight = mags.l$quality_weight, quality_threshold = mags.l$quality_threshold)
-  gmaio::save_plot(quality.gg, gmaio::figure_path(config.l, "mags", paste0("bin_quality_", tolower(source.s))))
+  quality_path.s <- gmaio::figure_path(config.l, "mags", paste0("bin_quality_", tolower(source.s)))
+  gmaio::save_plot(quality.gg, quality_path.s)
+  if (length(summary_figures.l) == 0){
+    summary_figures.l$quality <- gmaio::summary_figure(quality.gg, quality_path.s, paste("Bin quality,", source.s))
+  }
 }
 gmaio::save_plot(gmaio::plot_mag_counts(bins.df, metadata.df, group.s),
                  gmaio::figure_path(config.l, "mags", "bins_per_sample"))
@@ -38,9 +45,10 @@ gmaio::write_xlsx_tables(list(Samples = within_sample.l$samples, Mapping = withi
 # hq_ref_bins (HQ MAGs plus the pipeline's --reference_genomes) shows how much more the reference genomes explain.
 mapping_sets.v <- c("ws_hq_bins", "hq_derep_bins", "hq_ref_bins")
 if (any(mapping_sets.v %in% within_sample.l$mapping$Set)){
-  gmaio::save_plot(gmaio::plot_mag_mapping(within_sample.l$mapping, metadata.df, sets = mapping_sets.v,
-                                           facet_variable = group.s),
-                   gmaio::figure_path(config.l, "mags", "reads_mapped_to_mags"))
+  mapping.gg <- gmaio::plot_mag_mapping(within_sample.l$mapping, metadata.df, sets = mapping_sets.v, facet_variable = group.s)
+  mapping_path.s <- gmaio::figure_path(config.l, "mags", "reads_mapped_to_mags")
+  gmaio::save_plot(mapping.gg, mapping_path.s)
+  summary_figures.l$mapping <- gmaio::summary_figure(mapping.gg, mapping_path.s, "Reads mapped to MAGs per sample")
 }
 # What the HQ MAG plus reference genome abundance is made of: study MAGs, reference genomes that represent study MAGs
 # of the same species (dereplication kept the reference), and reference genomes of species no study MAG recovered
@@ -84,3 +92,6 @@ if (!is.null(tree.l)){
     gmaio::save_plot(tree.gg, gmaio::figure_path(config.l, "mags", paste0("marker_tree_", domain.s)))
   }
 }
+
+gmaio::record_summary(config.l, "mags", "Bins and MAGs", figures = summary_figures.l,
+                      files = gmaio::output_path(config.l, "tables", "MAG_per_sample_recovery.xlsx"))

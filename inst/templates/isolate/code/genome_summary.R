@@ -9,4 +9,9 @@ group.s <- gmaio::primary_group(project.l)
 
 summary.gg <- gmaio::plot_genome_summary(project.l$tables$genome_summary, metadata.df, fill_by = group.s,
                                          colours.v = project.l$palettes[[group.s]])
-gmaio::save_plot(summary.gg, gmaio::figure_path(config.l, "genome_summary", "genome_summary"))
+summary_path.s <- gmaio::figure_path(config.l, "genome_summary", "genome_summary")
+gmaio::save_plot(summary.gg, summary_path.s)
+
+# Summary report (only when outputs: report: true)
+gmaio::record_summary(config.l, "genomes", "Genomes",
+                      figures = list(gmaio::summary_figure(summary.gg, summary_path.s, "Assembly and quality per isolate")))

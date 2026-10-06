@@ -38,6 +38,7 @@ outputs:
   figures: Result_figures
   other: Result_other
   figure_format: pdf               # pdf, svg or png
+  report: false                    # true: analysis scripts record headline results for code/summary_report.R
 
 # Fixed colours; these override generated colours saved in palettes.yml
 colours: {}

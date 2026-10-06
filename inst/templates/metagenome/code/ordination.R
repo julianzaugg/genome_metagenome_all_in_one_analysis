@@ -28,6 +28,7 @@ methods.l <- list(pca_rclr = list(method = "pca_rclr"),
 min_prevalence.n <- 2
 
 statistics.l <- list()
+summary_figures.l <- list()
 for (i in seq_len(nrow(datasets.df))){
   name.s <- datasets.df$profile[i]
   if (!name.s %in% names(project.l$profiles)) next
@@ -41,6 +42,11 @@ for (i in seq_len(nrow(datasets.df))){
     label.s <- paste(dataset.s, method.s)
     ordination <- gmaio::try_step(do.call(gmaio::run_ordination, c(list(profile = profile), methods.l[[method.s]])), label.s)
     if (is.null(ordination)) next
+    # Near-identical samples (e.g. presence/absence of a few common taxa) can leave a single axis
+    if (length(ordination$variance) < 2){
+      message("Skipping ", label.s, ": the ordination has fewer than two axes")
+      next
+    }
     caption.s <- NULL
     if (!is.null(group.s)){
       ordination <- gmaio::orient_ordination(ordination, metadata.df, group.s)
@@ -69,8 +75,11 @@ for (i in seq_len(nrow(datasets.df))){
                                             title = datasets.df$title[i],
                                             caption = caption.s,
                                             legend_position = if (is.null(group.s)) "none" else "right")
-    gmaio::save_plot(ordination.gg, gmaio::figure_path(config.l, "ordination", paste0(dataset.s, "__", method.s)),
-                     width = 16, height = 13)
+    ordination_path.s <- gmaio::figure_path(config.l, "ordination", paste0(dataset.s, "__", method.s))
+    gmaio::save_plot(ordination.gg, ordination_path.s, width = 16, height = 13)
+    if (length(summary_figures.l) == 0){
+      summary_figures.l$first <- gmaio::summary_figure(ordination.gg, ordination_path.s, label.s, width = 16, height = 13)
+    }
     if (method.s == "pca_rclr"){
       for (axis.s in c("PC1", "PC2")){
         gmaio::save_plot(gmaio::plot_loadings(ordination, axis.s, n = 10),
@@ -81,5 +90,11 @@ for (i in seq_len(nrow(datasets.df))){
   }
 }
 if (length(statistics.l) > 0){
-  gmaio::write_xlsx_tables(statistics.l, gmaio::output_path(config.l, "tables", "Ordination_statistics.xlsx"))
+  statistics_file.s <- gmaio::output_path(config.l, "tables", "Ordination_statistics.xlsx")
+  gmaio::write_xlsx_tables(statistics.l, statistics_file.s)
+  # Summary report (only when outputs: report: true)
+  gmaio::record_summary(config.l, "ordination", "Ordination",
+                        tables = list(`PERMANOVA and PERMDISP` = gmaio::summary_permanova(statistics.l$PERMANOVA,
+                                                                                          statistics.l$PERMDISP)),
+                        figures = summary_figures.l, files = statistics_file.s)
 }

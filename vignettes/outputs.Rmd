@@ -32,7 +32,7 @@ A gmaio project writes three folders, set in `outputs:` of `config.yml`:
 |---|---|
 | `Result_tables/` | Excel tables: the data from `main.R`, and the statistics from each analysis script |
 | `Result_figures/` | One subfolder of figures per analysis script |
-| `Result_other/` | `processed.rds` (the processed project the scripts load) and the working files of some methods (e.g. `maaslin3/`) |
+| `Result_other/` | `processed.rds` (the processed project the scripts load), the working files of some methods (e.g. `maaslin3/`) and, when switched on, the summary report (`Summary_report.html` and the records in `summary/`) |
 
 This vignette explains what is in each file, and in particular the MAG files, which come in one version per genome set.
 You do not need it open while working: the same descriptions travel with the files.
@@ -163,3 +163,16 @@ show_table(gmaio::figure_catalogue()[, c("Folder", "Written_by", "Files", "Descr
 ```
 
 To change a figure, edit the plot function call in the script that writes it; the other vignettes explain the options.
+
+## Summary report
+
+`Result_other/Summary_report.html` is an optional one-page overview for sharing a project.
+It is written by `code/summary_report.R` when `outputs: report: true` is set in `config.yml`.
+
+- The overview, sample and read numbers and bin counts come from the processed project (`main.R`).
+- Each analysis script adds a section with its headline results: `mag_summary.R` (key figures), `diversity.R` (group tests), `ordination.R` (PERMANOVA and PERMDISP), `differential_abundance.R` (calls per dataset and the features most methods agree on), `strains.R` (within versus between group tests) and `comparison.R` (PERMANOVA and alpha diversity against the comparison samples).
+- The scripts save these as small records in `Result_other/summary/`, with png thumbnails of the key figures; the report embeds the thumbnails and links each to the full figure and table files, by paths relative to `Result_other/`, so the links keep working when the project folder is moved or shared whole.
+- A section recorded before the latest `main.R` run is marked as possibly out of date, and the report lists the scripts that have recorded nothing yet.
+
+The report needs the rmarkdown package and pandoc.
+

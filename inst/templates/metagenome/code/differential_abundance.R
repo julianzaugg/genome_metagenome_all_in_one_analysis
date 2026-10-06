@@ -26,6 +26,7 @@ boxplots_per_page.n <- 12
 
 results.l <- list()
 consensus.l <- list()
+summary_figures.l <- list()
 for (i in seq_len(nrow(datasets.df))){
   name.s <- datasets.df$profile[i]
   if (!name.s %in% names(project.l$profiles)) next
@@ -49,7 +50,12 @@ for (i in seq_len(nrow(datasets.df))){
   # (tracks show which group each method called it for) and boxplots of the consensus features
   figure_path.f <- function(suffix.s) gmaio::figure_path(config.l, "differential_abundance", paste0(dataset.s, "__", suffix.s))
   consensus.gg <- gmaio::plot_da_consensus(consensus.df, project.l$palettes[[group.s]], min_methods = 2)
-  if (!is.null(consensus.gg)) gmaio::save_plot(consensus.gg, figure_path.f("consensus"))
+  if (!is.null(consensus.gg)){
+    gmaio::save_plot(consensus.gg, figure_path.f("consensus"))
+    if (length(summary_figures.l) == 0){
+      summary_figures.l$first <- gmaio::summary_figure(consensus.gg, figure_path.f("consensus"), paste(dataset.s, "consensus"))
+    }
+  }
   heatmap.ht <- gmaio::plot_da_heatmap(profile, consensus.df, metadata.df, group.s, project.l$palettes, min_methods = 1)
   if (!is.null(heatmap.ht)) gmaio::save_plot(heatmap.ht, figure_path.f("heatmap"))
   agreed.v <- as.character(unique(consensus.df$Feature_ID[consensus.df$N_methods >= 2]))
@@ -67,4 +73,10 @@ short_names.f <- function(x){
 names(results.l) <- short_names.f(names(results.l))
 names(consensus.l) <- short_names.f(names(consensus.l))
 gmaio::write_xlsx_tables(results.l, gmaio::output_path(config.l, "tables", "Differential_abundance_all_results.xlsx"))
-gmaio::write_xlsx_tables(consensus.l, gmaio::output_path(config.l, "tables", "Differential_abundance_consensus.xlsx"))
+consensus_file.s <- gmaio::output_path(config.l, "tables", "Differential_abundance_consensus.xlsx")
+gmaio::write_xlsx_tables(consensus.l, consensus_file.s)
+
+# Summary report (only when outputs: report: true): calls per dataset and the features most methods agree on
+gmaio::record_summary(config.l, "differential_abundance", "Differential abundance", tables = gmaio::summary_da(consensus.l),
+                      figures = summary_figures.l, files = consensus_file.s,
+                      notes = paste0("Methods: ", paste(methods.v, collapse = ", "), "; significance level ", alpha.n, "."))

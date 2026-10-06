@@ -133,7 +133,10 @@ plot_mag_mapping <- function(mapping.df, metadata.df, sets = c("ws_hq_bins", "hq
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1, vjust = 0.5),
                    panel.grid.major.x = ggplot2::element_blank())
   if (!is.null(facet_variable)) mapping.gg <- mapping.gg + facet_by_group(facet_variable)
-  with_size(mapping.gg, max(12, 0.7 * length(unique(plot.df$Sample_ID)) + 5), 10)
+  width.n <- max(12, 0.7 * length(unique(plot.df$Sample_ID)) + 5)
+  # The set descriptions take about 7 cm each; stack them when one row would be wider than the figure
+  if (7 * length(sets.v) > width.n) mapping.gg <- mapping.gg + ggplot2::guides(fill = ggplot2::guide_legend(ncol = 1))
+  with_size(mapping.gg, width.n, 10)
 }
 
 mag_set_descriptions <- function(){

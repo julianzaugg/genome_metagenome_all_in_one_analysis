@@ -18,6 +18,7 @@ datasets.df <- data.frame(
 )
 
 tables.l <- list()
+summary_figures.l <- list()
 for (i in seq_len(nrow(datasets.df))){
   name.s <- datasets.df$profile[i]
   if (!name.s %in% names(project.l$profiles)) next
@@ -28,7 +29,11 @@ for (i in seq_len(nrow(datasets.df))){
   diversity.df <- gmaio::alpha_diversity(profile)
   diversity.l <- gmaio::plot_alpha_diversity(diversity.df, metadata.df, group.s, project.l$palettes[[group.s]],
                                              show_test = show_statistics.b, brackets = show_statistics.b)
-  gmaio::save_plot(diversity.l$plot, gmaio::figure_path(config.l, "diversity", dataset.s))
+  diversity_path.s <- gmaio::figure_path(config.l, "diversity", dataset.s)
+  gmaio::save_plot(diversity.l$plot, diversity_path.s)
+  if (length(summary_figures.l) == 0){
+    summary_figures.l$first <- gmaio::summary_figure(diversity.l$plot, diversity_path.s, dataset.s)
+  }
   tables.l[[paste0(dataset.s, "_values")]] <- diversity.df
   tables.l[[paste0(dataset.s, "_tests")]] <- diversity.l$tests
   if (!is.null(diversity.l$pairwise)) tables.l[[paste0(dataset.s, "_pairwise")]] <- diversity.l$pairwise
@@ -39,4 +44,11 @@ names(tables.l) <- names(tables.l) |>
   gsub(pattern = "mags_hq_ref_bins_relative_abundance", replacement = "mags_hq_ref") |>
   gsub(pattern = "sylph_taxonomic", replacement = "sylph") |>
   gsub(pattern = "singlem_relative", replacement = "singlem")
-gmaio::write_xlsx_tables(tables.l, gmaio::output_path(config.l, "tables", "Alpha_diversity.xlsx"))
+diversity_file.s <- gmaio::output_path(config.l, "tables", "Alpha_diversity.xlsx")
+gmaio::write_xlsx_tables(tables.l, diversity_file.s)
+
+# Summary report (only when outputs: report: true): the group tests of every dataset
+gmaio::record_summary(config.l, "diversity", "Alpha diversity",
+                      tables = list(`Group tests` = gmaio::stack_tables(tables.l[grepl("_tests$", names(tables.l))],
+                                                                        strip = "_tests$")),
+                      figures = summary_figures.l, files = diversity_file.s)

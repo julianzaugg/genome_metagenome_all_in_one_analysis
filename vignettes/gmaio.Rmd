@@ -31,6 +31,7 @@ A project is a directory with a `config.yml`, a metadata table and a `code/` fol
 2. `code/main.R` does the bulk processing: it reads every available pipeline output, links samples to the metadata, assigns colours, writes the standard tables to `Result_tables/` and saves the processed project to `Result_other/processed.rds`.
 3. Every other script in `code/` is one analysis.
    Each starts by loading the processed project, so the scripts are independent and can be rerun in any order.
+4. `code/summary_report.R` (optional, with `outputs: report: true`) writes a one-page HTML summary of the headline results, recorded by the analysis scripts with `record_summary()`; see `vignette("outputs")`.
 
 The scripts contain no analysis logic of their own.
 They choose which data to use and call `gmaio::` functions, so what a figure looks like is controlled by the arguments of those functions.

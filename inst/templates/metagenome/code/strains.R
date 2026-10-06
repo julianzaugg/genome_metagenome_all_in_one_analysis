@@ -24,6 +24,7 @@ tables.l <- list(inStrain_sharing = strains.l$instrain_sharing, inStrain_counts 
                  Strain_genomes = strains.l$strain_genomes)
 
 sharing.df <- strains.l$instrain_sharing
+summary_figures.l <- list()
 if (!is.null(strains.l$instrain_counts)){
   counts.df <- strains.l$instrain_counts
   samples.v <- intersect(metadata.df$Sample_ID, c(counts.df$Sample_ID_a, counts.df$Sample_ID_b))
@@ -45,8 +46,10 @@ if (!is.null(sharing.df)){
   if (!is.null(group.s)){
     shared.l <- gmaio::compare_pairs_by_group(sharing.df, "Same_strain", metadata.df, group.s, analysis.l$permutations,
                                               analysis.l$seed)
-    gmaio::save_plot(gmaio::plot_pairs_by_group(shared.l, group_colours.v),
-                     gmaio::figure_path(config.l, "strains", "strain_sharing_within_between_groups"))
+    sharing.gg <- gmaio::plot_pairs_by_group(shared.l, group_colours.v)
+    sharing_path.s <- gmaio::figure_path(config.l, "strains", "strain_sharing_within_between_groups")
+    gmaio::save_plot(sharing.gg, sharing_path.s)
+    summary_figures.l$sharing <- gmaio::summary_figure(sharing.gg, sharing_path.s, "Strain sharing within and between groups")
     tables.l[c("Sharing_by_group", "Sharing_by_group_pair", "Sharing_test")] <- shared.l[c("summary", "group_pairs", "test")]
   }
 }
@@ -71,4 +74,12 @@ if (!is.null(strains.l$instrain_genomes)){
     tables.l$Sample_diversity_pairwise <- diversity.l$pairwise
   }
 }
-gmaio::write_xlsx_tables(tables.l, gmaio::output_path(config.l, "tables", "Strain_sharing.xlsx"))
+strains_file.s <- gmaio::output_path(config.l, "tables", "Strain_sharing.xlsx")
+gmaio::write_xlsx_tables(tables.l, strains_file.s)
+
+# Summary report (only when outputs: report: true)
+gmaio::record_summary(config.l, "strains", "Strains",
+                      tables = list(`Strain sharing, within vs between groups` = tables.l$Sharing_test,
+                                    `TRACS SNP distance, within vs between groups` = tables.l$TRACS_test,
+                                    `Strain diversity tests` = tables.l$Sample_diversity_tests),
+                      figures = summary_figures.l, files = strains_file.s)

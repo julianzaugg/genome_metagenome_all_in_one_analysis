@@ -50,6 +50,7 @@ gmaio::write_xlsx_tables(tables.l, gmaio::output_path(config.l, "tables", "Study
                          number_format = "0.0000")
 
 statistics.l <- list()
+summary_figures.l <- list()
 for (i in which(datasets.df$ordinate)){
   name.s <- datasets.df$name[i]
   profile <- gmaio::filter_profile(profiles.l[[name.s]], min_prevalence = min_prevalence.n)
@@ -71,8 +72,11 @@ for (i in which(datasets.df$ordinate)){
                                               colours.v = group_colours.v, shape_by = "Dataset", ellipse = TRUE,
                                               title = datasets.df$title[i],
                                               caption = gmaio::permanova_caption(group_permanova.df, permdisp.l))
-      gmaio::save_plot(ordination.gg, gmaio::figure_path(config.l, "comparison", paste0("ordination__", name.s, "__", method.s)),
-                       width = 18, height = 13)
+      ordination_path.s <- gmaio::figure_path(config.l, "comparison", paste0("ordination__", name.s, "__", method.s))
+      gmaio::save_plot(ordination.gg, ordination_path.s, width = 18, height = 13)
+      if (length(summary_figures.l) == 0){
+        summary_figures.l$first <- gmaio::summary_figure(ordination.gg, ordination_path.s, label.s, width = 18, height = 13)
+      }
       # How far each study sample is from the other study samples and from each comparison group
       distances.df <- cbind(Label = label.s, gmaio::comparison_distances(ordination$distance, metadata.df))
       gmaio::save_plot(gmaio::plot_comparison_distances(distances.df, group_colours.v,
@@ -114,7 +118,14 @@ for (i in which(!is.na(datasets.df$rank))){
     if (!is.null(diversity.l$pairwise)) statistics.l[[paste0(name.s, "_alpha_pairwise")]] <- diversity.l$pairwise
   }
 }
-gmaio::write_xlsx_tables(statistics.l, gmaio::output_path(config.l, "tables", "Study_vs_comparison_statistics.xlsx"))
+statistics_file.s <- gmaio::output_path(config.l, "tables", "Study_vs_comparison_statistics.xlsx")
+gmaio::write_xlsx_tables(statistics.l, statistics_file.s)
+# Summary report (only when outputs: report: true)
+permanova.df <- gmaio::summary_permanova(statistics.l$PERMANOVA, statistics.l$PERMDISP, permdisp_term = "Comparison_group")
+alpha_tests.df <- gmaio::stack_tables(statistics.l[grepl("_alpha_tests$", names(statistics.l))], strip = "_alpha_tests$")
+gmaio::record_summary(config.l, "comparison", "Comparison samples",
+                      tables = list(`PERMANOVA and PERMDISP` = permanova.df, `Alpha diversity tests` = alpha_tests.df),
+                      figures = summary_figures.l, files = statistics_file.s)
 
 # This study's MAGs in the comparison samples
 if ("mags_derep_bins_covered_fraction" %in% gmaio::combined_profile_names(project.l)){

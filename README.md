@@ -58,6 +58,17 @@ Rscript code/barcharts.R
 `main.R` writes the standard tables to `Result_tables/`, the colour assignments to `palettes.yml`, and the processed project to `Result_other/processed.rds`.
 Analysis scripts read that file, so they can be run in any order and rerun individually.
 
+### Summary report (optional)
+
+Set `outputs: report: true` in `config.yml` and the analysis scripts also record their headline results (group tests, PERMANOVA, differential abundance calls, one or two key figures).
+After running them, `code/summary_report.R` writes `Result_other/Summary_report.html`: one self-contained page with the sample, read and bin counts from `main.R`, a section per analysis, and links to the full tables and figures.
+It needs the rmarkdown package and pandoc (which comes with RStudio), and can be rerun at any time without rerunning the analyses.
+With the switch off (the default) nothing extra is written.
+
+```bash
+Rscript code/summary_report.R
+```
+
 ## Getting the pipeline outputs
 
 gmaio reads only small summary tables from the pipeline `--outdir`, not reads, BAMs, assemblies or bins.

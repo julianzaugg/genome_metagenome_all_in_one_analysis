@@ -44,7 +44,8 @@ config_defaults <- function(){
       figures = "Result_figures",
       other = "Result_other",
       figure_format = "pdf",
-      taxa_colour_scheme = "distinct"
+      taxa_colour_scheme = "distinct",
+      report = FALSE
     ),
     colours = list()
   )
@@ -103,6 +104,9 @@ validate_config <- function(config.l, check_paths = TRUE){
   }
   if (!config.l$outputs$taxa_colour_scheme %in% c("distinct", "hierarchical")){
     cli::cli_abort("{.field outputs$taxa_colour_scheme} must be {.val distinct} or {.val hierarchical}")
+  }
+  if (!(is.logical(config.l$outputs$report) && length(config.l$outputs$report) == 1 && !is.na(config.l$outputs$report))){
+    cli::cli_abort("{.field outputs$report} must be {.val true} or {.val false}")
   }
   if (!config.l$outputs$figure_format %in% c("pdf", "svg", "png")){
     cli::cli_abort("{.field outputs$figure_format} must be one of {.val pdf}, {.val svg}, {.val png}")

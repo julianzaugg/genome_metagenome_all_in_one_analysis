@@ -57,6 +57,7 @@ outputs:
   other: Result_other
   figure_format: pdf               # pdf, svg or png
   taxa_colour_scheme: distinct     # distinct, or hierarchical (shades of the phylum colour)
+  report: false                    # true: analysis scripts record headline results for code/summary_report.R
 
 # Fixed colours; these override generated colours saved in palettes.yml
 colours: {}
