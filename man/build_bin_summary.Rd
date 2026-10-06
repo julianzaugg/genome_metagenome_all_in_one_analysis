@@ -2,7 +2,7 @@
 % Please edit documentation in R/mags.R
 \name{build_bin_summary}
 \alias{build_bin_summary}
-\title{Build the per-bin summary table}
+\title{Build the per-genome summary table}
 \usage{
 build_bin_summary(
   checkm2.df = NULL,
@@ -12,7 +12,8 @@ build_bin_summary(
   sample_ids.v = NULL,
   quality_weight = 3,
   quality_threshold = 50,
-  quality_source = "both"
+  quality_source = "both",
+  reference_checkm2.df = NULL
 )
 }
 \arguments{
@@ -25,12 +26,21 @@ build_bin_summary(
 \item{quality_weight, quality_threshold}{HQ rule parameters.}
 
 \item{quality_source}{Which CheckM report(s) decide HQ: \code{"both"} (either passes), \code{"checkm1"}, \code{"checkm2"}.}
+
+\item{reference_checkm2.df}{Optional CheckM2 report of the reference genomes (\code{\link[=read_checkm2]{read_checkm2()}}).}
 }
 \value{
-Data frame, one row per bin.
+Data frame, one row per genome, MAGs first; \code{Genome_type} is \code{"MAG"} or \code{"Reference"}.
 }
 \description{
-Combines CheckM2, CheckM1, GTDB-Tk and dereplication clusters into one row per bin,
+Combines CheckM2, CheckM1, GTDB-Tk and dereplication clusters into one row per genome,
 with quality scores (completeness - weight x contamination), the pipeline HQ rule,
 MIMAG-style quality tiers, representative flags and display labels.
+}
+\details{
+Genomes are MAGs (bins in the MAG CheckM reports) or reference genomes: those in the
+reference CheckM2 report (pipeline \code{--reference_genomes}), plus any genome that GTDB-Tk or
+the dereplication clusters list but no MAG CheckM report does. References are never assigned
+to a sample, get \code{REF} short IDs and take their quality from the reference CheckM2 report.
+Bins get \code{Bin} short IDs whatever their quality, which is given by \code{High_quality} and \code{MIMAG_tier}.
 }

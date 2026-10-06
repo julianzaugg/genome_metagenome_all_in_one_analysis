@@ -9,7 +9,11 @@ make_test_project <- function(..., env = parent.frame()){
     metadata = list(file = file.path(fixture_dir(), "metadata.csv"), sample_id_column = "Sample_ID",
                     label_column = "Name", exclude_column = "Exclude", sample_order = list("Treatment", "Sample_ID")),
     analysis = list(group_variables = list("Treatment"), reference_levels = list(Treatment = "Control"),
-                    ranks = list("phylum", "genus"), permutations = 99)
+                    ranks = list("phylum", "genus"), permutations = 99),
+    comparison = list(metadata = list(file = file.path(fixture_dir(), "comparison_metadata.csv"), label_column = "Site_name"),
+                      group_variable = "Group"),
+    # Its pipeline path is too long for a portable package tarball (see data-raw/make_fixtures.R)
+    files = list(comparison_reads_rpkm_normalised = file.path(fixture_dir(), "comparison_rpkm.tsv"))
   )
   config.l <- utils::modifyList(config.l, list(...))
   yaml::write_yaml(config.l, file.path(project_dir.s, "config.yml"))
@@ -23,8 +27,12 @@ processed_test_project <- function(env = parent.frame()){
   project.l <- suppressMessages(add_singlem(project.l))
   project.l <- suppressMessages(add_mags(project.l))
   project.l <- suppressMessages(add_gene_catalogue_functions(project.l, min_annotated_fraction = 0.5))
+  project.l <- suppressMessages(add_gene_catalogue_functions(project.l, "expanded", min_annotated_fraction = 0.5))
   project.l <- suppressMessages(add_genomespot(project.l))
   project.l <- suppressMessages(add_mobile_elements(project.l))
+  project.l <- suppressMessages(add_marker_tree(project.l))
+  project.l <- suppressMessages(add_strains(project.l))
+  project.l <- suppressMessages(add_comparison(project.l, min_annotated_fraction = 0.5))
   suppressMessages(add_palettes(project.l))
 }
 
@@ -37,7 +45,10 @@ partial_results <- function(){
                                 "09_coverm_hq_derep_bins", "08_within_sample_dereplicated_bins",
                                 "08_within_sample_dereplicated_hq_bins", "09_coverm_within_sample_derep_bins",
                                 "09_coverm_within_sample_hq_bins", "13_dram", "17_nonpareil", "18_genomespot", "20_genomad",
-                                "22_checkv_clustering", "23_rpkm")), recursive = TRUE)
+                                "22_checkv_clustering", "23_rpkm", "08_dereplicated_hq_ref_bins", "09_coverm_bins",
+                                "09_coverm_hq_ref_bins", "13_dram_expanded", "14_dram_bins", "23_rpkm_expanded",
+                                "24_marker_tree", "26_strain_reference", "27_instrain", "28_tracs",
+                                "29_comparison_reads")), recursive = TRUE)
   results.s
 }
 

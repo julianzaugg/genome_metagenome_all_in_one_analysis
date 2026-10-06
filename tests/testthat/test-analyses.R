@@ -2,11 +2,13 @@ test_that("alpha diversity and group comparisons run", {
   project.l <- processed_test_project()
   metadata.df <- analysis_metadata(project.l)
   diversity.df <- alpha_diversity(aggregate_profile(get_profile(project.l, "singlem_relative"), rank = "genus"))
-  expect_named(diversity.df, c("Sample_ID", "Richness", "Shannon", "Simpson", "Pielou"))
+  expect_named(diversity.df, c("Sample_ID", "Richness", "Shannon", "Simpson"))
+  expect_true("Pielou" %in% names(alpha_diversity(aggregate_profile(get_profile(project.l, "singlem_relative"), rank = "genus"),
+                                                  evenness = TRUE)))
   expect_true(all(diversity.df$Simpson >= 0 & diversity.df$Simpson <= 1))
   diversity.l <- plot_alpha_diversity(diversity.df, metadata.df, "Treatment", project.l$palettes$Treatment)
   expect_s3_class(diversity.l$plot, "ggplot")
-  expect_equal(nrow(diversity.l$tests), 4)
+  expect_equal(nrow(diversity.l$tests), 3)
 })
 
 test_that("rarefied diversity needs integer counts", {

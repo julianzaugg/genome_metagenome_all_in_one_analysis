@@ -8,6 +8,8 @@ metadata.df <- gmaio::analysis_metadata(project.l)
 group.s <- gmaio::primary_group(project.l)
 colour_by.s <- if (is.null(group.s)) "Sample_label" else group.s
 min_length.n <- 5000
+# Draw the group test (p value) and pairwise brackets on the figures; the test tables are written either way
+show_statistics.b <- TRUE
 if (!any(c("virus_clusters", "plasmid_clusters") %in% names(project.l$profiles)) && is.null(project.l$tables$virus_summary)){
   gmaio::skip_analysis("No geNomad or CheckV clustering results in the processed project")
 }
@@ -31,7 +33,7 @@ for (type.s in c("virus", "plasmid")){
   }
   if (!is.null(group.s)){
     richness.l <- gmaio::plot_alpha_diversity(summary.l$richness, metadata.df, group.s, project.l$palettes[[group.s]],
-                                              measures = "Clusters")
+                                              measures = "Clusters", show_test = show_statistics.b, brackets = show_statistics.b)
     gmaio::save_plot(richness.l$plot, gmaio::figure_path(config.l, "mobile_elements", paste0(type.s, "_richness")),
                      width = 9, height = 9)
     tables.l[[paste0(type.s, "_richness_tests")]] <- richness.l$tests

@@ -24,10 +24,12 @@ same steps as the template \code{main.R}. Used in the vignettes and handy for tr
 }
 \details{
 \itemize{
-\item \code{mode = "metagenome"}: an early partial pipeline run (sylph and SingleM only) on 24 samples
-from 12 mice, \code{Treatment} (Control, Treated) by \code{Time} (Week_0, Week_4), with \code{Mouse},
-\code{Age_weeks} and \code{Cage}. Some genera respond to treatment and others to time, and treated
-mice lose rare genera by week 4.
+\item \code{mode = "metagenome"}: a partial pipeline run (sylph, SingleM, MAG quality and taxonomy,
+strain comparison and comparison samples) on 24 samples from 12 mice, \code{Treatment} (Control,
+Treated) by \code{Time} (Week_0, Week_4), with \code{Mouse}, \code{Age_weeks} and \code{Cage}. Some genera respond
+to treatment and others to time, and treated mice lose rare genera by week 4. Mice sharing a
+cage share strains, and treated mice have less diverse strains at week 4. 16 mice from two
+other facilities are comparison samples, grouped by \code{Facility}.
 \item \code{mode = "isolate"}: 20 \emph{Escherichia coli} isolates from four sequence types and three
 \code{Source}s (Clinical, Animal, Environmental) with \code{Year}, plus two reference genomes, with
 quality, typing, AMR genes, insertion sequences, a pangenome, ANI, cgMLST and a tree.

@@ -14,11 +14,16 @@ Updated \code{gm_project}.
 }
 \description{
 Builds the bin summary from CheckM2/CheckM1/GTDB-Tk and dereplication clusters, reads
-the per-bin DRAM distillate when present, then, for each CoverM mapping set found,
+the DRAM distillate of all bins when present, then, for each CoverM mapping set found,
 builds profiles named \verb{mags_<set>_<type>} where type is \code{relative_abundance},
-\code{coverm_relative_abundance}, \code{coverage} or \code{read_count}.
+\code{coverm_relative_abundance}, \code{coverage}, \code{read_count} or \code{covered_fraction}.
 }
 \details{
+Reference genomes (pipeline \code{--reference_genomes}) are kept apart from the MAGs:
+\code{project.l$tables$bin_summary} has the MAGs only and \code{project.l$tables$reference_genomes}
+the references, with their CheckM2 quality and GTDB-Tk taxonomy when available. Both
+annotate the \code{hq_ref_bins} profiles, whose \code{Genome_type} feature column tells them apart.
+
 Sets \code{derep_bins}, \code{hq_bins}, \code{hq_derep_bins} and \code{hq_ref_bins} map every sample to one
 catalogue of genomes pooled across samples, so they can be compared between samples.
 Sets \code{ws_derep_bins} and \code{ws_hq_bins} (pipeline \code{--within_sample_dereplication}) map each

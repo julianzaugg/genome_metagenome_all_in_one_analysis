@@ -15,10 +15,10 @@ build_mag_profiles(coverm.df, bin_summary.df, set_name)
 }
 \value{
 Named list of \code{gm_profile}: \code{coverage}, \code{read_count}, \code{relative_abundance}
-(coverage normalised to 100 per sample among genomes) and \code{coverm_relative_abundance}
+(coverage normalised to 100 per sample among genomes), \code{coverm_relative_abundance}
 (CoverM's own value: a share of the reads that went into mapping, i.e. after QC and host
 removal, with the unmapped rest left out; value type \code{"read_share"}, so it is never
-rescaled to 100).
+rescaled to 100) and \code{covered_fraction} (share of each genome covered by reads, for detection).
 }
 \description{
 Build MAG abundance profiles from CoverM tables

@@ -1,6 +1,6 @@
 profile_value_types <- function(){
   c("relative_abundance", "read_share", "coverage", "read_count", "rpkm", "normalised_rpkm", "presence", "copy_number",
-    "value")
+    "covered_fraction", "value")
 }
 
 #' Create a feature profile
@@ -15,7 +15,8 @@ profile_value_types <- function(){
 #' @param value_type What the values are; one of `"relative_abundance"` (percent, each sample
 #'   sums to 100), `"read_share"` (percent of the reads that went into mapping, e.g. CoverM
 #'   relative abundance, where unmapped reads make up the rest), `"coverage"`, `"read_count"`, `"rpkm"`,
-#'   `"normalised_rpkm"`, `"presence"`, `"copy_number"`, `"value"`.
+#'   `"normalised_rpkm"`, `"presence"`, `"copy_number"`, `"covered_fraction"` (share of a genome covered by
+#'   reads, 0 to 1), `"value"`.
 #' @param source Short name of the data source, e.g. `"sylph"`.
 #' @param feature_level What a feature is, e.g. `"species"`, `"genus"`, `"genome"`, `"KO"`.
 #' @return A `gm_profile`.

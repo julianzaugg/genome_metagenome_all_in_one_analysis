@@ -74,9 +74,12 @@ run_permdisp <- function(distance.d, metadata.df, group, permutations = 999, see
   pairwise.df$P_value <- apply(pairs.m, 2, function(pair.v){
     keep.v <- groups.v %in% pair.v
     set.seed(seed)
-    pair_dispersion <- vegan::betadisper(stats::as.dist(as.matrix(aligned.l$distance)[keep.v, keep.v]),
-                                         droplevels(groups.v[keep.v]), type = "centroid")
-    vegan::permutest(pair_dispersion, permutations = permutations)$tab[1, "Pr(>F)"]
+    # vegan cannot place two groups whose distances fit in a single dimension (e.g. a few identical samples)
+    tryCatch({
+      pair_dispersion <- vegan::betadisper(stats::as.dist(as.matrix(aligned.l$distance)[keep.v, keep.v]),
+                                           droplevels(groups.v[keep.v]), type = "centroid")
+      vegan::permutest(pair_dispersion, permutations = permutations)$tab[1, "Pr(>F)"]
+    }, error = function(e) NA_real_)
   })
   pairwise.df$P_adjusted <- stats::p.adjust(pairwise.df$P_value, method = "BH")
   distances.df <- data.frame(Sample_ID = aligned.l$metadata$Sample_ID, Group = groups.v,

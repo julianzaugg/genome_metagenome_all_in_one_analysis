@@ -1,0 +1,11 @@
+user_genome	classification	classification_method	msa_percent	red_value	warnings
+S22.metabat2.1	d__Bacteria;p__Bacteroidota;c__Bacteroidia;o__Bacteroidales;f__Muribaculaceae;g__Muribaculum;s__Muribaculum sp177693	ANI	95	N/A	N/A
+S21.metabat2.2	d__Bacteria;p__Bacteroidota;c__Bacteroidia;o__Bacteroidales;f__Muribaculaceae;g__Duncaniella;s__Duncaniella sp570244	ANI	95	N/A	N/A
+S01.metabat2.3	d__Bacteria;p__Bacteroidota;c__Bacteroidia;o__Bacteroidales;f__Muribaculaceae;g__Duncaniella;s__Duncaniella sp401579	ANI	95	N/A	N/A
+S08.metabat2.4	d__Bacteria;p__Bacteroidota;c__Bacteroidia;o__Bacteroidales;f__Muribaculaceae;g__CAG-485;s__CAG-485 sp262345	ANI	95	N/A	N/A
+S20.metabat2.5	d__Bacteria;p__Bacillota;c__Bacilli;o__Lactobacillales;f__Lactobacillaceae;g__Lactobacillus;s__Lactobacillus sp223624	ANI	95	N/A	N/A
+S10.metabat2.6	d__Bacteria;p__Bacillota;c__Bacilli;o__Lactobacillales;f__Lactobacillaceae;g__Limosilactobacillus;s__Limosilactobacillus sp420836	ANI	95	N/A	N/A
+S24.metabat2.7	d__Bacteria;p__Bacillota;c__Bacilli;o__Lactobacillales;f__Enterococcaceae;g__Enterococcus;s__Enterococcus sp528723	ANI	95	N/A	N/A
+S24.metabat2.8	d__Bacteria;p__Bacteroidota;c__Bacteroidia;o__Bacteroidales;f__Bacteroidaceae;g__Bacteroides;s__Bacteroides sp194380	ANI	95	N/A	N/A
+S14.metabat2.9	d__Bacteria;p__Bacteroidota;c__Bacteroidia;o__Bacteroidales;f__Muribaculaceae;g__Paramuribaculum;s__Paramuribaculum sp848802	ANI	95	N/A	N/A
+S13.metabat2.10	d__Bacteria;p__Bacillota;c__Bacilli;o__Lactobacillales;f__Lactobacillaceae;g__Lactobacillus;s__Lactobacillus sp758367	ANI	95	N/A	N/A

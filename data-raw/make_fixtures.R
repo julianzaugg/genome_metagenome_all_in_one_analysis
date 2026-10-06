@@ -278,3 +278,159 @@ write_tsv(data.frame(seq_name = paste0(isolates.v[c(1, 1, 3, 5)], ".scaffolds__g
                      taxonomy = "Viruses;Duplodnaviria;Heunggongvirae;Uroviricota;Caudoviricetes;;"),
           "20_genomad", "genomad_virus_summary.tsv")
 cat("Fixtures written to", root.s, "\n")
+
+# ---- Metagenome: reference genomes, expanded catalogue, marker tree, strains and comparison samples ----------
+# A separate seed keeps the fixtures above unchanged.
+set.seed(7)
+root.s <- "inst/extdata/metagenome"
+results.s <- file.path(root.s, "res")
+samples.v <- c("S1", "S2", "S3", "S10", "S11", "S12")
+bins.v <- c("S1.metabat2.1", "S1.semibin.2", "S2.metabat2.1", "S10.vamb.3", "S11.metabat2.4", "S12.rosella.5")
+hq.v <- bins.v[c(1, 3, 5, 6)]
+derep.v <- bins.v[c(1, 3, 4, 5, 6)]
+lineage_of.f <- function(lineage.s) gsub("\\|", ";", sub("\\|t__.*", "", lineage.s))
+coverm.f <- function(label.s, genomes.v, mapped.n = 60, covered.v = rep(0.9, length(genomes.v))){
+  coverage.v <- round(rexp(length(genomes.v)) * 5, 4)
+  coverm.df <- data.frame(Genome = c("unmapped", genomes.v), c(100 - mapped.n, round(coverage.v / sum(coverage.v) * mapped.n, 4)),
+                          c(NA, covered.v), c(NA, coverage.v), c(NA, round(coverage.v * 1000)), check.names = FALSE)
+  names(coverm.df)[-1] <- paste(label.s, c("Relative Abundance (%)", "Covered Fraction", "Mean", "Read Count"))
+  coverm.df
+}
+
+# Reference genomes (--reference_genomes). S1_isolate_ref starts like sample S1 but must never be assigned to it.
+references.v <- c("S1_isolate_ref", "GCA_000123.1")
+write_tsv(data.frame(Name = references.v, Completeness = c(99.1, 97.5), Contamination = c(0.4, 1.2),
+                     Completeness_Model_Used = "Gradient Boost (General Model)", Translation_Table_Used = 11,
+                     Coding_Density = 0.88, Contig_N50 = 80000, Average_Gene_Length = 310, Genome_Size = 2.8e6,
+                     GC_Content = 0.48, Total_Coding_Sequences = 2600, Total_Contigs = 40, Max_Contig_Length = 3e5,
+                     Additional_Notes = "None"),
+          "25_reference_genomes", "checkm2", "reference_checkm2_report.tsv")
+gtdb_path.s <- file.path(results.s, "15_gtdbtk", "all_genomes", "classify", "all_genomes.bac120.summary.tsv")
+gtdb.df <- utils::read.delim(gtdb_path.s, check.names = FALSE, colClasses = "character")
+gtdb.df <- rbind(gtdb.df, data.frame(user_genome = references.v, classification = lineage_of.f(lineages.v[c(1, 3)]),
+                                     classification_method = "ANI", note = "", msa_percent = "95", red_value = "N/A",
+                                     warnings = "N/A", check.names = FALSE))
+utils::write.table(gtdb.df, gtdb_path.s, sep = "\t", quote = FALSE, row.names = FALSE, na = "")
+# HQ MAGs dereplicated with the references: S12.rosella.5 joins the cluster of GCA_000123.1
+hq_ref_clusters.df <- data.frame(V1 = c(hq.v[1:3], references.v, references.v[2]), V2 = c(hq.v[1:3], references.v, hq.v[4]))
+dir.create(file.path(results.s, "08_dereplicated_hq_ref_bins"), showWarnings = FALSE)
+writeLines(paste0("representatives/", hq_ref_clusters.df$V1, ".fasta\t", hq_ref_clusters.df$V2, ".fasta"),
+           file.path(results.s, "08_dereplicated_hq_ref_bins", "cluster_definition.tsv"))
+for (sample.s in samples.v){
+  write_tsv(coverm.f(paste0(sample.s, ".clean_1.fastq.gz"), c(hq.v[1:3], references.v)), "09_coverm_hq_ref_bins",
+            paste0(sample.s, "_abundances.tsv"))
+  write_tsv(coverm.f(paste0(sample.s, ".clean_1.fastq.gz"), derep.v, mapped.n = 65, covered.v = round(runif(5, 0.05, 1), 3)),
+            "09_coverm_bins", paste0(sample.s, "_abundances.tsv"))
+}
+
+# DRAM distillate of all bins, and a per-bin distillate left over from an older run that must be ignored
+product.df <- data.frame(genome = bins.v, Glycolysis = round(runif(6), 3), `Pentose phosphate pathway` = round(runif(6), 3),
+                         `Nitrogen fixation` = sample(c("True", "False"), 6, TRUE), check.names = FALSE)
+write_tsv(product.df, "14_dram_bins", "all_bins", "distilled", "product.tsv")
+write_tsv(product.df[1, ], "14_dram_bins", bins.v[1], "distilled", "product.tsv")
+
+# Expanded catalogue: the study genes plus genes of two comparison assemblies
+genes.v <- paste0(rep(samples.v, each = 5), "___NODE_", 1:30, "_length_1000_cov_2.0_1")
+comparison_genes.v <- paste0(rep(c("C1", "C2"), each = 5), "___NODE_", 1:10, "_length_900_cov_3.0_1")
+expanded_genes.v <- c(genes.v, comparison_genes.v)
+expanded_dram.df <- data.frame(V1 = paste0("chunk.002_", expanded_genes.v), fasta = "chunk.002", rank = "C",
+                               ko_id = sample(c("K00001", "K00002", "K00003", "K00004", NA), 40, TRUE),
+                               kegg_hit = "alcohol dehydrogenase [EC:1.1.1.1]",
+                               cazy_ids = sample(c("GH13; CBM48", "GT2", NA, "GH23"), 40, TRUE), cazy_best_hit = "",
+                               peptidase_family = sample(c("M23", "S8", NA), 40, TRUE))
+names(expanded_dram.df)[1] <- ""
+write_tsv(expanded_dram.df, "13_dram_expanded", "dram_annotations", "annotations.tsv")
+write_tsv(data.frame(Gene_ID = expanded_genes.v, matrix(round(rexp(40 * 6), 4), nrow = 40, dimnames = list(NULL, samples.v)),
+                     check.names = FALSE),
+          "23_rpkm_expanded", "gene_catalogue_rpkm_per_gene_normalised.tsv")
+
+# Marker gene tree with two GTDB context genomes
+dir.create(file.path(results.s, "24_marker_tree"), showWarnings = FALSE)
+writeLines(paste0("((S1.metabat2.1:0.1,GB_GCA_900001.1:0.12):0.05,(S2.metabat2.1:0.1,(S11.metabat2.4:0.05,",
+                  "S1_isolate_ref:0.06):0.04):0.05,(S10.vamb.3:0.2,RS_GCF_900002.1:0.15):0.1,S12.rosella.5:0.3,S1.semibin.2:0.25);"),
+           file.path(results.s, "24_marker_tree", "bac120.treefile"))
+writeLines(paste(rep(bins.v, each = 2), rep(c("GB_GCA_900001.1", "RS_GCF_900002.1"), 6), sep = "\t"),
+           file.path(results.s, "24_marker_tree", "bac120.closest_references.tsv"))
+writeLines(paste(c("GB_GCA_900001.1", "RS_GCF_900002.1"), lineage_of.f(lineages.v[c(2, 4)]), sep = "\t"),
+           file.path(results.s, "24_marker_tree", "bac120.reference_genomes.tsv"))
+
+# Strain comparison of two HQ MAGs: S1 and S2 share a strain of S1.metabat2.1
+strain_genomes.v <- hq.v[c(1, 3)]
+write_tsv(data.frame(genome = c(strain_genomes.v, hq.v[2]), completeness = c(98, 91, 95), contamination = c(1, 0.5, 2),
+                     source = "checkm2", status = c("kept", "kept", "dropped"), reason = c("passed", "passed", "below_thresholds")),
+          "26_strain_reference", "strain_reference_genomes.tsv")
+pairs.df <- data.frame(t(utils::combn(samples.v, 2)), stringsAsFactors = FALSE)
+names(pairs.df) <- c("sample_a", "sample_b")
+sharing.df <- do.call(rbind, lapply(strain_genomes.v, function(genome.s){
+  popani.v <- round(runif(nrow(pairs.df), 0.9990, 0.99998), 7)
+  if (genome.s == strain_genomes.v[1]) popani.v[1] <- 0.999995
+  data.frame(genome = genome.s, sample_a = paste0(pairs.df$sample_a, ".bam"), sample_b = paste0(pairs.df$sample_b, ".bam"),
+             popANI = popani.v, conANI = popani.v - 0.0001, percent_genome_compared = "", coverage_overlap = round(runif(nrow(pairs.df)), 3),
+             cluster_a = "1_1", cluster_b = "1_2", same_strain = ifelse(popani.v >= 0.99999, "TRUE", "FALSE"))
+}))
+write_tsv(sharing.df, "27_instrain", "summary", "strain_sharing_summary.tsv")
+counts.df <- stats::aggregate(sharing.df$same_strain == "TRUE", list(sample_a = sharing.df$sample_a, sample_b = sharing.df$sample_b),
+                              function(x) c(length(x), sum(x)))
+write_tsv(data.frame(sample_a = counts.df$sample_a, sample_b = counts.df$sample_b, n_genomes_compared = counts.df$x[, 1],
+                     n_same_strain = counts.df$x[, 2]),
+          "27_instrain", "summary", "strain_sharing_counts.tsv")
+write_tsv(data.frame(sample = character(), reason = character()), "27_instrain", "excluded_profiles.tsv")
+for (sample.s in samples.v){
+  write_tsv(data.frame(genome = hq.v, coverage = round(runif(4, 2, 40), 2), breadth = round(runif(4, 0.6, 1), 3),
+                       nucl_diversity = round(runif(4, 0.0005, 0.01), 5), length = 2.5e6,
+                       breadth_minCov = round(runif(4, 0.3, 0.98), 3), popANI_reference = round(runif(4, 0.995, 0.9999), 5),
+                       SNV_count = rpois(4, 200)),
+            "27_instrain", "profiles", paste0(sample.s, ".IS"), "output", paste0(sample.s, ".IS_genome_info.tsv"))
+}
+tracs.df <- data.frame(sampleA = rep(pairs.df$sample_a, 2), sampleB = rep(pairs.df$sample_b, 2), `date difference` = NA,
+                       `SNP distance` = rpois(2 * nrow(pairs.df), 40), `transmission distance` = NA, `expected K` = NA,
+                       check.names = FALSE)
+tracs.df$`filtered SNP distance` <- pmax(0, tracs.df$`SNP distance` - rpois(nrow(tracs.df), 10))
+tracs.df$`sites considered` <- round(runif(nrow(tracs.df), 5e5, 2e6))
+tracs.df$`MSA file` <- rep(strain_genomes.v, each = nrow(pairs.df))
+dir.create(file.path(results.s, "28_tracs"), showWarnings = FALSE)
+utils::write.csv(tracs.df, file.path(results.s, "28_tracs", "transmission_distances.csv"), row.names = FALSE, na = "NA")
+utils::write.csv(data.frame(sample = samples.v, cluster = c(0, 0, 1, 2, 2, 3)), file.path(results.s, "28_tracs", "strain_clusters.csv"),
+                 row.names = FALSE)
+
+# Comparison samples (--comparison_reads): four koalas from another study, two captive and two wild, with their own
+# metadata (one metadata row has no reads). The sylph profile has one species the study does not.
+comparison.v <- c("C1", "C2", "C3", "C4")
+utils::write.csv(data.frame(Sample_ID = c(comparison.v, "C9"), Site_name = paste0("Site_", c(1:4, 9)),
+                            Group = c("Captive", "Captive", "Wild", "Wild", "Wild")),
+                 file.path(root.s, "comparison_metadata.csv"), row.names = FALSE)
+comparison_lineages.v <- c(lineages.v[1:5],
+  "d__Bacteria|p__Bacillota_A|c__Clostridia|o__Oscillospirales|f__Ruminococcaceae|g__Faecalibacterium|s__Faecalibacterium prausnitzii|t__GCF_000007.1")
+comparison_leaf.m <- sweep(matrix(rexp(6 * 4), nrow = 6), 2, colSums(matrix(1, 6, 4)), "/")
+comparison_leaf.m <- sweep(comparison_leaf.m, 2, colSums(comparison_leaf.m), "/") * 100
+rows.l <- list()
+for (depth.n in 1:8){
+  prefix.v <- vapply(strsplit(comparison_lineages.v, "|", fixed = TRUE), function(x) paste(x[seq_len(depth.n)], collapse = "|"),
+                     character(1))
+  summed.m <- rowsum(comparison_leaf.m, prefix.v, reorder = FALSE)
+  rows.l[[depth.n]] <- data.frame(clade_name = rownames(summed.m), round(summed.m, 4), check.names = FALSE)
+}
+comparison_sylph.df <- do.call(rbind, rows.l)
+names(comparison_sylph.df)[-1] <- paste0(comparison.v, ".clean_1.fastq.gz")
+write_tsv(comparison_sylph.df, "29_comparison_reads", "sylph", "merged_relative_abundance.tsv")
+write_tsv(comparison_sylph.df, "29_comparison_reads", "sylph", "merged_sequence_abundance.tsv")
+comparison_singlem.df <- expand.grid(taxonomy = singlem_lineages.v, sample = paste0(comparison.v, "_R1"), stringsAsFactors = FALSE)
+comparison_singlem.df$coverage <- round(rexp(nrow(comparison_singlem.df)) * 5, 2)
+write_tsv(comparison_singlem.df[, c("sample", "coverage", "taxonomy")], "29_comparison_reads", "singlem", "metagenome.condensed.tsv")
+write_tsv(data.frame(sample = paste0(comparison.v, "_R1"), bacterial_archaeal_bases = 1e8, metagenome_size = 2e8,
+                     read_fraction = round(runif(4, 40, 90), 2), average_bacterial_archaeal_genome_size = 3e6, warning = "",
+                     domain_relative_abundance = 1),
+          "29_comparison_reads", "singlem", "metagenome.prokaryotic_fraction.tsv")
+for (sample.s in comparison.v){
+  write_tsv(coverm.f(paste0(sample.s, ".clean_1.fastq.gz"), derep.v, mapped.n = 30, covered.v = round(runif(5, 0, 0.8), 3)),
+            "29_comparison_reads", "bin_mapping", paste0(sample.s, "_abundances.tsv"))
+  write_tsv(data.frame(file = paste0(sample.s, c("_R1", "_R2"), ".fastq.gz"), format = "FASTQ", type = "DNA",
+                       num_seqs = 4e6 + 1:2, sum_len = 6e8 + 1:2, min_len = 35, avg_len = 150, max_len = 151),
+            "29_comparison_reads", "read_stats", paste0(sample.s, ".raw.seqkit_stats.tsv"))
+}
+# The pipeline path (29_comparison_reads/gene_catalogue_mapping/gene_catalogue_rpkm_per_gene_normalised.tsv) is too
+# long for a portable package tarball; the test project points files: comparison_reads_rpkm_normalised here instead
+utils::write.table(data.frame(Gene_ID = expanded_genes.v, matrix(round(rexp(40 * 4), 4), nrow = 40,
+                                                                 dimnames = list(NULL, comparison.v)), check.names = FALSE),
+                   file.path(root.s, "comparison_rpkm.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
+cat("Reference, strain and comparison fixtures written to", root.s, "\n")

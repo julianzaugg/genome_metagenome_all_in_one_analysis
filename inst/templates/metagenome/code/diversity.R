@@ -8,6 +8,8 @@ metadata.df <- gmaio::analysis_metadata(project.l)
 group.s <- gmaio::primary_group(project.l)
 if (is.null(group.s)) gmaio::skip_analysis("No group variable; set analysis: group_variables in config.yml")
 
+# Draw the group test (p value) and pairwise brackets on the figures; the test tables are written either way
+show_statistics.b <- TRUE
 # name = profile, rank (NA for unaggregated features)
 datasets.df <- data.frame(
   profile = c("sylph_taxonomic", "singlem_relative", "singlem_relative", "mags_hq_derep_bins_relative_abundance"),
@@ -23,7 +25,8 @@ for (i in seq_len(nrow(datasets.df))){
   dataset.s <- paste(c(name.s, stats::na.omit(datasets.df$rank[i])), collapse = "__")
 
   diversity.df <- gmaio::alpha_diversity(profile)
-  diversity.l <- gmaio::plot_alpha_diversity(diversity.df, metadata.df, group.s, project.l$palettes[[group.s]])
+  diversity.l <- gmaio::plot_alpha_diversity(diversity.df, metadata.df, group.s, project.l$palettes[[group.s]],
+                                             show_test = show_statistics.b, brackets = show_statistics.b)
   gmaio::save_plot(diversity.l$plot, gmaio::figure_path(config.l, "diversity", dataset.s))
   tables.l[[paste0(dataset.s, "_values")]] <- diversity.df
   tables.l[[paste0(dataset.s, "_tests")]] <- diversity.l$tests

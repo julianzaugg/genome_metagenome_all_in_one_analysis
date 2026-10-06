@@ -16,5 +16,6 @@ Updated \code{gm_project}.
 }
 \description{
 Colours metadata variables (group variables, discrete covariates, \code{colour_variables}
-and samples) and taxa at phylum and the configured analysis ranks.
+and samples) and taxa at phylum and the configured analysis ranks; with comparison samples,
+also \code{Comparison_group} (study groups keep their colours) and \code{Dataset}.
 }

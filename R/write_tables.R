@@ -1,7 +1,7 @@
 #' Write data frames to a styled Excel workbook
 #'
-#' One sheet per list element: bold header, frozen header row (and first column when
-#' `freeze_first_column`), auto column widths and filters. Empty data frames are
+#' One sheet per list element: bold header, centred cells, frozen header row (and first column
+#' when `freeze_first_column`), auto column widths and filters. Empty data frames are
 #' written as a header-only sheet. An empty list writes nothing.
 #'
 #' For the table files gmaio writes (see [output_catalogue()]), an `About` sheet describing
@@ -29,6 +29,7 @@ write_xlsx_tables <- function(tables.l, path, freeze_first_column = TRUE, number
   workbook <- openxlsx::createWorkbook()
   header_style <- openxlsx::createStyle(textDecoration = "bold", fgFill = "#DCE6F1", border = "Bottom",
                                         halign = "center", valign = "center", wrapText = TRUE)
+  body_style <- openxlsx::createStyle(halign = "center", valign = "center")
   number_style <- if (!is.null(number_format)) openxlsx::createStyle(numFmt = number_format) else NULL
 
   for (i in seq_along(tables.l)){
@@ -48,10 +49,14 @@ write_xlsx_tables <- function(tables.l, path, freeze_first_column = TRUE, number
       }, numeric(1))
       openxlsx::setColWidths(workbook, sheet.s, cols = seq_along(table.df), widths = widths.v)
     }
+    if (ncol(table.df) > 0 && nrow(table.df) > 0){
+      openxlsx::addStyle(workbook, sheet.s, body_style, rows = seq_len(nrow(table.df)) + 1, cols = seq_along(table.df),
+                         gridExpand = TRUE)
+    }
     numeric_columns.v <- which(vapply(table.df, is.double, logical(1)))
     if (!is.null(number_style) && length(numeric_columns.v) > 0 && nrow(table.df) > 0){
       openxlsx::addStyle(workbook, sheet.s, number_style, rows = seq_len(nrow(table.df)) + 1,
-                         cols = numeric_columns.v, gridExpand = TRUE)
+                         cols = numeric_columns.v, gridExpand = TRUE, stack = TRUE)
     }
   }
   entry.l <- if (about && !"About" %in% sheet_names.v) describe_output(path) else NULL

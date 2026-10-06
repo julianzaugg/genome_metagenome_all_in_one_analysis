@@ -1,16 +1,20 @@
 #' Alpha diversity per sample
 #'
-#' Shannon, Simpson (Gini-Simpson) and Pielou evenness are computed on proportions and
-#' are valid for relative abundance, coverage or counts. Richness is the number of
-#' features above zero; it depends on sequencing depth, so for read counts it can be
-#' computed after rarefying (`rarefy_depth`). Chao1 is only reported for integer counts.
+#' Shannon and Simpson (Gini-Simpson) are computed on proportions and are valid for
+#' relative abundance, coverage or counts. Richness is the number of features above zero;
+#' it depends on sequencing depth, so for read counts it can be computed after rarefying
+#' (`rarefy_depth`). Chao1 is only reported for integer counts. Pielou evenness
+#' (Shannon / log(Richness)) is only added on request: it inherits the depth dependence of
+#' richness and adds little to Shannon and Simpson.
 #'
 #' @param profile A `gm_profile`.
 #' @param rarefy_depth Optional depth to rarefy read counts to (samples below it are dropped).
 #' @param seed Random seed for rarefying.
-#' @return Data frame with `Sample_ID`, `Richness`, `Shannon`, `Simpson`, `Pielou` and, for counts, `Chao1`.
+#' @param evenness Also report Pielou evenness.
+#' @return Data frame with `Sample_ID`, `Richness`, `Shannon`, `Simpson`, `Pielou` (with
+#'   `evenness = TRUE`) and, for counts, `Chao1`.
 #' @export
-alpha_diversity <- function(profile, rarefy_depth = NULL, seed = 1234){
+alpha_diversity <- function(profile, rarefy_depth = NULL, seed = 1234, evenness = FALSE){
   check_profile(profile)
   samples.m <- t(profile$values)
   is_count.b <- profile$value_type == "read_count" && all(samples.m == round(samples.m))
@@ -29,8 +33,8 @@ alpha_diversity <- function(profile, rarefy_depth = NULL, seed = 1234){
   richness.v <- rowSums(samples.m > 0)
   shannon.v <- vegan::diversity(samples.m, index = "shannon")
   diversity.df <- data.frame(Sample_ID = rownames(samples.m), Richness = richness.v, Shannon = shannon.v,
-                             Simpson = vegan::diversity(samples.m, index = "simpson"),
-                             Pielou = ifelse(richness.v > 1, shannon.v / log(richness.v), NA_real_), row.names = NULL)
+                             Simpson = vegan::diversity(samples.m, index = "simpson"), row.names = NULL)
+  if (evenness) diversity.df$Pielou <- ifelse(richness.v > 1, shannon.v / log(richness.v), NA_real_)
   if (is_count.b) diversity.df$Chao1 <- vegan::estimateR(samples.m)["S.chao1", ]
   diversity.df
 }
@@ -40,19 +44,20 @@ alpha_diversity <- function(profile, rarefy_depth = NULL, seed = 1234){
 #' One panel per measure with a box per group, the Wilcoxon (two groups) or Kruskal-Wallis
 #' p value, and with more than two groups brackets for the pairs that differ (Dunn's test,
 #' BH adjusted within each measure). All figure options of [plot_group_boxplots()] can be
-#' passed, e.g. `bracket_label = "p"`, `shape_by = "Time"` or `panel_labels`.
+#' passed, e.g. `bracket_label = "p"`, `shape_by = "Time"` or `panel_labels`; `show_test = FALSE`
+#' and `brackets = FALSE` leave the statistics off the figure (the test tables are still returned).
 #'
 #' @param diversity.df Result of [alpha_diversity()].
 #' @param metadata.df Metadata; groups are drawn in factor level order.
 #' @param group Metadata column.
 #' @param colours.v Named colours for `group`.
-#' @param measures Measures to plot, in order.
+#' @param measures Measures to plot, in order (those not in `diversity.df` are skipped).
 #' @param ... Figure and test options passed to [plot_group_boxplots()].
 #' @return List with `plot`, `tests` (per measure) and `pairwise` (pairwise tests with group
 #'   sizes, means and medians, when more than two groups).
 #' @export
 plot_alpha_diversity <- function(diversity.df, metadata.df, group, colours.v = NULL,
-                                 measures = c("Richness", "Shannon", "Simpson", "Pielou"), ...){
+                                 measures = c("Richness", "Shannon", "Simpson"), ...){
   measures <- intersect(measures, names(diversity.df))
   joined.df <- join_metadata(diversity.df, metadata.df, "inner")
   long.df <- do.call(rbind, lapply(measures, function(m){

@@ -1,5 +1,7 @@
 # MAG quality, per-sample yield, taxonomy of representatives, how much of each sample the MAGs
-# explain (own MAGs vs the catalogue pooled across samples) and DRAM distillate heatmaps.
+# explain (own MAGs vs the catalogue pooled across samples), DRAM distillate heatmaps and the
+# marker gene tree. Reference genomes (pipeline --reference_genomes) are listed apart from the MAGs,
+# in the Reference_genomes sheet of MAG_summary.xlsx, and only appear here in the tree.
 
 project.l <- gmaio::load_processed()
 config.l <- project.l$config
@@ -58,4 +60,15 @@ if (!is.null(product.l)){
                    gmaio::figure_path(config.l, "mags", "dram_module_completeness"))
   gmaio::save_plot(gmaio::plot_dram_heatmap(product.l$presence, bins.df, representatives.v, project.l$palettes$taxa),
                    gmaio::figure_path(config.l, "mags", "dram_function_presence"))
+}
+
+# Marker gene tree (pipeline --run_marker_tree): the MAGs and reference genomes among the GTDB genomes
+# placed next to them. highlight = "hq" draws the other bins as small points.
+tree.l <- project.l$tables$marker_tree
+if (!is.null(tree.l)){
+  for (domain.s in names(tree.l$trees)){
+    tree.gg <- gmaio::plot_marker_tree(tree.l$trees[[domain.s]], bins.df, project.l$tables$reference_genomes,
+                                       tree.l$gtdb_lineages, project.l$palettes$taxa)
+    gmaio::save_plot(tree.gg, gmaio::figure_path(config.l, "mags", paste0("marker_tree_", domain.s)))
+  }
 }

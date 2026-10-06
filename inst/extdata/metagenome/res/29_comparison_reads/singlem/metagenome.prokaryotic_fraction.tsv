@@ -1,0 +1,5 @@
+sample	bacterial_archaeal_bases	metagenome_size	read_fraction	average_bacterial_archaeal_genome_size	warning	domain_relative_abundance
+C1_R1	1e+08	2e+08	64.13	3e+06		1
+C2_R1	1e+08	2e+08	68.75	3e+06		1
+C3_R1	1e+08	2e+08	44.37	3e+06		1
+C4_R1	1e+08	2e+08	83.76	3e+06		1

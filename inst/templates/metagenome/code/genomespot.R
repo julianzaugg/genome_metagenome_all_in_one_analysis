@@ -10,6 +10,8 @@ if (is.null(genomespot.l) || is.null(bins.df)){
   gmaio::skip_analysis("GenomeSPOT or MAG results missing from the processed project")
 }
 
+# Draw the group test (p value) and pairwise brackets on the figures; the test tables are written either way
+show_statistics.b <- TRUE
 abundance_profile.s <- "mags_hq_derep_bins_relative_abundance"
 hq_bins.v <- bins.df$Bin_ID[bins.df$High_quality]
 
@@ -23,7 +25,8 @@ if (abundance_profile.s %in% names(project.l$profiles)){
   community.df <- gmaio::community_weighted_traits(genomespot.l, gmaio::get_profile(project.l, abundance_profile.s))
   tables.l$Community_weighted <- community.df
   if (!is.null(group.s)){
-    community.l <- gmaio::plot_community_traits(community.df, metadata.df, group.s, project.l$palettes[[group.s]])
+    community.l <- gmaio::plot_community_traits(community.df, metadata.df, group.s, project.l$palettes[[group.s]],
+                                                show_test = show_statistics.b, brackets = show_statistics.b)
     gmaio::save_plot(community.l$plot, gmaio::figure_path(config.l, "genomespot", "community_weighted_traits"))
     tables.l$Community_tests <- community.l$tests
   }

@@ -95,20 +95,20 @@ fetch_pipeline_results <- function(config_path = "config.yml", source = NULL, dr
 #' @param config.l A `gm_config`.
 #' @param verbose Print the report.
 #' @return Tibble with `step`, `key`, `description`, `status` (`found`, `missing` or
-#'   `ambiguous`), `n_files` and `files`, invisibly.
+#'   `ambiguous`), `n_files` and `files` (for ambiguous outputs, the competing files), invisibly.
 #' @export
 check_inputs <- function(config.l, verbose = TRUE){
   registry.df <- registry_for_mode(config.l$mode)
   registry.df <- registry.df[!is.na(registry.df$transfer) | registry.df$key %in% names(config.l$files), , drop = FALSE]
   located.l <- lapply(registry.df$key, function(key.s){
-    tryCatch(locate_output(config.l, key.s), error = function(e) e)
+    tryCatch(locate_output(config.l, key.s), gmaio_ambiguous_output = function(e) e)
   })
   ambiguous.v <- vapply(located.l, inherits, logical(1), "error")
   n_files.v <- ifelse(ambiguous.v, NA_integer_, vapply(located.l, function(x) if (is.character(x)) length(x) else 0L, integer(1)))
   inputs.df <- tibble::tibble(step = registry.df$step, key = registry.df$key, description = registry.df$description,
                               status = ifelse(ambiguous.v, "ambiguous", ifelse(n_files.v > 0, "found", "missing")),
                               n_files = n_files.v,
-                              files = lapply(located.l, function(x) if (is.character(x)) x else character()))
+                              files = lapply(located.l, function(x) if (is.character(x)) x else x$paths %||% character()))
   if (verbose) report_inputs(config.l, inputs.df)
   invisible(inputs.df)
 }
@@ -129,13 +129,21 @@ report_inputs <- function(config.l, inputs.df){
                                              paste(missing.v, collapse = ", ")))
     }
   }
-  for (key.s in inputs.df$key[inputs.df$status == "ambiguous"]){
-    bullets.v <- c(bullets.v, "x" = paste0("Several files match ", key.s, "; set files: ", key.s, " in the config"))
+  for (i in which(inputs.df$status == "ambiguous")){
+    dates.v <- format(file.mtime(inputs.df$files[[i]]), "%Y-%m-%d")
+    bullets.v <- c(bullets.v, "x" = paste0("Several files match ", inputs.df$key[i], ":"),
+                   stats::setNames(paste0(inputs.df$files[[i]], " (", dates.v, ")"), rep(" ", length(dates.v))))
+    if (length(unique(dates.v)) > 1){
+      bullets.v <- c(bullets.v, " " = "Files from different dates: the older ones are probably left over from an earlier run.")
+    }
+    bullets.v <- c(bullets.v, " " = paste0("Remove the files that do not belong, or set files: ", inputs.df$key[i],
+                                           " in the config"))
   }
   bullets.v <- gsub("\\{", "{{", gsub("\\}", "}}", bullets.v))
   cli::cli_inform(c("Pipeline outputs ({config.l$mode}) in {.path {results.s}}:", bullets.v))
 
-  if (all(inputs.df$status == "missing") && !is.null(config.l$pipeline_results)){
+  # Outputs set in files: are found wherever pipeline_results points
+  if (all(inputs.df$status[!inputs.df$key %in% names(config.l$files)] == "missing") && !is.null(config.l$pipeline_results)){
     nested.v <- Sys.glob(file.path(results.s, "*", "pipeline_info"))
     if (length(nested.v) > 0){
       cli::cli_inform(c("i" = "The outputs look like they are in {.path {dirname(nested.v[1])}}",

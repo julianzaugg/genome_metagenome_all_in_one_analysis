@@ -51,13 +51,17 @@ ani_matrix <- function(ani.df, genomes.v = NULL, floor_value = 75){
 #' @param names_size Font size of genome labels.
 #' @param row_title,column_title Axis titles.
 #' @param annotation_names Show annotation names beside the column annotations.
+#' @param hide_zero_values Leave cells with zero empty when values are shown.
+#' @param legend_param Settings for the value legend, passed to `heatmap_legend_param` of
+#'   [ComplexHeatmap::Heatmap()] (e.g. `list(at = ..., labels = ..., color_bar = "discrete")`).
 #' @return A ComplexHeatmap `Heatmap`.
 #' @export
 plot_genome_matrix <- function(values.m, genomes.df, palettes.l = list(), annotation_variables = NULL,
                                type = c("ani", "distance"), breaks = NULL, colours = NULL, legend_title = NULL,
                                split_by = NULL, cluster = TRUE, show_dend = TRUE, label_by = "Sample_label",
                                show_values = nrow(values.m) <= 25, value_digits = 1, value_size = NULL, cell_size = 0.45,
-                               names_size = 7, row_title = NULL, column_title = NULL, annotation_names = TRUE){
+                               names_size = 7, row_title = NULL, column_title = NULL, annotation_names = TRUE,
+                               hide_zero_values = FALSE, legend_param = list()){
   type <- match.arg(type)
   genomes.df <- genomes.df[match(rownames(values.m), genomes.df$Sample_ID), , drop = FALSE]
   require_columns(genomes.df, c(label_by, split_by, annotation_variables), "Genome metadata")
@@ -69,8 +73,8 @@ plot_genome_matrix <- function(values.m, genomes.df, palettes.l = list(), annota
     distance.d <- stats::as.dist(100 - values.m)
     legend_title <- legend_title %||% "ANI (%)"
   } else {
-    breaks <- breaks %||% unique(round(c(0, 5, 10, 25, 50, 100, 200, max(values.m, 201))))
-    breaks <- sort(unique(pmin(breaks, max(values.m, 1))))
+    breaks <- breaks %||% unique(round(c(0, 5, 10, 25, 50, 100, 200, max(values.m, 201, na.rm = TRUE))))
+    breaks <- sort(unique(pmin(breaks, max(values.m, 1, na.rm = TRUE))))
     colours <- colours %||% grDevices::hcl.colors(length(breaks), "YlOrRd", rev = TRUE)
     distance.d <- stats::as.dist(values.m)
     legend_title <- legend_title %||% "Allele\ndifferences"
@@ -86,13 +90,14 @@ plot_genome_matrix <- function(values.m, genomes.df, palettes.l = list(), annota
   }
   # Values are fitted to the cell: about 0.6 of the cell width for the longest printed value
   digits.n <- if (type == "ani") value_digits else 0
-  widest.n <- max(nchar(formatC(max(values.m), format = "f", digits = digits.n)))
+  widest.n <- max(nchar(formatC(max(values.m, na.rm = TRUE), format = "f", digits = digits.n)))
   value_size <- value_size %||% min(6, cell_size * 28.35 * 1.1 / widest.n)
   with_measure_device({
     annotation.l <- heatmap_annotations(genomes.df, annotation_variables, palettes.l, annotation_names)
     cell_fun <- NULL
     if (show_values){
       cell_fun <- function(j, i, x, y, width, height, fill){
+        if (is.na(values.m[i, j]) || (hide_zero_values && values.m[i, j] == 0)) return(invisible(NULL))
         grid::grid.text(formatC(values.m[i, j], format = "f", digits = digits.n), x, y,
                         gp = grid::gpar(fontsize = value_size, col = contrast_text_colour(fill)))
       }
@@ -107,9 +112,10 @@ plot_genome_matrix <- function(values.m, genomes.df, palettes.l = list(), annota
       row_title_gp = grid::gpar(fontsize = 8, fontface = "bold"), column_title_gp = grid::gpar(fontsize = 8, fontface = "bold"),
       top_annotation = annotation.l$top, left_annotation = annotation.l$left, cell_fun = cell_fun,
       row_names_gp = grid::gpar(fontsize = names_size), column_names_gp = grid::gpar(fontsize = names_size),
-      rect_gp = grid::gpar(col = "white", lwd = 0.4),
+      rect_gp = grid::gpar(col = "white", lwd = 0.4), na_col = "grey92",
       width = grid::unit(ncol(values.m) * cell_size, "cm"), height = grid::unit(nrow(values.m) * cell_size, "cm"),
-      heatmap_legend_param = list(title_gp = grid::gpar(fontsize = 8, fontface = "bold"), labels_gp = grid::gpar(fontsize = 7))
+      heatmap_legend_param = utils::modifyList(list(title_gp = grid::gpar(fontsize = 8, fontface = "bold"),
+                                                    labels_gp = grid::gpar(fontsize = 7)), legend_param)
     )
   })
 }

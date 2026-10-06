@@ -21,7 +21,8 @@ A \code{Label} column is used for display; it defaults to \code{Feature_ID}.}
 \item{value_type}{What the values are; one of \code{"relative_abundance"} (percent, each sample
 sums to 100), \code{"read_share"} (percent of the reads that went into mapping, e.g. CoverM
 relative abundance, where unmapped reads make up the rest), \code{"coverage"}, \code{"read_count"}, \code{"rpkm"},
-\code{"normalised_rpkm"}, \code{"presence"}, \code{"copy_number"}, \code{"value"}.}
+\code{"normalised_rpkm"}, \code{"presence"}, \code{"copy_number"}, \code{"covered_fraction"} (share of a genome covered by
+reads, 0 to 1), \code{"value"}.}
 
 \item{source}{Short name of the data source, e.g. \code{"sylph"}.}
 

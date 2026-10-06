@@ -24,7 +24,9 @@ plot_genome_matrix(
   names_size = 7,
   row_title = NULL,
   column_title = NULL,
-  annotation_names = TRUE
+  annotation_names = TRUE,
+  hide_zero_values = FALSE,
+  legend_param = list()
 )
 }
 \arguments{
@@ -68,6 +70,11 @@ genomes are then clustered within blocks.}
 \item{row_title, column_title}{Axis titles.}
 
 \item{annotation_names}{Show annotation names beside the column annotations.}
+
+\item{hide_zero_values}{Leave cells with zero empty when values are shown.}
+
+\item{legend_param}{Settings for the value legend, passed to \code{heatmap_legend_param} of
+\code{\link[ComplexHeatmap:Heatmap]{ComplexHeatmap::Heatmap()}} (e.g. \code{list(at = ..., labels = ..., color_bar = "discrete")}).}
 }
 \value{
 A ComplexHeatmap \code{Heatmap}.

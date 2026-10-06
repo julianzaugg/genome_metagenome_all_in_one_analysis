@@ -11,38 +11,7 @@
 #' @export
 read_metadata <- function(config.l){
   md.l <- config.l$metadata
-  path.s <- project_path(config.l, md.l$file)
-  if (!file.exists(path.s)) cli::cli_abort("Metadata file {.path {path.s}} not found")
-
-  metadata.df <- read_table_any(path.s, sheet = md.l$sheet)
-  id_col.s <- md.l$sample_id_column
-  require_columns(metadata.df, id_col.s, "Metadata")
-
-  if (id_col.s != "Sample_ID"){
-    if ("Sample_ID" %in% names(metadata.df)){
-      names(metadata.df)[names(metadata.df) == "Sample_ID"] <- "Sample_ID_original"
-      cli::cli_inform(c("Metadata column {.field Sample_ID} renamed to {.field Sample_ID_original}",
-                        "i" = paste("{.field Sample_ID} is gmaio's sample identifier, taken from {.field {id_col.s}};",
-                                    "give your column another name (e.g. {.field Subject}) to use it as a variable")))
-    }
-    names(metadata.df)[names(metadata.df) == id_col.s] <- "Sample_ID"
-  }
-  metadata.df$Sample_ID <- trimws(as.character(metadata.df$Sample_ID))
-  metadata.df <- metadata.df[!is.na(metadata.df$Sample_ID) & metadata.df$Sample_ID != "", , drop = FALSE]
-
-  duplicated.v <- unique(metadata.df$Sample_ID[duplicated(metadata.df$Sample_ID)])
-  if (length(duplicated.v) > 0) cli::cli_abort("Duplicated sample IDs in metadata: {.val {duplicated.v}}")
-
-  metadata.df$Sample_label <- if (!is.null(md.l$label_column)){
-    require_columns(metadata.df, md.l$label_column, "Metadata")
-    label.v <- as.character(metadata.df[[md.l$label_column]])
-    ifelse(is.na(label.v), metadata.df$Sample_ID, label.v)
-  } else {
-    metadata.df$Sample_ID
-  }
-  if (anyDuplicated(metadata.df$Sample_label)){
-    cli::cli_abort("Sample labels from {.field {md.l$label_column}} are not unique")
-  }
+  metadata.df <- read_sample_table(project_path(config.l, md.l$file), md.l$sheet, md.l$sample_id_column, md.l$label_column)
 
   metadata.df$Excluded <- rep(FALSE, nrow(metadata.df))
   if (!is.null(md.l$exclude_column)){
@@ -56,6 +25,40 @@ read_metadata <- function(config.l){
   metadata.df <- set_group_levels(metadata.df, config.l)
   metadata.df <- order_samples(metadata.df, md.l$sample_order)
   rownames(metadata.df) <- metadata.df$Sample_ID
+  metadata.df
+}
+
+# Read a sample table, with Sample_ID taken from id_col.s and Sample_label from label_col.s (default: the ID)
+read_sample_table <- function(path.s, sheet, id_col.s, label_col.s = NULL, what = "Metadata", unique_labels = TRUE){
+  if (!file.exists(path.s)) cli::cli_abort("{what} file {.path {path.s}} not found")
+  metadata.df <- read_table_any(path.s, sheet = sheet)
+  require_columns(metadata.df, id_col.s, what)
+
+  if (id_col.s != "Sample_ID"){
+    if ("Sample_ID" %in% names(metadata.df)){
+      names(metadata.df)[names(metadata.df) == "Sample_ID"] <- "Sample_ID_original"
+      cli::cli_inform(c("{what} column {.field Sample_ID} renamed to {.field Sample_ID_original}",
+                        "i" = paste("{.field Sample_ID} is gmaio's sample identifier, taken from {.field {id_col.s}};",
+                                    "give your column another name (e.g. {.field Subject}) to use it as a variable")))
+    }
+    names(metadata.df)[names(metadata.df) == id_col.s] <- "Sample_ID"
+  }
+  metadata.df$Sample_ID <- trimws(as.character(metadata.df$Sample_ID))
+  metadata.df <- metadata.df[!is.na(metadata.df$Sample_ID) & metadata.df$Sample_ID != "", , drop = FALSE]
+
+  duplicated.v <- unique(metadata.df$Sample_ID[duplicated(metadata.df$Sample_ID)])
+  if (length(duplicated.v) > 0) cli::cli_abort("Duplicated sample IDs in {tolower(what)}: {.val {duplicated.v}}")
+
+  metadata.df$Sample_label <- if (!is.null(label_col.s)){
+    require_columns(metadata.df, label_col.s, what)
+    label.v <- as.character(metadata.df[[label_col.s]])
+    ifelse(is.na(label.v), metadata.df$Sample_ID, label.v)
+  } else {
+    metadata.df$Sample_ID
+  }
+  if (unique_labels && anyDuplicated(metadata.df$Sample_label)){
+    cli::cli_abort("Sample labels from {.field {label_col.s}} are not unique")
+  }
   metadata.df
 }
 

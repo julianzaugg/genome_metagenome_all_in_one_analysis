@@ -22,7 +22,8 @@ test_that("gmaio tables get an About sheet, described sheets and a README index"
                           logical(1))
     expect_true(all(described.v), label = paste(basename(path.s), toString(data_sheets.v[!described.v])))
   }
-  about.df <- readxl::read_excel(grep("MAG_hq_derep_bins_abundances", written.v, value = TRUE), "About", col_names = FALSE)
+  about.df <- readxl::read_excel(grep("MAG_hq_derep_bins_abundances", written.v, value = TRUE), "About", col_names = FALSE,
+                                 .name_repair = "minimal")
   expect_true("Genome set: hq_derep_bins" %in% about.df[[1]])
   readme.v <- readLines(file.path(dirname(written.v[1]), "README.md"))
   expect_true(all(paste0("### ", basename(written.v)) %in% readme.v))

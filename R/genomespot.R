@@ -85,12 +85,14 @@ community_weighted_traits <- function(genomespot.l, profile){
 #' @param metadata.df Metadata.
 #' @param group Metadata column.
 #' @param colours.v Named colours for `group`.
+#' @param ... Figure and test options passed to [plot_group_boxplots()], e.g. `show_test = FALSE`.
 #' @return List with `plot` and `tests`.
 #' @export
-plot_community_traits <- function(traits.df, metadata.df, group, colours.v = NULL){
+plot_community_traits <- function(traits.df, metadata.df, group, colours.v = NULL, ...){
   labels.v <- c(genomespot_traits(), Oxygen_tolerant_percent = "Oxygen tolerant (%)")
   measures.v <- intersect(names(labels.v), names(traits.df))
   renamed.df <- traits.df[, c("Sample_ID", measures.v)]
   names(renamed.df)[-1] <- labels.v[measures.v]
-  plot_alpha_diversity(renamed.df, metadata.df, group, colours.v, measures = unname(labels.v[measures.v]))[c("plot", "tests")]
+  traits.l <- plot_alpha_diversity(renamed.df, metadata.df, group, colours.v, measures = unname(labels.v[measures.v]), ...)
+  traits.l[c("plot", "tests")]
 }

@@ -1,0 +1,7 @@
+Genome	S12.clean_1.fastq.gz Relative Abundance (%)	S12.clean_1.fastq.gz Covered Fraction	S12.clean_1.fastq.gz Mean	S12.clean_1.fastq.gz Read Count
+unmapped	35			
+S1.metabat2.1	14.5917	0.772	3.3269	3327
+S2.metabat2.1	1.3351	0.202	0.3044	304
+S10.vamb.3	18.5632	0.644	4.2324	4232
+S11.metabat2.4	9.0645	0.153	2.0667	2067
+S12.rosella.5	21.4456	0.873	4.8896	4890

@@ -74,9 +74,14 @@ within_sample_sets <- function() grep("^ws_", names(mag_sets()), value = TRUE)
 #' Add MAG quality, taxonomy and abundance profiles
 #'
 #' Builds the bin summary from CheckM2/CheckM1/GTDB-Tk and dereplication clusters, reads
-#' the per-bin DRAM distillate when present, then, for each CoverM mapping set found,
+#' the DRAM distillate of all bins when present, then, for each CoverM mapping set found,
 #' builds profiles named `mags_<set>_<type>` where type is `relative_abundance`,
-#' `coverm_relative_abundance`, `coverage` or `read_count`.
+#' `coverm_relative_abundance`, `coverage`, `read_count` or `covered_fraction`.
+#'
+#' Reference genomes (pipeline `--reference_genomes`) are kept apart from the MAGs:
+#' `project.l$tables$bin_summary` has the MAGs only and `project.l$tables$reference_genomes`
+#' the references, with their CheckM2 quality and GTDB-Tk taxonomy when available. Both
+#' annotate the `hq_ref_bins` profiles, whose `Genome_type` feature column tells them apart.
 #'
 #' Sets `derep_bins`, `hq_bins`, `hq_derep_bins` and `hq_ref_bins` map every sample to one
 #' catalogue of genomes pooled across samples, so they can be compared between samples.
@@ -108,12 +113,22 @@ add_mags <- function(project.l){
     clusters.l[[sub("^clusters_", "", key.s)]] <- read_cluster_definition(locate_output(config.l, key.s))
   }
 
-  bins.df <- build_bin_summary(checkm2.df, checkm1.df, gtdb.df, clusters.l, sample_ids.v = project.l$metadata$Sample_ID,
-                               quality_weight = mags.l$quality_weight, quality_threshold = mags.l$quality_threshold,
-                               quality_source = mags.l$quality_source)
+  reference_checkm2.df <- if (has_output(config.l, "reference_checkm2")){
+    read_checkm2(locate_output(config.l, "reference_checkm2"))
+  }
+  genomes.df <- build_bin_summary(checkm2.df, checkm1.df, gtdb.df, clusters.l, sample_ids.v = project.l$metadata$Sample_ID,
+                                  quality_weight = mags.l$quality_weight, quality_threshold = mags.l$quality_threshold,
+                                  quality_source = mags.l$quality_source, reference_checkm2.df = reference_checkm2.df)
+  bins.df <- genomes.df[genomes.df$Genome_type == "MAG", , drop = FALSE]
+  references.df <- genomes.df[genomes.df$Genome_type == "Reference", , drop = FALSE]
+  rownames(bins.df) <- rownames(references.df) <- NULL
   project.l$tables$bin_summary <- bins.df
+  project.l$tables$reference_genomes <- if (nrow(references.df) > 0) references.df
   project.l$tables$bin_clusters <- clusters.l
   cli::cli_inform("MAGs: {nrow(bins.df)} bins, {sum(bins.df$High_quality)} high quality")
+  if (nrow(references.df) > 0){
+    cli::cli_inform("Reference genomes: {nrow(references.df)} ({sum(!is.na(references.df$Completeness_CheckM2))} with CheckM2)")
+  }
 
   if (has_output(config.l, "dram_bins_product")){
     project.l$tables$dram_product <- read_dram_product(locate_output(config.l, "dram_bins_product"))
@@ -125,7 +140,7 @@ add_mags <- function(project.l){
     if (!has_output(config.l, key.s)) next
     coverm.df <- read_coverm_abundances(locate_output(config.l, key.s))
     coverm.df <- link_table_samples(coverm.df, "Sample", project.l$metadata, paste("CoverM", set.s))
-    profiles.l <- build_mag_profiles(coverm.df, bins.df, set_name = paste0("mags_", set.s))
+    profiles.l <- build_mag_profiles(coverm.df, genomes.df, set_name = paste0("mags_", set.s))
     # Samples without genomes of their own get no CoverM table in within-sample runs; they have zero of them
     if (set.s %in% within_sample_sets()) profiles.l <- lapply(profiles.l, add_zero_samples, project.l$metadata$Sample_ID)
     for (type.s in names(profiles.l)){
@@ -152,63 +167,89 @@ add_mags <- function(project.l){
 #' divided by the sample's mean SingleM marker RPKM) and sums genes by KEGG KO, CAZy
 #' family, CAZy substrate (when the DRAM distillate is available) and MEROPS family.
 #'
+#' The pipeline builds one or two catalogues. The `"base"` catalogue holds the genes assembled
+#' from the study samples. The `"expanded"` catalogue, built when the run had
+#' `--reference_genomes` (with `--reference_genomes_in_catalogue`) or `--comparison_assemblies`,
+#' adds those genomes' genes, so reads from genes the study assemblies missed are counted too;
+#' it is the catalogue the comparison samples are mapped to (see [add_comparison()]).
+#'
 #' @param project.l A `gm_project`.
+#' @param catalogue `"base"` or `"expanded"`.
 #' @param min_annotated_fraction Error when fewer catalogue genes than this have a DRAM row.
 #' @return Updated `gm_project` with `functions_ko`, `functions_cazy`, `functions_cazy_substrate`
-#'   and `functions_peptidase` profiles and an `annotation_coverage` table.
+#'   and `functions_peptidase` profiles and an `annotation_coverage` table; for the expanded
+#'   catalogue `functions_expanded_ko`, ... and `annotation_coverage_expanded`.
 #' @export
-add_gene_catalogue_functions <- function(project.l, min_annotated_fraction = 0.9){
+add_gene_catalogue_functions <- function(project.l, catalogue = c("base", "expanded"), min_annotated_fraction = 0.9){
+  catalogue <- match.arg(catalogue)
   config.l <- project.l$config
-  if (skip_missing(config.l, c("dram_catalogue", "rpkm_normalised"), "gene catalogue functions")) return(project.l)
-  genes.p <- link_profile_samples(read_rpkm(locate_output(config.l, "rpkm_normalised")), project.l$metadata)
-  annotations.df <- read_dram_annotations(locate_output(config.l, "dram_catalogue"))
+  keys.v <- catalogue_keys(catalogue)
+  if (skip_missing(config.l, keys.v, paste(if (catalogue == "expanded") "expanded", "gene catalogue functions"))){
+    return(project.l)
+  }
+  genes.p <- link_profile_samples(read_rpkm(locate_output(config.l, keys.v[["rpkm"]])), project.l$metadata)
+  annotations.df <- read_dram_annotations(locate_output(config.l, keys.v[["dram"]]))
+  substrate.df <- if (has_output(config.l, "dram_bins_metabolism")){
+    cazy_substrate_map(locate_output(config.l, "dram_bins_metabolism"))
+  }
+  functions.l <- catalogue_function_profiles(genes.p, annotations.df, substrate.df, min_annotated_fraction)
 
+  prefix.s <- if (catalogue == "expanded") "functions_expanded_" else "functions_"
+  for (name.s in names(functions.l$profiles)){
+    profile <- functions.l$profiles[[name.s]]
+    profile$source <- paste0(prefix.s, name.s)
+    project.l$profiles[[profile$source]] <- profile
+  }
+  project.l$tables[[paste0("annotation_coverage", if (catalogue == "expanded") "_expanded")]] <- functions.l$annotation_coverage
+  if (!is.null(substrate.df)) project.l$tables$cazy_substrate_map <- substrate.df
+  project.l
+}
+
+catalogue_keys <- function(catalogue){
+  if (catalogue == "expanded") c(rpkm = "rpkm_normalised_expanded", dram = "dram_catalogue_expanded") else
+    c(rpkm = "rpkm_normalised", dram = "dram_catalogue")
+}
+
+# Function profiles (ko, cazy, cazy_substrate, peptidase) of a gene catalogue profile and how much of each
+# sample's RPKM is annotated; shared by the study and the comparison samples
+catalogue_function_profiles <- function(genes.p, annotations.df, substrate.df = NULL, min_annotated_fraction = 0.9){
   annotated_fraction.n <- mean(rownames(genes.p$values) %in% annotations.df$Gene_ID)
   if (annotated_fraction.n < min_annotated_fraction){
     cli::cli_abort(c("Only {round(100 * annotated_fraction.n, 1)}% of catalogue genes have DRAM annotations",
-                     "i" = "Check that the gene catalogue RPKM and DRAM inputs come from the same run"))
+                     "i" = "Check that the gene catalogue RPKM and DRAM inputs come from the same run and catalogue"))
   }
   genes.p$features <- cbind(genes.p$features, annotations.df[match(genes.p$features$Feature_ID, annotations.df$Gene_ID),
                                                              setdiff(names(annotations.df), "Gene_ID"), drop = FALSE])
+  profiles.l <- list()
 
   ko.p <- aggregate_profile(genes.p, by = "ko_id")
   ko_description.v <- genes.p$features$kegg_hit[match(ko.p$features$Feature_ID, genes.p$features$ko_id)]
   ko.p$features$Description <- ko_description.v
   ko.p$features$Label <- function_label(ko.p$features$Feature_ID, ko_description.v)
-  ko.p$source <- "functions_ko"
-  project.l$profiles$functions_ko <- ko.p
+  profiles.l$ko <- ko.p
 
   cazy.p <- aggregate_profile(genes.p, by = "cazy_family", split = ";")
   cazy.p$features$CAZy_class <- sub("[0-9].*$", "", cazy.p$features$Feature_ID)
-  cazy.p$source <- "functions_cazy"
-  project.l$profiles$functions_cazy <- cazy.p
+  profiles.l$cazy <- cazy.p
 
-  peptidase.p <- aggregate_profile(genes.p, by = "peptidase_family")
-  peptidase.p$source <- "functions_peptidase"
-  project.l$profiles$functions_peptidase <- peptidase.p
-
-  if (has_output(config.l, "dram_bins_metabolism")){
-    substrate.df <- cazy_substrate_map(locate_output(config.l, "dram_bins_metabolism"))
-    project.l$tables$cazy_substrate_map <- substrate.df
+  if (!is.null(substrate.df)){
     family_profile.p <- update_profile(cazy.p, cazy.p$values[rownames(cazy.p$values) != "Unassigned", , drop = FALSE])
     family_profile.p$features$Substrate <- vapply(family_profile.p$features$Feature_ID, function(f){
       s.v <- unique(substrate.df$Substrate[substrate.df$CAZy_family == f])
       if (length(s.v) == 0) NA_character_ else paste(sort(s.v), collapse = ";")
     }, character(1))
-    substrate.p <- aggregate_profile(family_profile.p, by = "Substrate", split = ";")
-    substrate.p$source <- "functions_cazy_substrate"
-    project.l$profiles$functions_cazy_substrate <- substrate.p
+    profiles.l$cazy_substrate <- aggregate_profile(family_profile.p, by = "Substrate", split = ";")
   }
+  profiles.l$peptidase <- aggregate_profile(genes.p, by = "peptidase_family")
 
   annotated.m <- vapply(c(ko = "ko_id", cazy = "cazy_family", peptidase = "peptidase_family"), function(col.s){
     has.v <- !is.na(genes.p$features[[col.s]]) & genes.p$features[[col.s]] != ""
     colSums(genes.p$values[has.v, , drop = FALSE]) / colSums(genes.p$values) * 100
   }, numeric(ncol(genes.p$values)))
-  project.l$tables$annotation_coverage <- data.frame(Sample_ID = profile_samples(genes.p),
-                                                     Genes_detected = colSums(genes.p$values > 0),
-                                                     KO_percent = annotated.m[, "ko"], CAZy_percent = annotated.m[, "cazy"],
-                                                     Peptidase_percent = annotated.m[, "peptidase"], row.names = NULL)
-  project.l
+  coverage.df <- data.frame(Sample_ID = profile_samples(genes.p), Genes_detected = colSums(genes.p$values > 0),
+                            KO_percent = annotated.m[, "ko"], CAZy_percent = annotated.m[, "cazy"],
+                            Peptidase_percent = annotated.m[, "peptidase"], row.names = NULL)
+  list(profiles = profiles.l, annotation_coverage = coverage.df)
 }
 
 function_label <- function(id.v, description.v, max_chars = 60){
@@ -306,7 +347,8 @@ add_mobile_elements <- function(project.l){
 #' Assign project palettes and save them to palettes.yml
 #'
 #' Colours metadata variables (group variables, discrete covariates, `colour_variables`
-#' and samples) and taxa at phylum and the configured analysis ranks.
+#' and samples) and taxa at phylum and the configured analysis ranks; with comparison samples,
+#' also `Comparison_group` (study groups keep their colours) and `Dataset`.
 #'
 #' @param project.l A `gm_project`.
 #' @param min_taxon_abundance Only taxa reaching this relative abundance (percent) in some sample get a saved colour.
@@ -320,12 +362,14 @@ add_palettes <- function(project.l, min_taxon_abundance = 0.1){
   variables.v <- unique(c(analysis.l$group_variables, discrete_covariates.v, config.l$metadata$colour_variables))
 
   taxa.df <- NULL
-  profile_names.v <- taxonomic_profile_names(project.l)
-  if (length(profile_names.v) > 0){
+  # Comparison samples' taxa get saved colours too, so combined figures are as stable as the study's
+  taxonomic.l <- c(project.l$profiles[taxonomic_profile_names(project.l)],
+                   Filter(function(p) all(rank_columns() %in% names(p$features)), project.l$comparison$profiles))
+  if (length(taxonomic.l) > 0){
     ranks.v <- unique(c("phylum", analysis.l$ranks))
-    taxa.df <- do.call(rbind, lapply(profile_names.v, function(name.s){
+    taxa.df <- do.call(rbind, lapply(taxonomic.l, function(taxonomic.p){
       do.call(rbind, lapply(ranks.v, function(rank.s){
-        profile <- as_relative_abundance(aggregate_profile(project.l$profiles[[name.s]], rank = rank.s))
+        profile <- as_relative_abundance(aggregate_profile(taxonomic.p, rank = rank.s))
         profile <- filter_profile(profile, min_abundance = min_taxon_abundance)
         data.frame(Label = profile$features$Label, Phylum = profile$features$Phylum,
                    Abundance = apply(profile$values, 1, max), stringsAsFactors = FALSE)
@@ -333,8 +377,22 @@ add_palettes <- function(project.l, min_taxon_abundance = 0.1){
     }))
   }
   palette_file.s <- project_path(config.l, "palettes.yml")
-  palettes.l <- build_palettes(metadata.df, variables.v, taxa.df, existing.l = read_palettes(palette_file.s),
+  existing.l <- read_palettes(palette_file.s)
+  palettes.l <- build_palettes(metadata.df, variables.v, taxa.df, existing.l = existing.l,
                                fixed.l = config.l$colours, taxa_scheme = config.l$outputs$taxa_colour_scheme)
+  if (!is.null(project.l$comparison)){
+    # Study groups keep their colours; comparison groups get colours unlike any metadata variable's
+    combined.df <- combined_metadata(project.l, include_excluded = TRUE)
+    group.s <- primary_group(project.l)
+    study_colours.v <- if (!is.null(group.s)) palettes.l[[group.s]]
+    used.v <- unlist(palettes.l[setdiff(names(palettes.l), c("Sample_ID", "Sample_label", "taxa"))])
+    palettes.l$Comparison_group <- assign_colours(combined.df$Comparison_group,
+                                                  existing.v = c(unlist(existing.l$Comparison_group), study_colours.v),
+                                                  fixed.v = unlist(config.l$colours$Comparison_group), avoid.v = used.v)
+    palettes.l$Dataset <- assign_colours(combined.df$Dataset, existing.v = unlist(existing.l$Dataset),
+                                         fixed.v = unlist(config.l$colours$Dataset),
+                                         avoid.v = c(used.v, palettes.l$Comparison_group))
+  }
   if (config.l$mode == "isolate"){
     palettes.l <- lapply(palettes.l, function(x) c(x, Reference = special_colours()[["Reference"]]))
     palettes.l$Entry_type <- c(Sample = "#2171B5", Reference = special_colours()[["Reference"]])

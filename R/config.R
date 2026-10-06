@@ -28,6 +28,17 @@ config_defaults <- function(){
       quality_threshold = 50,
       quality_source = "both"
     ),
+    comparison = list(
+      metadata = list(
+        file = NULL,
+        sheet = 1,
+        sample_id_column = "Sample_ID",
+        label_column = NULL,
+        exclude_samples = character()
+      ),
+      group_variable = NULL,
+      dataset_labels = list(study = "This study", comparison = "Comparison")
+    ),
     outputs = list(
       tables = "Result_tables",
       figures = "Result_figures",
@@ -65,7 +76,8 @@ read_config <- function(path = "config.yml", check_paths = TRUE){
 # Settings that are vectors; YAML reads `[]` and `[a, b]` as lists
 config_vector_fields <- function(){
   list(c("metadata", "exclude_samples"), c("metadata", "sample_order"), c("metadata", "colour_variables"),
-       c("analysis", "group_variables"), c("analysis", "covariates"), c("analysis", "ranks"))
+       c("analysis", "group_variables"), c("analysis", "covariates"), c("analysis", "ranks"),
+       c("comparison", "metadata", "exclude_samples"))
 }
 
 validate_config <- function(config.l, check_paths = TRUE){
@@ -102,6 +114,10 @@ validate_config <- function(config.l, check_paths = TRUE){
                      "i" = paste("{.field Sample_ID} is gmaio's sample identifier, from {.field metadata$sample_id_column};",
                                  "a metadata column of that name is renamed {.field Sample_ID_original}"),
                      "i" = "Rename the metadata column (e.g. to {.field Subject}) and use that name"))
+  }
+  labels.l <- config.l$comparison$dataset_labels
+  if (length(labels.l$study) != 1 || length(labels.l$comparison) != 1 || identical(labels.l$study, labels.l$comparison)){
+    cli::cli_abort("{.field comparison$dataset_labels} needs two different labels, {.field study} and {.field comparison}")
   }
   unknown.v <- setdiff(names(config.l$files), pipeline_registry()$key)
   if (length(unknown.v) > 0){

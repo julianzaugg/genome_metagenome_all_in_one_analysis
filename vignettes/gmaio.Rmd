@@ -153,14 +153,16 @@ gmaio::write_xlsx_tables(list(PERMANOVA = permanova.df), gmaio::output_path(proj
 
 | Script | Main functions |
 |---|---|
-| `main.R` | `read_config()`, `start_project()`, `add_sylph()`, `add_singlem()`, `add_mags()`, `add_gene_catalogue_functions()`, `add_palettes()`, `write_project_tables()` |
+| `main.R` | `read_config()`, `start_project()`, `add_sylph()`, `add_singlem()`, `add_mags()`, `add_gene_catalogue_functions()` (base and expanded catalogue), `add_marker_tree()`, `add_strains()`, `add_comparison()`, `add_palettes()`, `write_project_tables()` |
 | `barcharts.R` | `plot_stacked_barchart()` |
 | `heatmaps.R` | `plot_heatmap()` |
 | `ordination.R` | `run_ordination()`, `plot_ordination()`, `run_permanova()`, `run_pairwise_permanova()`, `run_permdisp()`, `plot_loadings()` |
 | `diversity.R` | `alpha_diversity()`, `plot_alpha_diversity()` (built on `plot_group_boxplots()`) |
 | `differential_abundance.R` | `run_differential_abundance()`, `da_consensus()`, `plot_da_consensus()`, `plot_da_heatmap()`, `plot_feature_boxplots()` |
 | `functional_profiles.R` | `plot_heatmap()`, `plot_stacked_barchart()` |
-| `mag_summary.R` | `plot_mag_quality()`, `plot_mag_counts()`, `plot_mag_taxonomy()`, `within_sample_mag_summary()`, `plot_mag_mapping()` |
+| `mag_summary.R` | `plot_mag_quality()`, `plot_mag_counts()`, `plot_mag_taxonomy()`, `within_sample_mag_summary()`, `plot_mag_mapping()`, `plot_marker_tree()` |
+| `comparison.R` | `combined_metadata()`, `combined_profile()`, `run_ordination()`, `run_permanova()`, `comparison_distances()`, `plot_comparison_distances()`, `mag_detection()` (see the comparison vignette) |
+| `strains.R` | `strain_sharing_matrix()`, `plot_strain_sharing_matrix()`, `compare_pairs_by_group()`, `plot_pairs_by_group()`, `instrain_sample_summary()`, `plot_instrain_diversity()` (see the strains vignette) |
 | `nonpareil.R` | `plot_nonpareil_curves()`, `plot_nonpareil_metrics()` |
 | `mobile_elements.R` | `mobile_element_summary()`, `plot_mobile_prevalence()` |
 | `genomespot.R` | `community_weighted_traits()`, `plot_genomespot_traits()` |

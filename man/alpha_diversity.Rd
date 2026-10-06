@@ -4,7 +4,7 @@
 \alias{alpha_diversity}
 \title{Alpha diversity per sample}
 \usage{
-alpha_diversity(profile, rarefy_depth = NULL, seed = 1234)
+alpha_diversity(profile, rarefy_depth = NULL, seed = 1234, evenness = FALSE)
 }
 \arguments{
 \item{profile}{A \code{gm_profile}.}
@@ -12,13 +12,18 @@ alpha_diversity(profile, rarefy_depth = NULL, seed = 1234)
 \item{rarefy_depth}{Optional depth to rarefy read counts to (samples below it are dropped).}
 
 \item{seed}{Random seed for rarefying.}
+
+\item{evenness}{Also report Pielou evenness.}
 }
 \value{
-Data frame with \code{Sample_ID}, \code{Richness}, \code{Shannon}, \code{Simpson}, \code{Pielou} and, for counts, \code{Chao1}.
+Data frame with \code{Sample_ID}, \code{Richness}, \code{Shannon}, \code{Simpson}, \code{Pielou} (with
+\code{evenness = TRUE}) and, for counts, \code{Chao1}.
 }
 \description{
-Shannon, Simpson (Gini-Simpson) and Pielou evenness are computed on proportions and
-are valid for relative abundance, coverage or counts. Richness is the number of
-features above zero; it depends on sequencing depth, so for read counts it can be
-computed after rarefying (\code{rarefy_depth}). Chao1 is only reported for integer counts.
+Shannon and Simpson (Gini-Simpson) are computed on proportions and are valid for
+relative abundance, coverage or counts. Richness is the number of features above zero;
+it depends on sequencing depth, so for read counts it can be computed after rarefying
+(\code{rarefy_depth}). Chao1 is only reported for integer counts. Pielou evenness
+(Shannon / log(Richness)) is only added on request: it inherits the depth dependence of
+richness and adds little to Shannon and Simpson.
 }

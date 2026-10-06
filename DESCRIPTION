@@ -1,6 +1,6 @@
 Package: gmaio
 Title: Downstream Analysis of genome_metagenome_all_in_one Pipeline Output
-Version: 0.1.0
+Version: 0.2.0
 Authors@R:
     person("Julian", "Zaugg", , "j.zaugg@uq.edu.au", role = c("aut", "cre"))
 Description: Loads, links and analyses the output of the genome_metagenome_all_in_one

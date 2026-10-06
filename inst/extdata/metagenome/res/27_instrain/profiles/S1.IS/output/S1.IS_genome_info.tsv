@@ -1,0 +1,5 @@
+genome	coverage	breadth	nucl_diversity	length	breadth_minCov	popANI_reference	SNV_count
+S1.metabat2.1	29.06	0.784	0.00428	2500000	0.791	0.99767	186
+S2.metabat2.1	12.72	0.753	0.00387	2500000	0.559	0.99702	184
+S11.metabat2.4	37.91	0.629	7e-04	2500000	0.683	0.99851	187
+S12.rosella.5	39.89	0.751	0.00487	2500000	0.822	0.99548	203

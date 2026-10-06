@@ -43,10 +43,10 @@ head(diversity.df)
 | `Richness` | Number of taxa above zero |
 | `Shannon` | Shannon entropy (natural log): richness and evenness together |
 | `Simpson` | Gini-Simpson, 1 - sum of squared proportions: the chance two random reads come from different taxa |
-| `Pielou` | Evenness, Shannon / log(Richness), from 0 (one taxon dominates) to 1 (all equal) |
+| `Pielou` | Evenness, Shannon / log(Richness), from 0 (one taxon dominates) to 1 (all equal); only with `evenness = TRUE`, since it inherits the depth dependence of richness |
 | `Chao1` | Estimated richness including unseen taxa; integer read counts only |
 
-Shannon, Simpson and Pielou are computed on proportions, so they suit relative abundance, coverage and counts alike.
+Shannon and Simpson are computed on proportions, so they suit relative abundance, coverage and counts alike.
 Richness depends on sequencing depth: for read counts (e.g. the `mags_*_read_count` profiles), `rarefy_depth` subsamples every sample to the same number of reads first, dropping samples below it:
 
 ```r
@@ -122,7 +122,7 @@ Here each mouse was sampled twice, so for a strict comparison test one time poin
 
 ```{r test-options}
 diversity.l <- gmaio::plot_alpha_diversity(diversity.df, metadata.df, "Group",
-                                           measures = c("Richness", "Pielou"),
+                                           measures = c("Richness", "Shannon"),
                                            pairwise_test = "wilcoxon", bracket_label = "p")
 ```
 
@@ -134,7 +134,7 @@ show_plot(diversity.l$plot)
 
 | Argument | Controls | Default |
 |---|---|---|
-| `measures` | Measures shown, in order | Richness, Shannon, Simpson, Pielou |
+| `measures` | Measures shown, in order | Richness, Shannon, Simpson |
 | `panel_labels` | Panel titles, e.g. `c(Richness = "Observed genera")` | measure names |
 | `shape_by`, `shapes` | Point shape by a metadata column, and the shapes | none |
 | `box_width`, `box_alpha` | Box width and fill transparency | 0.6, 0.5 |
@@ -151,7 +151,7 @@ For example, Treatment on the x axis with time point as the point shape, two pan
 diversity.l <- gmaio::plot_alpha_diversity(diversity.df, metadata.df, "Treatment", project.l$palettes$Treatment,
                                            shape_by = "Time", ncol = 2, x_text_angle = 0,
                                            panel_labels = c(Richness = "Observed genera", Shannon = "Shannon index",
-                                                            Simpson = "Gini-Simpson index", Pielou = "Pielou evenness"))
+                                                            Simpson = "Gini-Simpson index"))
 ```
 
 ```{r figure-options-show, echo = FALSE}

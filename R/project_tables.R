@@ -58,13 +58,15 @@ write_project_tables <- function(project.l){
   if (!is.null(project.l$tables$bin_summary)){
     clusters.l <- project.l$tables$bin_clusters
     if (length(clusters.l) > 0) names(clusters.l) <- paste0("Clusters_", names(clusters.l))
-    write.f(c(list(Bins = project.l$tables$bin_summary), clusters.l), "MAG_summary.xlsx")
+    write.f(c(list(Bins = project.l$tables$bin_summary, Reference_genomes = project.l$tables$reference_genomes,
+                   Marker_tree_neighbours = project.l$tables$marker_tree$neighbours),
+              clusters.l), "MAG_summary.xlsx")
     for (set.s in names(mag_sets())){
       prefix.s <- paste0("mags_", set.s, "_")
       names.v <- grep(paste0("^", prefix.s), names(project.l$profiles), value = TRUE)
       if (length(names.v) == 0) next
       abundance.l <- lapply(stats::setNames(names.v, sub(prefix.s, "", names.v)), function(n){
-        profile_to_wide_df(project.l$profiles[[n]], c("Feature_ID", "Short_ID", "Label"))
+        profile_to_wide_df(project.l$profiles[[n]], c("Feature_ID", "Short_ID", "Genome_type", "Label"))
       })
       write.f(abundance.l, paste0("MAG_", set.s, "_abundances.xlsx"), number_format = "0.0000")
       write.f(taxonomy_tables(project.l$profiles[[paste0(prefix.s, "relative_abundance")]], include_native = FALSE),
@@ -72,16 +74,18 @@ write_project_tables <- function(project.l){
     }
   }
 
-  function_names.v <- c(KEGG_KO = "functions_ko", CAZy_family = "functions_cazy",
-                        CAZy_substrate = "functions_cazy_substrate", Peptidase = "functions_peptidase")
-  function_names.v <- function_names.v[function_names.v %in% names(project.l$profiles)]
-  if (length(function_names.v) > 0){
+  for (catalogue.s in c("base", "expanded")){
+    expanded.s <- if (catalogue.s == "expanded") "expanded_" else ""
+    function_names.v <- paste0("functions_", expanded.s, function_sheet_names())
+    names(function_names.v) <- names(function_sheet_names())
+    function_names.v <- function_names.v[function_names.v %in% names(project.l$profiles)]
+    if (length(function_names.v) == 0) next
     tables.l <- lapply(function_names.v, function(n){
       profile_to_wide_df(project.l$profiles[[n]], c("Feature_ID", "Label", "Description", "CAZy_class"))
     })
-    tables.l$Annotation_coverage <- project.l$tables$annotation_coverage
+    tables.l$Annotation_coverage <- project.l$tables[[paste0("annotation_coverage", if (catalogue.s == "expanded") "_expanded")]]
     tables.l$CAZy_substrate_map <- project.l$tables$cazy_substrate_map
-    write.f(tables.l, "Gene_catalogue_functions_normalised_rpkm.xlsx")
+    write.f(tables.l, paste0("Gene_catalogue_functions_", expanded.s, "normalised_rpkm.xlsx"))
   }
 
   if (!is.null(project.l$tables$nonpareil)){
@@ -98,6 +102,11 @@ write_project_tables <- function(project.l){
   table_dir.s <- project_path(config.l, config.l$outputs$tables) # nolint: object_usage_linter. Used in cli glue.
   cli::cli_inform(c("v" = "Wrote {length(written.e$paths)} table file{?s} to {.path {table_dir.s}}"))
   invisible(written.e$paths)
+}
+
+# Function profile name suffixes, named by their sheet in the gene catalogue workbooks
+function_sheet_names <- function(){
+  c(KEGG_KO = "ko", CAZy_family = "cazy", CAZy_substrate = "cazy_substrate", Peptidase = "peptidase")
 }
 
 run_params_table <- function(run_params.l){

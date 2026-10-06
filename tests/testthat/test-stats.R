@@ -3,9 +3,9 @@ test_that("PERMANOVA aligns metadata by sample name, not position", {
   profile <- get_profile(project.l, "sylph_taxonomic")
   ordination <- run_ordination(profile, "pcoa", distance = "bray")
   metadata.df <- analysis_metadata(project.l)
-  first.df <- run_permanova(ordination$distance, metadata.df, "Treatment", permutations = 99)
+  first.df <- suppressMessages(run_permanova(ordination$distance, metadata.df, "Treatment", permutations = 99))
   reversed.df <- metadata.df[rev(seq_len(nrow(metadata.df))), ]
-  shuffled.df <- run_permanova(ordination$distance, reversed.df, "Treatment", permutations = 99)
+  shuffled.df <- suppressMessages(run_permanova(ordination$distance, reversed.df, "Treatment", permutations = 99))
   expect_equal(first.df$R2, shuffled.df$R2)
   expect_equal(first.df$P_value, shuffled.df$P_value)
   expect_equal(first.df$N[1], 5)
@@ -20,7 +20,7 @@ test_that("ordinations return scores, variance and distances", {
   expect_false(is.null(pca$loadings))
   jaccard <- run_ordination(profile, "pcoa", distance = "jaccard", binary = TRUE, detection = 1)
   expect_null(jaccard$loadings)
-  permdisp.l <- run_permdisp(jaccard$distance, analysis_metadata(project.l), "Treatment", permutations = 99)
+  permdisp.l <- suppressMessages(run_permdisp(jaccard$distance, analysis_metadata(project.l), "Treatment", permutations = 99))
   expect_named(permdisp.l, c("overall", "pairwise", "distances"))
 })
 

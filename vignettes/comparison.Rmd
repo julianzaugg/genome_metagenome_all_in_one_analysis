@@ -1,0 +1,151 @@
+---
+title: "Comparison samples"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Comparison samples}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.align = "center")
+# Show each figure exactly as save_plot() writes it, at its automatic size
+show_plot <- function(plot, ...){
+  path.s <- knitr::fig_path(".png")
+  gmaio::save_plot(plot, path.s, dpi = 110, ...)
+  knitr::include_graphics(path.s, dpi = 110)
+}
+```
+
+The pipeline can profile reads from another study next to your own (`--comparison_reads`, and `--comparison_assemblies` to add their genes to the gene catalogue).
+These comparison samples are not assembled or binned: they get sylph and SingleM profiles, are mapped to your dereplicated bins, and are mapped to the gene catalogue.
+`code/comparison.R` puts them side by side with your samples, to show how different your samples are from each other and from the comparison samples.
+This vignette follows that script on the synthetic example project, where 16 mice from two other facilities are the comparison samples.
+
+```{r project}
+project.l <- gmaio::example_project()
+```
+
+## Configuration
+
+Comparison samples come from other studies, so they have their own metadata, set in the `comparison:` section of `config.yml`:
+
+```yaml
+comparison:
+  metadata:
+    file: data/comparison_metadata.xlsx
+    sheet: 1                       # a sheet name or number
+    sample_id_column: Sample_ID    # must match the --comparison_reads samplesheet `sample` column
+    label_column: Name
+    exclude_samples: []
+  group_variable: Facility         # comparison metadata column to group comparison samples by
+  dataset_labels: {study: This study, comparison: Other facilities}
+```
+
+The metadata can list more samples than were sequenced; only those in the pipeline outputs are used, and a comparison sample missing from it is an error.
+`main.R` loads them with `add_comparison()`, after the MAGs and gene catalogue functions.
+
+## Combined metadata and profiles
+
+`combined_metadata()` stacks the two sets of samples.
+`Dataset` says where each sample comes from, and `Comparison_group` holds the study's primary group variable for study samples and `comparison: group_variable` for comparison samples, with the study's levels first.
+A comparison group named like a study group (for example the same site) is suffixed with the comparison dataset label, so the two datasets' groups are never pooled.
+
+```{r metadata}
+metadata.df <- gmaio::combined_metadata(project.l)
+table(metadata.df$Dataset, metadata.df$Comparison_group)
+```
+
+`combined_profile()` joins a comparison profile with the study profile of the same name.
+Taxa found in only one dataset are zero in the other.
+Function profiles (`functions_ko`, ...) are joined with the study profiles of the catalogue the comparison reads were mapped to, the expanded one when the pipeline built it.
+
+```{r profiles}
+gmaio::combined_profile_names(project.l)
+genus.p <- gmaio::aggregate_profile(gmaio::combined_profile(project.l, "sylph_taxonomic"), rank = "genus")
+genus.p
+```
+
+## Ordination and PERMANOVA
+
+The script ordinates each combined dataset, colouring samples by `Comparison_group` and shaping them by `Dataset`, and tests both variables with PERMANOVA.
+Pairwise PERMANOVA between all groups shows which study groups differ from which comparison groups.
+
+```{r ordination}
+filtered.p <- gmaio::filter_profile(genus.p, min_prevalence = 3)
+ordination <- gmaio::run_ordination(filtered.p, "pca_rclr")
+permanova.df <- gmaio::run_permanova(ordination$distance, metadata.df, "Comparison_group", permutations = 999)
+permdisp.l <- gmaio::run_permdisp(ordination$distance, metadata.df, "Comparison_group", permutations = 999)
+ordination.gg <- gmaio::plot_ordination(ordination, metadata.df, colour_by = "Comparison_group",
+                                        colours.v = project.l$palettes$Comparison_group, shape_by = "Dataset",
+                                        ellipse = TRUE, title = "sylph genus",
+                                        caption = gmaio::permanova_caption(permanova.df, permdisp.l))
+```
+
+```{r ordination-show, echo = FALSE}
+show_plot(ordination.gg, width = 18, height = 13)
+```
+
+```{r pairwise}
+gmaio::run_pairwise_permanova(ordination$distance, metadata.df, "Comparison_group", permutations = 999)
+```
+
+## Distances to each group
+
+`comparison_distances()` takes each study sample's mean distance to the samples of every group (its own group without itself).
+A study sample closer to a comparison group than to its own study group stands out at once.
+Points from one sample are not independent, so the figure draws no tests; the PERMANOVA results are the inference.
+
+```{r distances}
+distances.df <- gmaio::comparison_distances(ordination$distance, metadata.df)
+head(distances.df)
+distances.gg <- gmaio::plot_comparison_distances(distances.df, project.l$palettes$Comparison_group,
+                                                 y_label = paste("Mean distance,", ordination$distance_label))
+```
+
+```{r distances-show, echo = FALSE}
+show_plot(distances.gg)
+```
+
+## Composition
+
+Barcharts are split by dataset, with a strip of groups under the bars.
+With many samples, `top_method = "mean"` keeps the legend to the taxa with the highest mean instead of each sample's own top taxa.
+
+```{r barchart}
+barchart.gg <- gmaio::plot_stacked_barchart(genus.p, metadata.df, project.l$palettes$taxa, top_n = 12, top_method = "mean",
+                                            facet_variable = "Dataset", annotation_variables = "Comparison_group",
+                                            annotation_colours = list(Comparison_group = project.l$palettes$Comparison_group),
+                                            legend_title = "Genus")
+```
+
+```{r barchart-show, echo = FALSE}
+show_plot(barchart.gg)
+```
+
+## Alpha diversity
+
+```{r diversity}
+diversity.l <- gmaio::plot_alpha_diversity(gmaio::alpha_diversity(genus.p), metadata.df, "Comparison_group",
+                                           project.l$palettes$Comparison_group)
+```
+
+```{r diversity-show, echo = FALSE}
+show_plot(diversity.l$plot)
+```
+
+Richness depends on sequencing depth.
+Comparison samples are often sequenced to a different depth than the study's, so compare richness between datasets only when depths are similar; `project.l$comparison$tables$read_stats` has the comparison samples' raw read counts.
+
+## Detecting the study's MAGs
+
+Comparison reads are mapped to the study's dereplicated bins.
+`mag_detection()` counts, for each genome, the samples of each group in which reads cover at least `min_covered_fraction` of it; requiring breadth guards against reads from relatives that hit only conserved regions.
+The table goes to `Study_vs_comparison_MAG_detection.xlsx`, and the script draws the covered fraction of the HQ bins as a heatmap.
+
+```r
+detection.df <- gmaio::mag_detection(project.l, min_covered_fraction = 0.3)
+covered.p <- gmaio::combined_profile(project.l, "mags_derep_bins_covered_fraction")
+```
+
+The example project has no CoverM mapping, so this part is not run here.

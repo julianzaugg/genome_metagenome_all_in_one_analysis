@@ -95,16 +95,18 @@ Metagenome projects (`mode: metagenome`):
 
 | Script | What it does |
 |---|---|
-| `main.R` | Loads read statistics, sylph, SingleM, MAGs (CheckM, GTDB-Tk, CoverM, DRAM distillate), gene catalogue functions (DRAM + RPKM), Nonpareil, GenomeSPOT, geNomad/CheckV; writes the standard tables and palettes |
+| `main.R` | Loads read statistics, sylph, SingleM, MAGs and reference genomes (CheckM, GTDB-Tk, CoverM, DRAM distillate), gene catalogue functions (DRAM + RPKM, base and expanded catalogue), Nonpareil, GenomeSPOT, geNomad/CheckV, the marker gene tree, strain comparison (inStrain, TRACS) and comparison samples; writes the standard tables and palettes |
 | `barcharts.R` | Stacked barcharts of the top taxa per sample for each profile and rank |
 | `heatmaps.R` | Abundance heatmaps (log10 relative abundance) with phylum annotation |
 | `ordination.R` | rclr PCA and Jaccard PCoA of taxonomic, MAG and functional profiles, PERMANOVA, PERMDISP, loadings |
-| `diversity.R` | Alpha diversity (richness, Shannon, Simpson, Pielou) with group tests |
+| `diversity.R` | Alpha diversity (richness, Shannon, Simpson) with group tests |
 | `differential_abundance.R` | MaAsLin3, LinDA and sPLS-DA with a consensus table, effect plots and boxplots |
 | `nonpareil.R` | Nonpareil coverage curves and metrics by group |
 | `genomespot.R` | GenomeSPOT trait predictions for HQ MAGs and abundance-weighted community traits |
-| `mag_summary.R` | MAG quality, yield per sample, representative taxonomy, how much of each sample its own MAGs and the pooled catalogue explain, DRAM module heatmaps |
-| `functional_profiles.R` | KEGG, CAZy and peptidase heatmaps, CAZy substrate barcharts |
+| `mag_summary.R` | MAG quality, yield per sample, representative taxonomy, how much of each sample its own MAGs and the pooled catalogue explain, DRAM module heatmaps, marker gene trees |
+| `functional_profiles.R` | KEGG, CAZy and peptidase heatmaps, CAZy substrate barcharts, for the study's gene catalogue or the expanded one |
+| `comparison.R` | The study's samples next to external comparison samples: combined profiles, ordinations with PERMANOVA and PERMDISP, distances from each study sample to each group, composition, alpha diversity and detection of the study's MAGs |
+| `strains.R` | Strains shared between samples (inStrain popANI), sharing within versus between groups, TRACS SNP distances and per-sample strain diversity |
 | `mobile_elements.R` | Viral and plasmid cluster prevalence, richness, richness against depth, Jaccard PCoA, virus taxonomy |
 
 Isolate projects (`mode: isolate`):
@@ -135,6 +137,8 @@ The vignettes are worked examples on synthetic example projects (`gmaio::example
 | `vignette("barcharts", package = "gmaio")` | `plot_stacked_barchart()`: which taxa are shown, annotation strips, legend and bar options; where colours come from and how to change them |
 | `vignette("diversity", package = "gmaio")` | `alpha_diversity()` and `plot_alpha_diversity()`: measures, rarefying, group and Dunn pairwise tests with brackets, figure options |
 | `vignette("differential_abundance", package = "gmaio")` | MaAsLin3, LinDA and sPLS-DA, the consensus, effect, heatmap and boxplot figures, covariates and random effects |
+| `vignette("comparison", package = "gmaio")` | Comparison samples: their metadata, combined profiles and metadata, ordinations, distances to each group and MAG detection |
+| `vignette("strains", package = "gmaio")` | Strain sharing (inStrain), within versus between group tests, TRACS distances and strain diversity |
 | `vignette("isolates", package = "gmaio")` | Isolate mode: genome summary, AMR genes and insertion sequences, ANI, cgMLST, pangenome and trees |
 
 Each workbook gmaio writes also has an `About` sheet describing its sheets and columns, and `Result_tables/README.md` and `Result_figures/README.md` list the files present.
@@ -162,7 +166,12 @@ MAG abundance profiles are named `mags_<set>_<type>`.
 The cross-sample sets (`derep_bins`, `hq_bins`, `hq_derep_bins`, `hq_ref_bins`) map every sample to one catalogue of genomes pooled across samples; `hq_derep_bins` is the one the analysis scripts use.
 With the pipeline's `--within_sample_dereplication`, gmaio also loads `ws_derep_bins` and `ws_hq_bins`, where each sample is mapped only to its own bins.
 A genome can then only be detected in the sample it came from, so these are for per-sample summaries (`within_sample_mag_summary()`, `plot_mag_mapping()`), not ordination or differential abundance; those functions warn if given one.
-`<type>` is `relative_abundance` (each sample sums to 100), `coverm_relative_abundance` (CoverM's value: % of the reads after QC and host removal, not rescaled), `coverage` or `read_count`.
+`<type>` is `relative_abundance` (each sample sums to 100), `coverm_relative_abundance` (CoverM's value: % of the reads after QC and host removal, not rescaled), `coverage`, `read_count` or `covered_fraction` (share of each genome covered by reads, for detection).
+
+Genomes from the pipeline's `--reference_genomes` are kept apart from the MAGs.
+`project.l$tables$bin_summary` (the `Bins` sheet of `MAG_summary.xlsx`) has the MAGs only, and `project.l$tables$reference_genomes` (the `Reference_genomes` sheet) the references, with their CheckM2 quality from the pipeline's reference report and their GTDB-Tk taxonomy.
+A genome is a reference when it is in that report, or when GTDB-Tk or a dereplication cluster lists it but no MAG CheckM report does.
+References are never assigned to a sample, get `REF` short IDs, and are marked `Reference` in the `Genome_type` column of the `hq_ref_bins` profiles; MAG figures and counts leave them out.
 
 `Metadata_and_read_stats.xlsx` has the read funnel in `Read_stats`: raw reads, each QC step, and reads mapped to each genome set, all as % of raw reads.
 For Nanopore runs it adds `Bases_mapped_<set>_percent`, the full length of mapped reads as % of raw sequenced bases (the pipeline's metric A).
@@ -176,12 +185,22 @@ Tools label samples differently (`S1_R1`, `S1.clean_1.fastq.gz`, `S1.metabat2.5`
 Any pipeline sample that cannot be matched is an error.
 Samples can be excluded from analyses (but kept in tables) with `exclude_column` or `exclude_samples`.
 
+Comparison samples (the pipeline's `--comparison_reads`, e.g. a published survey) are linked to their own metadata, set in the `comparison:` section of `config.yml` (file, sheet, ID and label columns, `exclude_samples`, a `group_variable` and the two dataset labels).
+The metadata can list more samples than were sequenced; only those in the pipeline outputs are used, and a comparison sample missing from it is an error.
+`combined_metadata()` and `combined_profile()` put both sets of samples side by side, with `Dataset` and `Comparison_group` (the study's primary group variable, then the comparison groups).
+A comparison group or label that repeats a study one is suffixed, so groups from the two datasets are never pooled.
+
 ## Pipeline outputs
 
 Outputs are found in `pipeline_results` by directory name suffix (`*_sylph`, `*_checkm2`, ...), so Illumina, Nanopore and isolate numbering all work.
 `gmaio::pipeline_registry()` lists every output gmaio reads.
 Any entry can be overridden in `config.yml` under `files:` with a file, glob or directory, for example when outputs have been copied elsewhere.
 Outputs that were not produced (skipped pipeline steps or an unfinished run) are reported by `gmaio::check_inputs()` and skipped.
+When several files compete for one output, `check_inputs()` lists them with their dates; files from an older run into the same `--outdir` (for example per-bin DRAM `distilled/` folders from an earlier pipeline version) are the usual cause, and should be removed.
+gmaio only reads the DRAM distillate of all bins together (`<n>_dram_bins/all_bins/distilled/`).
+
+The expanded gene catalogue (`13_dram_expanded`, `23_rpkm_expanded`) adds the genes of the reference genomes (with `--reference_genomes_in_catalogue`) and/or comparison assemblies to the study's; its function profiles are named `functions_expanded_*`.
+Comparison reads are mapped to the expanded catalogue when there is one, so `combined_profile(project.l, "functions_ko")` joins them with the study's expanded profile.
 
 ## Colours
 

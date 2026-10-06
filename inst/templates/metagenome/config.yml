@@ -39,6 +39,18 @@ mags:
   quality_threshold: 50            # HQ when the score reaches this
   quality_source: both             # both (either passes), checkm1 or checkm2
 
+# External comparison samples (pipeline --comparison_reads), e.g. a published survey, with their own metadata.
+# code/comparison.R compares them with this study's samples.
+comparison:
+  metadata:
+    file: null                     # e.g. data/comparison_metadata.xlsx
+    sheet: 1
+    sample_id_column: Sample_ID    # must match the --comparison_reads samplesheet `sample` column
+    label_column: null
+    exclude_samples: []
+  group_variable: null             # comparison metadata column to group comparison samples by
+  dataset_labels: {study: This study, comparison: Comparison}
+
 outputs:
   tables: Result_tables
   figures: Result_figures
@@ -49,4 +61,5 @@ outputs:
 # Fixed colours; these override generated colours saved in palettes.yml
 colours: {}
 #  Treatment: {Control: "#4E79A7", Treated: "#E15759"}
+#  Comparison_group: {wild: "#76B7B2"}
 #  taxa: {p__Bacillota_A: "#59A14F"}

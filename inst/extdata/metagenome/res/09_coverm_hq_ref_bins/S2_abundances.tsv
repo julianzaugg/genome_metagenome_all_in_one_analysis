@@ -1,0 +1,7 @@
+Genome	S2.clean_1.fastq.gz Relative Abundance (%)	S2.clean_1.fastq.gz Covered Fraction	S2.clean_1.fastq.gz Mean	S2.clean_1.fastq.gz Read Count
+unmapped	40			
+S1.metabat2.1	18.808	0.9	9.36	9360
+S2.metabat2.1	18.7621	0.9	9.3372	9337
+S11.metabat2.4	12.1603	0.9	6.0517	6052
+S1_isolate_ref	3.4686	0.9	1.7262	1726
+GCA_000123.1	6.801	0.9	3.3846	3385

@@ -2,8 +2,8 @@ test_that("outputs are located by directory name suffix, whatever the number", {
   config.l <- make_test_project()
   expect_match(locate_output(config.l, "sylph_relative"), "02_sylph/merged_relative_abundance.tsv$")
   expect_length(locate_output(config.l, "coverm_hq_derep_bins"), 6)
-  expect_length(locate_output(config.l, "coverm_derep_bins"), 0)
-  expect_error(locate_output(config.l, "coverm_derep_bins", required = TRUE), "not found")
+  expect_length(locate_output(config.l, "coverm_hq_bins"), 0)
+  expect_error(locate_output(config.l, "coverm_hq_bins", required = TRUE), "not found")
 
   renumbered.s <- withr::local_tempdir()
   file.copy(fixture_results(), renumbered.s, recursive = TRUE)
@@ -45,6 +45,11 @@ test_that("the metagenome processing steps build linked profiles and tables", {
   expect_true(all(c("GH13", "CBM48", "GT2") %in% rownames(cazy.p$values)))
   expect_true("Unassigned" %in% rownames(project.l$profiles$functions_ko$values))
 
+  expanded.p <- project.l$profiles$functions_expanded_ko
+  expect_true("K00004" %in% rownames(expanded.p$values))
+  expect_false("K00004" %in% rownames(project.l$profiles$functions_ko$values))
+  expect_equal(nrow(project.l$tables$annotation_coverage_expanded), 6)
+
   expect_equal(nrow(project.l$profiles$virus_clusters$values), 3)
   expect_true(all(c("Treatment", "Sample_ID", "taxa") %in% names(project.l$palettes)))
 })
@@ -54,6 +59,10 @@ test_that("tables are written and the processed project round-trips", {
   written.v <- suppressMessages(write_project_tables(project.l))
   expect_true(all(file.exists(written.v)))
   expect_true(any(grepl("Sylph_taxonomic_abundance.xlsx$", written.v)))
+  expect_true(any(grepl("Gene_catalogue_functions_expanded_normalised_rpkm.xlsx$", written.v)))
+  summary.s <- grep("MAG_summary.xlsx$", written.v, value = TRUE)
+  expect_true(all(c("Bins", "Reference_genomes", "Marker_tree_neighbours") %in% readxl::excel_sheets(summary.s)))
+  expect_equal(nrow(readxl::read_excel(summary.s, "Bins")), 6)
   genus.df <- readxl::read_excel(grep("Sylph_taxonomic", written.v, value = TRUE), sheet = "genus")
   expect_equal(unname(colSums(genus.df[, -(1:2)])), rep(100, 6), tolerance = 1e-3)
 

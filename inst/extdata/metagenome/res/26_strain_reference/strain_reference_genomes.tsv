@@ -1,0 +1,4 @@
+genome	completeness	contamination	source	status	reason
+S1.metabat2.1	98	1	checkm2	kept	passed
+S11.metabat2.4	91	0.5	checkm2	kept	passed
+S2.metabat2.1	95	2	checkm2	dropped	below_thresholds

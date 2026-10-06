@@ -163,10 +163,12 @@ taxonomic_profile_names <- function(project.l){
 #' Builds a processed project from synthetic pipeline output shipped with gmaio, running the
 #' same steps as the template `main.R`. Used in the vignettes and handy for trying out functions.
 #'
-#' * `mode = "metagenome"`: an early partial pipeline run (sylph and SingleM only) on 24 samples
-#'   from 12 mice, `Treatment` (Control, Treated) by `Time` (Week_0, Week_4), with `Mouse`,
-#'   `Age_weeks` and `Cage`. Some genera respond to treatment and others to time, and treated
-#'   mice lose rare genera by week 4.
+#' * `mode = "metagenome"`: a partial pipeline run (sylph, SingleM, MAG quality and taxonomy,
+#'   strain comparison and comparison samples) on 24 samples from 12 mice, `Treatment` (Control,
+#'   Treated) by `Time` (Week_0, Week_4), with `Mouse`, `Age_weeks` and `Cage`. Some genera respond
+#'   to treatment and others to time, and treated mice lose rare genera by week 4. Mice sharing a
+#'   cage share strains, and treated mice have less diverse strains at week 4. 16 mice from two
+#'   other facilities are comparison samples, grouped by `Facility`.
 #' * `mode = "isolate"`: 20 *Escherichia coli* isolates from four sequence types and three
 #'   `Source`s (Clinical, Animal, Environmental) with `Year`, plus two reference genomes, with
 #'   quality, typing, AMR genes, insertion sequences, a pangenome, ANI, cgMLST and a tree.
@@ -188,7 +190,10 @@ example_project <- function(path = tempfile("gmaio_example_"), mode = c("metagen
          metadata = c(metadata.l, list(sample_order = list("Treatment", "Time", "Sample_ID"),
                                        colour_variables = list("Time", "Cage"))),
          analysis = list(group_variables = list("Treatment"), reference_levels = list(Treatment = "Control"),
-                         ranks = list("phylum", "genus"), permutations = 999))
+                         ranks = list("phylum", "genus"), permutations = 999),
+         comparison = list(metadata = list(file = file.path(example.s, "comparison_metadata.csv"), label_column = "Name"),
+                           group_variable = "Facility",
+                           dataset_labels = list(study = "This study", comparison = "Other facilities")))
   } else {
     list(project_name = "gmaio isolate example", mode = "isolate", pipeline_results = file.path(example.s, "res"),
          metadata = c(metadata.l, list(sample_order = list("Source", "Sample_ID"))),
@@ -201,6 +206,9 @@ example_project <- function(path = tempfile("gmaio_example_"), mode = c("metagen
     if (mode == "metagenome"){
       project.l <- add_sylph(project.l)
       project.l <- add_singlem(project.l)
+      project.l <- add_mags(project.l)
+      project.l <- add_strains(project.l)
+      project.l <- add_comparison(project.l)
     } else {
       project.l <- add_isolate_genomes(project.l)
       project.l <- add_comparisons(project.l)

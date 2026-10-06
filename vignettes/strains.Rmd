@@ -1,0 +1,111 @@
+---
+title: "Strain sharing"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Strain sharing}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.align = "center")
+# Show each figure exactly as save_plot() writes it, at its automatic size
+show_plot <- function(plot, ...){
+  path.s <- knitr::fig_path(".png")
+  gmaio::save_plot(plot, path.s, dpi = 110, ...)
+  knitr::include_graphics(path.s, dpi = 110)
+}
+```
+
+With `--run_instrain` and `--run_tracs`, the pipeline compares the strains of high-quality bins between samples.
+inStrain profiles the reads of each sample against the bins and compares samples by popANI, calling the same strain at popANI >= 99.999%.
+TRACS gives SNP distances between samples for each genome.
+`code/strains.R` asks which samples share strains, whether strains are shared more within groups than between them, and how diverse each sample's strain populations are.
+This vignette follows that script on the synthetic example project, where mice sharing a cage usually share strains and treated mice have less diverse strains at week 4.
+
+```{r project}
+project.l <- gmaio::example_project()
+metadata.df <- gmaio::analysis_metadata(project.l)
+strains.l <- project.l$tables$strains
+names(strains.l)
+```
+
+`main.R` loads the results with `add_strains()`.
+inStrain names samples by their BAM files (`S01.bam`); gmaio links them to the metadata like any other output, and adds each genome's short ID and label from the bin summary.
+
+```{r sharing}
+head(strains.l$instrain_sharing[, c("Short_ID", "Sample_ID_a", "Sample_ID_b", "popANI", "Same_strain")])
+```
+
+## Who shares strains with whom
+
+`strain_sharing_matrix()` turns pairs of samples into a sample by sample matrix: here the number of genomes each pair shares as the same strain, from inStrain's counts.
+
+```{r counts}
+counts.df <- strains.l$instrain_counts
+samples.v <- intersect(metadata.df$Sample_ID, c(counts.df$Sample_ID_a, counts.df$Sample_ID_b))
+counts.m <- gmaio::strain_sharing_matrix(counts.df, "Same_strain", samples.v, missing = 0)
+counts.ht <- gmaio::plot_strain_sharing_matrix(counts.m, metadata.df, project.l$palettes, group = "Cage")
+```
+
+```{r counts-show, echo = FALSE}
+show_plot(counts.ht)
+```
+
+For one genome, the popANI between every pair of samples it was compared in shows how close the strains are; grey pairs were not compared (too little coverage in one of them).
+
+```{r popani}
+genome.df <- strains.l$instrain_sharing[strains.l$instrain_sharing$Short_ID == "Bin001", ]
+genome.df$popANI_percent <- 100 * genome.df$popANI
+ani.m <- gmaio::strain_sharing_matrix(genome.df, "popANI_percent", samples.v, diagonal = 100)
+ani.ht <- gmaio::plot_strain_sharing_matrix(ani.m, metadata.df, project.l$palettes, group = "Cage", type = "popani",
+                                            title = genome.df$Label[1])
+```
+
+```{r popani-show, echo = FALSE}
+show_plot(ani.ht)
+```
+
+## Within and between groups
+
+`compare_pairs_by_group()` splits sample pairs into pairs from the same group and pairs from different groups, and tests the difference with a permutation test that shuffles group labels between samples.
+Shuffling samples, not pairs, keeps together all the genomes a pair of samples shares, so the test does not treat them as independent.
+It works for strain sharing (a logical value: the percent of pairs sharing a strain) and for distances such as TRACS SNP distances.
+
+```{r within-between}
+shared.l <- gmaio::compare_pairs_by_group(strains.l$instrain_sharing, "Same_strain", metadata.df, "Cage",
+                                          permutations = 999)
+shared.l$summary
+shared.l$test
+sharing.gg <- gmaio::plot_pairs_by_group(shared.l, project.l$palettes$Cage)
+```
+
+```{r within-between-show, echo = FALSE}
+show_plot(sharing.gg)
+```
+
+```{r tracs}
+distances.l <- gmaio::compare_pairs_by_group(strains.l$tracs_distances, "Filtered_SNP_distance", metadata.df, "Cage",
+                                             permutations = 999)
+tracs.gg <- gmaio::plot_pairs_by_group(distances.l, project.l$palettes$Cage, y_label = "TRACS SNP distance (filtered)")
+```
+
+```{r tracs-show, echo = FALSE}
+show_plot(tracs.gg)
+```
+
+## Strain diversity
+
+inStrain reports nucleotide diversity for each genome in each sample.
+Testing genome by genome would count a sample once per genome, so `instrain_sample_summary()` first summarises each sample over its well-covered genomes (`min_breadth`: the share of the genome inStrain covers at its minimum depth).
+
+```{r diversity}
+diversity.df <- gmaio::instrain_sample_summary(strains.l$instrain_genomes, min_breadth = 0.5)
+metadata.df$Treatment_time <- factor(paste(metadata.df$Treatment, metadata.df$Time),
+                                     levels = c("Control Week_0", "Control Week_4", "Treated Week_0", "Treated Week_4"))
+diversity.l <- gmaio::plot_instrain_diversity(diversity.df, metadata.df, "Treatment_time")
+```
+
+```{r diversity-show, echo = FALSE}
+show_plot(diversity.l$plot)
+```

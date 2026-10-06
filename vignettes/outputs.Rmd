@@ -54,12 +54,14 @@ All bins, all samples ──┬── dereplicate at 95% ANI ──────�
                         │        └── keep the representatives that are HQ ────► hq_bins
                         ├── keep HQ bins ── dereplicate at 95% ANI ──────────► hq_derep_bins
                         └── keep HQ bins + reference genomes ── dereplicate ──► hq_ref_bins
+                                  (--reference_genomes)
 
 Each sample's own bins ─┬── dereplicate within the sample ───────────────────► ws_derep_bins
                         └── keep HQ bins ── dereplicate within the sample ───► ws_hq_bins
 ```
 
 HQ means completeness - 3 x contamination >= 50, in CheckM2 or CheckM1 (pipeline `--hq_quality_source`).
+Every bin has a short ID `Bin001`, ... whatever its quality; `High_quality` and `MIMAG_tier` say how good it is.
 
 ```{r sets, echo = FALSE}
 sets.df <- gmaio::mag_set_catalogue()
@@ -78,6 +80,8 @@ The `Name` column is how each set is labelled in figures, e.g. in `reads_mapped_
   `hq_derep_bins` keeps the HQ bins first and then dereplicates them, so every HQ genome is represented.
   `hq_derep_bins` therefore has at least as many genomes; often the two are nearly the same, but they differ when HQ genomes cluster with poorer bins.
 - **`derep_bins`** keeps genomes of any quality: the most complete picture of what was assembled, and the most reads explained, but low-quality genomes have unreliable taxonomy and functions.
+- **`hq_ref_bins`** adds the pipeline's `--reference_genomes`, so reads from organisms the study did not assemble but a reference represents are counted too.
+  The references are listed in the `Reference_genomes` sheet of `MAG_summary.xlsx` (short IDs `REF001`, ...), and are marked `Reference` in the `Genome_type` column of the abundance tables.
 - **`ws_derep_bins` and `ws_hq_bins`** (only with the pipeline's `--within_sample_dereplication`) map each sample only to the genomes assembled from it.
   They answer "how much of this sample do its own MAGs explain?", shown in `MAG_per_sample_recovery.xlsx` and the `reads_mapped_to_mags` figure.
   A genome can only be found in the sample it came from, so these sets say nothing about differences between samples; gmaio warns if you ordinate or test them.
@@ -90,6 +94,7 @@ The `Name` column is how each set is labelled in figures, e.g. in `reads_mapped_
 | `coverm_relative_abundance` | CoverM relative abundance: % of the sample's reads (after QC and host removal) that map to the genome | the % of reads mapped to the set |
 | `coverage` | Mean read depth over the genome (x) | - |
 | `read_count` | Reads mapped to the genome | reads mapped |
+| `covered_fraction` | Share of the genome covered by at least one read, 0 to 1; a genome is usually called present from about 0.3 | - |
 
 Use `relative_abundance` to compare composition between samples; it is what the templates plot and test.
 Use `coverm_relative_abundance` when the unmapped share matters, e.g. "this genome is 5% of all the reads in the sample".
@@ -97,7 +102,7 @@ Use `coverm_relative_abundance` when the unmapped share matters, e.g. "this geno
 
 ### Finding a MAG across sets
 
-`MAG_summary.xlsx` has every bin from every sample, with its quality and taxonomy.
+`MAG_summary.xlsx` has every bin from every sample, with its quality and taxonomy (`Bins`), the reference genomes (`Reference_genomes`) and, with the pipeline's marker gene tree, the GTDB genomes placed next to each genome (`Marker_tree_neighbours`; the closest is also in the `Tree_neighbour` column).
 For each set it has two columns: `Is_representative_<set>` (the bin is in that set) and `Representative_<set>` (the bin that represents its cluster there).
 So to follow one genome from its sample into the pooled catalogue:
 
@@ -106,7 +111,14 @@ bins.df <- readxl::read_excel("Result_tables/MAG_summary.xlsx", "Bins")
 bins.df[bins.df$Bin_ID == "<a bin>", c("High_quality", "Representative_hq_derep_bins")]
 ```
 
-In the abundance tables, the first column (`genome`) is the `Bin_ID` of each representative, and `Short_ID` (`MAG001`, ...) is the short name used in figures.
+In the abundance tables, the first column (`genome`) is the `Bin_ID` of each representative, and `Short_ID` (`Bin001`, ...) is the short name used in figures.
+
+## Gene catalogues
+
+The pipeline builds a gene catalogue from the genes assembled from the study samples (`13_dram`, `23_rpkm`), and, when the run had `--reference_genomes` (with `--reference_genomes_in_catalogue`) or `--comparison_assemblies`, an expanded catalogue that adds those genomes' genes (`13_dram_expanded`, `23_rpkm_expanded`).
+Both give the same function tables: `Gene_catalogue_functions_normalised_rpkm.xlsx` and `Gene_catalogue_functions_expanded_normalised_rpkm.xlsx`, and profiles `functions_*` and `functions_expanded_*`.
+The expanded catalogue counts reads from genes the study assemblies missed, so more of each sample is annotated; the comparison samples are mapped to it, so it is the one to use when comparing with them (`combined_profile()` does this).
+`functional_profiles.R` uses the study catalogue by default; set `catalogue.s <- "functions_expanded"` at its top for the expanded one.
 
 ## Tables
 

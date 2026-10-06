@@ -4,19 +4,33 @@
 \alias{add_gene_catalogue_functions}
 \title{Add gene catalogue functional profiles}
 \usage{
-add_gene_catalogue_functions(project.l, min_annotated_fraction = 0.9)
+add_gene_catalogue_functions(
+  project.l,
+  catalogue = c("base", "expanded"),
+  min_annotated_fraction = 0.9
+)
 }
 \arguments{
 \item{project.l}{A \code{gm_project}.}
+
+\item{catalogue}{\code{"base"} or \code{"expanded"}.}
 
 \item{min_annotated_fraction}{Error when fewer catalogue genes than this have a DRAM row.}
 }
 \value{
 Updated \code{gm_project} with \code{functions_ko}, \code{functions_cazy}, \code{functions_cazy_substrate}
-and \code{functions_peptidase} profiles and an \code{annotation_coverage} table.
+and \code{functions_peptidase} profiles and an \code{annotation_coverage} table; for the expanded
+catalogue \code{functions_expanded_ko}, ... and \code{annotation_coverage_expanded}.
 }
 \description{
 Joins DRAM annotations of the gene catalogue to the normalised RPKM table (RPKM
 divided by the sample's mean SingleM marker RPKM) and sums genes by KEGG KO, CAZy
 family, CAZy substrate (when the DRAM distillate is available) and MEROPS family.
+}
+\details{
+The pipeline builds one or two catalogues. The \code{"base"} catalogue holds the genes assembled
+from the study samples. The \code{"expanded"} catalogue, built when the run had
+\code{--reference_genomes} (with \code{--reference_genomes_in_catalogue}) or \code{--comparison_assemblies},
+adds those genomes' genes, so reads from genes the study assemblies missed are counted too;
+it is the catalogue the comparison samples are mapped to (see \code{\link[=add_comparison]{add_comparison()}}).
 }

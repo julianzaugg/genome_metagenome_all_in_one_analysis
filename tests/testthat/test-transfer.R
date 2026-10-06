@@ -43,7 +43,45 @@ example_paths <- function(mode){
     "17_dram_bins/S1.b1/dram_annotations/annotations.tsv", "21_gene_catalogue/gene_catalogue_membership.tsv",
     "21_gene_catalogue/gene_catalogue.fna", "22_dram/dram_annotations/annotations.tsv", "22_dram/dram_annotations/genes.faa",
     "23_rpkm/gene_catalogue_rpkm_per_gene_normalised.tsv", "23_rpkm/gene_catalogue_mapped_reads_per_gene.tsv",
-    "23_rpkm/singlem_rpkm_means.tsv")
+    "23_rpkm/singlem_rpkm_means.tsv",
+    # A distillate of one bin left over from an older pipeline version, next to the all_bins one
+    "17_dram_bins/S1.b1/distilled/product.tsv",
+    # Illumina-numbered outputs of reference genomes, the expanded catalogue, strains and comparison samples
+    "13_dram_expanded/dram_annotations/annotations.tsv", "13_dram_expanded/dram_annotations/genes.faa",
+    "12_gene_catalogue_expanded/gene_catalogue.faa", "23_rpkm_expanded/gene_catalogue_rpkm_per_gene_normalised.tsv",
+    "23_rpkm_expanded/gene_catalogue_mapped_reads_per_gene.tsv", "23_rpkm_expanded/gene_blast/gene_catalogue_blast.tsv",
+    "25_reference_genomes/checkm2/reference_checkm2_report.tsv", "25_reference_genomes/reference_genomes/k1_bin_1.fasta",
+    "25_reference_genomes/proteins/k1_bin_1.faa", "24_marker_tree/bac120.treefile", "24_marker_tree/ar53.treefile",
+    "24_marker_tree/bac120.closest_references.tsv", "24_marker_tree/bac120.reference_genomes.tsv",
+    "24_marker_tree/bac120.marker_msa.fasta", "26_strain_reference/strain_reference_genomes.tsv",
+    "26_strain_reference/strain_reference.fasta", "27_instrain/summary/strain_sharing_summary.tsv",
+    "27_instrain/summary/strain_sharing_counts.tsv", "27_instrain/summary/strain_sharing_matrix/S1.b1.popani.tsv",
+    "27_instrain/excluded_profiles.tsv", "27_instrain/profiles/S1.IS/output/S1.IS_genome_info.tsv",
+    "27_instrain/profiles/S1.IS/output/S1.IS_SNVs.tsv", "27_instrain/profiles/S1.IS/raw_data/covT.hd5",
+    "28_tracs/transmission_distances.csv", "28_tracs/strain_clusters.csv", "28_tracs/strain_db.zip",
+    "29_comparison_reads/read_stats/C1.raw.seqkit_stats.tsv", "29_comparison_reads/sylph/merged_relative_abundance.tsv",
+    "29_comparison_reads/sylph/merged_sequence_abundance.tsv", "29_comparison_reads/sylph/C1.sylsp",
+    "29_comparison_reads/singlem/metagenome.condensed.tsv", "29_comparison_reads/singlem/metagenome.prokaryotic_fraction.tsv",
+    "29_comparison_reads/singlem/metagenome.otu_table.tsv", "29_comparison_reads/bin_mapping/C1_abundances.tsv",
+    "29_comparison_reads/bin_mapping/C1.bam", "29_comparison_reads/host_removed/C1.clean_1.fastq.gz",
+    "29_comparison_reads/gene_catalogue_mapping/gene_catalogue_rpkm_per_gene_normalised.tsv",
+    "29_comparison_reads/gene_catalogue_mapping/gene_catalogue_mapped_reads_per_gene.tsv",
+    "30_comparison_assemblies/C1.faa", "19_barrnap/S1.b1.16S.fasta")
+}
+
+# Every folder name the pipeline writes (Illumina and Nanopore metagenome, isolate), to check copy globs against
+pipeline_directories <- function(){
+  illumina.v <- c("00_read_stats", "01_fastp", "02_sylph", "03_singlem", "04_host_removed", "05_metaspades", "06_aviary",
+                  "07_checkm2", "08_dereplicated_bins", "08_dereplicated_hq_bins", "08_dereplicated_hq_ref_bins",
+                  "08_within_sample_dereplicated_bins", "08_within_sample_dereplicated_hq_bins", "09_coverm_bins",
+                  "09_coverm_hq_bins", "09_coverm_hq_derep_bins", "09_coverm_hq_ref_bins", "09_coverm_within_sample_derep_bins",
+                  "09_coverm_within_sample_hq_bins", "10_coverm_scaffolds", "11_pyrodigal", "12_gene_catalogue",
+                  "12_gene_catalogue_expanded", "13_dram", "13_dram_expanded", "14_dram_bins", "15_gtdbtk", "16_checkm1",
+                  "17_nonpareil", "18_genomespot", "19_barrnap", "20_genomad", "21_checkv", "22_checkv_clustering", "23_rpkm",
+                  "23_rpkm_expanded", "24_marker_tree", "25_reference_genomes", "26_strain_reference", "27_instrain", "28_tracs",
+                  "29_comparison_reads", "30_comparison_assemblies", "cleanifier", "pipeline_info")
+  examples.v <- unique(sub("/.*", "", c(example_paths("metagenome"), example_paths("isolate"))))
+  unique(c(illumina.v, examples.v))
 }
 
 make_tree <- function(root.s, paths.v){
@@ -87,11 +125,45 @@ test_that("the rsync filter copies exactly the registry outputs, with or without
   }
 })
 
+test_that("each copy glob only matches its own pipeline folder", {
+  directories.v <- pipeline_directories()
+  registry.df <- pipeline_registry()
+  registry.df <- registry.df[!is.na(registry.df$transfer), , drop = FALSE]
+  for (i in seq_len(nrow(registry.df))){
+    for (glob.s in strsplit(registry.df$transfer[i], " ", fixed = TRUE)[[1]]){
+      top.s <- sub("/.*", "", glob.s)
+      regex.s <- paste0("^", gsub("*", "[^/]*", gsub(".", "\\.", top.s, fixed = TRUE), fixed = TRUE), "$")
+      matched.v <- grep(regex.s, directories.v, value = TRUE)
+      foreign.v <- matched.v[!grepl(registry.df$dir[i], matched.v)]
+      expect_true(length(foreign.v) == 0, label = paste(registry.df$key[i], glob.s, "also matches", toString(foreign.v)))
+    }
+  }
+})
+
+test_that("old per-bin DRAM distillates are not copied or read", {
+  inputs.df <- check_inputs(make_test_project(), verbose = FALSE)
+  expect_equal(inputs.df$status[inputs.df$key == "dram_bins_product"], "found")
+  expect_match(inputs.df$files[[which(inputs.df$key == "dram_bins_product")]], "all_bins/distilled/product.tsv$")
+  expect_true(all(grepl("dram_bins/all_bins/distilled/", grep("dram_bins", rsync_filter("metagenome"), value = TRUE))))
+})
+
+test_that("files that compete for one output are listed with their dates", {
+  results.s <- make_tree(file.path(withr::local_tempdir(), "results"),
+                         c("13_dram/dram_annotations/annotations.tsv", "13_dram/old/annotations.tsv"))
+  Sys.setFileTime(file.path(results.s, "13_dram/old/annotations.tsv"), as.POSIXct("2026-07-01 12:00:00"))
+  config.l <- make_test_project(pipeline_results = results.s)
+  expect_error(locate_output(config.l, "dram_catalogue"), "left over from an earlier run", class = "gmaio_ambiguous_output")
+  inputs.df <- check_inputs(config.l, verbose = FALSE)
+  expect_equal(inputs.df$status[inputs.df$key == "dram_catalogue"], "ambiguous")
+  expect_length(inputs.df$files[[which(inputs.df$key == "dram_catalogue")]], 2)
+  expect_match(capture_messages(check_inputs(config.l)), "2026-07-01", all = FALSE)
+})
+
 test_that("write_rsync_filter writes the filter and explains the copy command", {
   path.s <- withr::local_tempfile(fileext = ".txt")
   expect_message(write_rsync_filter(path.s, mode = "metagenome"), "rsync -av --prune-empty-dirs")
   lines.v <- readLines(path.s)
-  expect_true("+ [0-9]*_sylph/merged_relative_abundance.tsv" %in% lines.v)
+  expect_true("+ [0-9][0-9]_sylph/merged_relative_abundance.tsv" %in% lines.v)
   expect_false(any(grepl("gene_catalogue_membership|bakta", lines.v)))
   expect_equal(utils::tail(lines.v, 2), c("+ */", "- *"))
 })
@@ -103,10 +175,11 @@ test_that("check_inputs reports complete, partial and missing steps", {
   expect_false(any(c("gene_catalogue_membership", "rpkm_mapped_reads") %in% inputs.df$key))
 
   config.l <- make_test_project(pipeline_results = partial_results())
-  expect_message(inputs.df <- check_inputs(config.l), "MAG abundance: not found")
+  messages.v <- capture_messages(inputs.df <- check_inputs(config.l))
+  expect_match(messages.v, "MAG abundance: not found", all = FALSE)
   expect_equal(inputs.df$status[inputs.df$key == "sylph_relative"], "found")
   expect_equal(inputs.df$status[inputs.df$key == "read_stats"], "missing")
-  expect_message(check_inputs(config.l), "Missing outputs are skipped")
+  expect_match(messages.v, "Missing outputs are skipped", all = FALSE)
 })
 
 test_that("a partial run processes what is there and skips the rest", {
@@ -129,7 +202,7 @@ test_that("a partial run processes what is there and skips the rest", {
 
 test_that("check_inputs points to outputs copied one level too deep", {
   config.l <- make_test_project(pipeline_results = fixture_dir())
-  expect_message(check_inputs(config.l), "look like they are in")
+  expect_match(capture_messages(check_inputs(config.l)), "look like they are in", all = FALSE)
 })
 
 test_that("fetch_pipeline_results copies the outputs into pipeline_results and can be rerun", {

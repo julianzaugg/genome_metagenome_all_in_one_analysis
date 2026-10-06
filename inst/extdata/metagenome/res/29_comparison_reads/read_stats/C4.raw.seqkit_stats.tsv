@@ -1,0 +1,3 @@
+file	format	type	num_seqs	sum_len	min_len	avg_len	max_len
+C4_R1.fastq.gz	FASTQ	DNA	4000001	600000001	35	150	151
+C4_R2.fastq.gz	FASTQ	DNA	4000002	600000002	35	150	151

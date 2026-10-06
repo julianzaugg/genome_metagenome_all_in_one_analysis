@@ -6,7 +6,10 @@ R package for downstream analysis of [genome_metagenome_all_in_one](https://gith
 
 - `R/` package functions; `inst/templates/{metagenome,isolate}/` project templates (`config.yml`, `code/main.R`, one script per analysis).
 - `R/pipeline_registry.R` is the single map of pipeline outputs (directory and file patterns, matched by name suffix so mode-specific numbering does not matter).
+  Directory regexes are anchored and copy globs use two-digit prefixes (`[0-9][0-9]_dram/`), so similar names (`13_dram` vs `13_dram_expanded` vs `14_dram_bins`) never match each other; `test-transfer.R` checks every glob against the list of real pipeline folders, so add new folder names there.
+- Reference genomes (`--reference_genomes`) live in `tables$reference_genomes`, apart from the MAG `tables$bin_summary`; comparison samples (`--comparison_reads`) live in `project.l$comparison` with their own metadata (config `comparison:`), joined with the study's by `combined_metadata()` / `combined_profile()`.
 - `inst/extdata/metagenome` and `inst/extdata/isolate` (small, for tests) and `inst/extdata/example` and `inst/extdata/example_isolate` (larger, for vignettes and `example_project(mode = )`) are synthetic pipeline output built by `data-raw/make_fixtures.R` and `data-raw/make_example.R`. Never commit client data.
+  Add new data in a block with its own `set.seed()` at the end of those scripts, so existing files do not change, and keep paths under 100 bytes (`gmaio/inst/...`) for portable tarballs.
 - `vignettes/` worked examples on `example_project()`; update them when plot function options change.
 - `code_examples_dump/` holds old ad-hoc scripts for reference; it is gitignored.
 

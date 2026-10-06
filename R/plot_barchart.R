@@ -94,7 +94,8 @@ annotation_strip_plot <- function(metadata.df, variables.v, colours.l, facet_var
                                  name = variable_label(variable.s))
   }
   strip.gg <- strip.gg +
-    ggplot2::scale_y_discrete(limits = rev(variables.v), expand = c(0, 0)) +
+    ggplot2::scale_y_discrete(limits = rev(variables.v), labels = function(x) vapply(x, variable_label, character(1)),
+                              expand = c(0, 0)) +
     ggplot2::scale_x_discrete(expand = c(0, 0)) +
     ggplot2::labs(x = NULL, y = NULL) +
     theme_gmaio(base_size = base_size) +
@@ -119,6 +120,7 @@ value_type_label <- function(value_type){
     normalised_rpkm = "Normalised RPKM",
     presence = "Presence",
     copy_number = "Copy number",
+    covered_fraction = "Covered fraction",
     "Value"
   )
 }

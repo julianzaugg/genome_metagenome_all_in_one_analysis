@@ -69,6 +69,62 @@ test_that("without read statistics, only the CoverM rates are available", {
 test_that("between-sample analyses warn on within-sample MAG profiles", {
   project.l <- processed_test_project()
   own.p <- get_profile(project.l, "mags_ws_derep_bins_relative_abundance")
-  expect_warning(try(run_ordination(own.p), silent = TRUE), "within-sample MAG profile")
+  expect_warning(suppressMessages(try(run_ordination(own.p), silent = TRUE)), "within-sample MAG profile")
   expect_no_warning(suppressMessages(run_ordination(get_profile(project.l, "mags_hq_derep_bins_relative_abundance"))))
+})
+
+test_that("reference genomes are kept apart from the MAGs and never assigned to a sample", {
+  project.l <- processed_test_project()
+  bins.df <- project.l$tables$bin_summary
+  references.df <- project.l$tables$reference_genomes
+  expect_equal(unique(bins.df$Genome_type), "MAG")
+  expect_equal(nrow(bins.df), 6)
+  # S1_isolate_ref starts like sample S1 but is a reference genome
+  expect_setequal(references.df$Bin_ID, c("S1_isolate_ref", "GCA_000123.1"))
+  expect_true(all(is.na(references.df$Sample_ID)))
+  expect_true(all(grepl("^REF[0-9]+$", references.df$Short_ID)))
+  expect_equal(references.df$Completeness_CheckM2[references.df$Bin_ID == "S1_isolate_ref"], 99.1)
+  expect_false(is.na(references.df$Classification[1]))
+  hq_ref.p <- project.l$profiles$mags_hq_ref_bins_relative_abundance
+  expect_setequal(hq_ref.p$features$Genome_type, c("MAG", "Reference"))
+  expect_equal(hq_ref.p$features$Short_ID[hq_ref.p$features$Feature_ID == "S1_isolate_ref"],
+               references.df$Short_ID[references.df$Bin_ID == "S1_isolate_ref"])
+})
+
+test_that("without a reference CheckM2 report, genomes no MAG report lists are references", {
+  checkm2.df <- data.frame(Bin_ID = c("S1.b1", "S2.b1"), Completeness = c(95, 80), Contamination = c(1, 2))
+  gtdb.df <- data.frame(Bin_ID = c("S1.b1", "S2.b1", "k1_bin_3"), Classification = NA_character_)
+  gtdb.df[rank_columns()] <- NA_character_
+  summary.df <- build_bin_summary(checkm2.df, gtdb.df = gtdb.df, sample_ids.v = c("S1", "S2", "k1"))
+  expect_equal(summary.df$Genome_type, c("MAG", "MAG", "Reference"))
+  expect_equal(summary.df$Sample_ID, c("S1", "S2", NA))
+  expect_false(summary.df$High_quality[3])
+})
+
+test_that("CoverM covered fraction becomes its own profile", {
+  project.l <- processed_test_project()
+  covered.p <- project.l$profiles$mags_derep_bins_covered_fraction
+  expect_equal(covered.p$value_type, "covered_fraction")
+  expect_true(all(covered.p$values >= 0 & covered.p$values <= 1))
+})
+
+test_that("the marker gene tree is read and plotted with the MAGs, references and GTDB genomes", {
+  skip_if_not_installed("ape")
+  project.l <- processed_test_project()
+  tree.l <- project.l$tables$marker_tree
+  expect_equal(names(tree.l$trees), "bac120")
+  expect_equal(ape::Ntip(tree.l$trees$bac120), 9)
+  expect_equal(unique(project.l$tables$bin_summary$Tree_neighbour), "GB_GCA_900001.1")
+  expect_equal(nrow(tree.l$neighbours), 12)
+  expect_match(tree.l$neighbours$Neighbour_classification[1], "^d__Bacteria")
+  skip_if_not_installed("ggtree")
+  tree.gg <- plot_marker_tree(tree.l$trees$bac120, project.l$tables$bin_summary, project.l$tables$reference_genomes,
+                              tree.l$gtdb_lineages, project.l$palettes$taxa)
+  expect_s3_class(tree.gg, "ggplot")
+  tips.df <- tree.gg$data[tree.gg$data$isTip, ]
+  expect_equal(as.character(tips.df$Tip_type[tips.df$label == "S1_isolate_ref"]), "Reference genome")
+  expect_equal(as.character(tips.df$Tip_type[tips.df$label == "RS_GCF_900002.1"]), "GTDB genome")
+  out.s <- withr::local_tempdir()
+  save_plot(tree.gg, file.path(out.s, "tree.pdf"))
+  expect_gt(file.size(file.path(out.s, "tree.pdf")), 1000)
 })

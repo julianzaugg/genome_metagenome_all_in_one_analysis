@@ -13,7 +13,7 @@ check_inputs(config.l, verbose = TRUE)
 }
 \value{
 Tibble with \code{step}, \code{key}, \code{description}, \code{status} (\code{found}, \code{missing} or
-\code{ambiguous}), \code{n_files} and \code{files}, invisibly.
+\code{ambiguous}), \code{n_files} and \code{files} (for ambiguous outputs, the competing files), invisibly.
 }
 \description{
 Looks up every output gmaio reads for the project's mode, grouped by processing step,

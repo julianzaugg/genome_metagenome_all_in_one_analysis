@@ -4,7 +4,7 @@
 \alias{plot_community_traits}
 \title{Plot community-weighted traits by group}
 \usage{
-plot_community_traits(traits.df, metadata.df, group, colours.v = NULL)
+plot_community_traits(traits.df, metadata.df, group, colours.v = NULL, ...)
 }
 \arguments{
 \item{traits.df}{Result of \code{\link[=community_weighted_traits]{community_weighted_traits()}}.}
@@ -14,6 +14,8 @@ plot_community_traits(traits.df, metadata.df, group, colours.v = NULL)
 \item{group}{Metadata column.}
 
 \item{colours.v}{Named colours for \code{group}.}
+
+\item{...}{Figure and test options passed to \code{\link[=plot_group_boxplots]{plot_group_boxplots()}}, e.g. \code{show_test = FALSE}.}
 }
 \value{
 List with \code{plot} and \code{tests}.

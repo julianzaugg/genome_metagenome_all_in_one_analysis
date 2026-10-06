@@ -319,3 +319,114 @@ write_tsv(data.frame(seq_name = paste0(prophage.v, ".scaffolds__genomad__contig_
                                        length(prophage.v), replace = TRUE, prob = c(0.8, 0.2))),
           "20_genomad", "genomad_virus_summary.tsv")
 cat("Example projects written to inst/extdata/example and", root.s, "\n")
+
+# ---- Metagenome example: MAGs, strains and comparison samples -----------------------
+# Ten MAGs with CheckM2 and GTDB-Tk results; inStrain and TRACS comparisons in which mice sharing a cage
+# share strains; and 16 mice from two other facilities as comparison samples (pipeline --comparison_reads),
+# profiled with sylph and SingleM, with their own metadata. A separate seed keeps the data above unchanged.
+set.seed(2028)
+root.s <- "inst/extdata/example"
+results.s <- file.path(root.s, "results")
+metadata.df <- utils::read.csv(file.path(root.s, "metadata.csv"), stringsAsFactors = FALSE)
+samples.v <- metadata.df$Sample_ID
+sylph.df <- utils::read.delim(file.path(results.s, "04_sylph", "merged_relative_abundance.tsv"), check.names = FALSE,
+                              stringsAsFactors = FALSE)
+leaf.df <- sylph.df[grepl("\\|t__", sylph.df$clade_name), , drop = FALSE]
+lineages.v <- leaf.df$clade_name
+
+# MAGs: one per abundant genome, from the sample where it is most abundant
+mag_rows.v <- utils::head(order(-rowMeans(leaf.df[-1])), 10)
+mag_lineages.v <- lineages.v[mag_rows.v]
+mags.v <- sprintf("%s.metabat2.%d", samples.v[apply(leaf.df[mag_rows.v, -1], 1, which.max)], seq_along(mag_rows.v))
+write_tsv(data.frame(Name = mags.v, Completeness = round(stats::runif(10, 72, 99.5), 2),
+                     Contamination = round(stats::runif(10, 0.2, 6), 2), Completeness_Model_Used = "Gradient Boost (General Model)",
+                     Translation_Table_Used = 11, Coding_Density = 0.89, Contig_N50 = round(stats::runif(10, 1e4, 9e4)),
+                     Average_Gene_Length = 310, Genome_Size = round(stats::runif(10, 2e6, 4e6)), GC_Content = 0.46,
+                     Total_Coding_Sequences = 2800, Total_Contigs = round(stats::runif(10, 40, 300)), Max_Contig_Length = 3e5,
+                     Additional_Notes = "None"),
+          "07_checkm2", "all_bins_checkm2_report.tsv")
+write_tsv(data.frame(user_genome = mags.v, classification = gsub("\\|", ";", sub("\\|t__.*", "", mag_lineages.v)),
+                     classification_method = "ANI", msa_percent = 95, red_value = "N/A", warnings = "N/A"),
+          "15_gtdbtk", "all_genomes", "classify", "all_genomes.bac120.summary.tsv")
+
+# inStrain and TRACS: mice in the same cage usually carry the same strain, mice in different cages rarely
+cage.v <- stats::setNames(metadata.df$Cage, samples.v)
+pairs.df <- data.frame(t(utils::combn(samples.v, 2)), stringsAsFactors = FALSE)
+names(pairs.df) <- c("sample_a", "sample_b")
+strain_mags.v <- mags.v[1:6]
+sharing.df <- do.call(rbind, lapply(strain_mags.v, function(mag.s){
+  compared.df <- pairs.df[stats::runif(nrow(pairs.df)) < 0.6, , drop = FALSE]
+  same_cage.v <- cage.v[compared.df$sample_a] == cage.v[compared.df$sample_b]
+  same_strain.v <- stats::runif(nrow(compared.df)) < ifelse(same_cage.v, 0.7, 0.05)
+  popani.v <- ifelse(same_strain.v, stats::runif(nrow(compared.df), 0.999991, 1), stats::runif(nrow(compared.df), 0.9985, 0.99998))
+  data.frame(genome = mag.s, sample_a = paste0(compared.df$sample_a, ".bam"), sample_b = paste0(compared.df$sample_b, ".bam"),
+             popANI = round(popani.v, 7), conANI = round(popani.v - 1e-5, 7), percent_genome_compared = "",
+             coverage_overlap = round(stats::runif(nrow(compared.df), 0.5, 1), 3), cluster_a = "1_1", cluster_b = "1_2",
+             same_strain = ifelse(popani.v >= 0.99999, "TRUE", "FALSE"))
+}))
+write_tsv(sharing.df, "27_instrain", "summary", "strain_sharing_summary.tsv")
+counts.df <- stats::aggregate(sharing.df$same_strain == "TRUE", list(sample_a = sharing.df$sample_a, sample_b = sharing.df$sample_b),
+                              function(x) c(length(x), sum(x)))
+write_tsv(data.frame(sample_a = counts.df$sample_a, sample_b = counts.df$sample_b, n_genomes_compared = counts.df$x[, 1],
+                     n_same_strain = counts.df$x[, 2]),
+          "27_instrain", "summary", "strain_sharing_counts.tsv")
+treated_week4.v <- stats::setNames(metadata.df$Treatment == "Treated" & metadata.df$Time == "Week_4", samples.v)
+for (sample.s in samples.v){
+  # Treatment at week 4 narrows the strain populations (lower nucleotide diversity)
+  diversity.n <- if (treated_week4.v[[sample.s]]) 0.0008 else 0.0016
+  write_tsv(data.frame(genome = mags.v, coverage = round(stats::runif(10, 3, 60), 2), breadth = round(stats::runif(10, 0.7, 1), 3),
+                       nucl_diversity = round(stats::rlnorm(10, log(diversity.n), 0.3), 6), length = 3e6,
+                       breadth_minCov = round(stats::runif(10, 0.2, 0.98), 3),
+                       popANI_reference = round(stats::runif(10, 0.997, 0.9999), 6),
+                       SNV_count = stats::rpois(10, diversity.n * 3e6)),
+            "27_instrain", "profiles", paste0(sample.s, ".IS"), "output", paste0(sample.s, ".IS_genome_info.tsv"))
+}
+tracs_pairs.df <- sharing.df[, c("genome", "sample_a", "sample_b", "same_strain")]
+tracs.df <- data.frame(sampleA = sub("\\.bam$", "", tracs_pairs.df$sample_a), sampleB = sub("\\.bam$", "", tracs_pairs.df$sample_b),
+                       `date difference` = NA, check.names = FALSE)
+tracs.df$`SNP distance` <- ifelse(tracs_pairs.df$same_strain == "TRUE", stats::rpois(nrow(tracs.df), 3), stats::rpois(nrow(tracs.df), 400))
+tracs.df$`transmission distance` <- NA
+tracs.df$`expected K` <- NA
+tracs.df$`filtered SNP distance` <- round(tracs.df$`SNP distance` * stats::runif(nrow(tracs.df), 0.6, 0.9))
+tracs.df$`sites considered` <- round(stats::runif(nrow(tracs.df), 1e6, 2.5e6))
+tracs.df$`MSA file` <- tracs_pairs.df$genome
+dir.create(file.path(results.s, "28_tracs"), recursive = TRUE, showWarnings = FALSE)
+utils::write.csv(tracs.df, file.path(results.s, "28_tracs", "transmission_distances.csv"), row.names = FALSE, na = "NA")
+
+# Comparison samples: 16 mice from two facilities, with the same taxa at facility-specific abundances,
+# two genomes the study mice lack and some study genomes missing
+comparison.df <- data.frame(Sample_ID = sprintf("F%02d", 1:16), Facility = rep(c("Facility_A", "Facility_B"), each = 8),
+                            stringsAsFactors = FALSE)
+comparison.df$Name <- sprintf("%s_%d", sub("Facility_", "Fac", comparison.df$Facility), rep(1:8, 2))
+utils::write.csv(comparison.df[c("Sample_ID", "Name", "Facility")], file.path(root.s, "comparison_metadata.csv"), row.names = FALSE)
+extra_lineages.v <- c(
+  "d__Bacteria|p__Bacillota_A|c__Clostridia|o__Lachnospirales|f__Lachnospiraceae|g__Dorea|s__Dorea sp100001|t__GCF_900000001.1",
+  "d__Bacteria|p__Bacteroidota|c__Bacteroidia|o__Bacteroidales|f__Muribaculaceae|g__Sodaliphilus|s__Sodaliphilus sp100002|t__GCF_900000002.1")
+comparison_lineages.v <- c(lineages.v, extra_lineages.v)
+baseline.v <- log(rowMeans(as.matrix(leaf.df[-1])) + 0.05)
+facility.m <- cbind(stats::rnorm(length(lineages.v), sd = 0.8), stats::rnorm(length(lineages.v), sd = 0.8))
+log.m <- sapply(seq_len(nrow(comparison.df)), function(j){
+  c(baseline.v + facility.m[, 1 + (comparison.df$Facility[j] == "Facility_B")], c(1.5, 1.2)) + stats::rnorm(length(comparison_lineages.v), sd = 0.6)
+})
+abundance.m <- exp(log.m) * (matrix(stats::runif(length(log.m)), nrow(log.m)) < stats::plogis(log.m + 2))
+abundance.m <- sweep(abundance.m, 2, colSums(abundance.m), "/") * 100
+rows.l <- list()
+for (depth.n in 1:8){
+  prefix.v <- vapply(strsplit(comparison_lineages.v, "|", fixed = TRUE), function(x) paste(x[seq_len(depth.n)], collapse = "|"),
+                     character(1))
+  summed.m <- rowsum(abundance.m, prefix.v, reorder = FALSE)
+  rows.l[[depth.n]] <- data.frame(clade_name = rownames(summed.m), round(summed.m, 5), check.names = FALSE)
+}
+comparison_sylph.df <- do.call(rbind, rows.l)
+comparison_sylph.df <- comparison_sylph.df[rowSums(comparison_sylph.df[-1]) > 0, ]
+names(comparison_sylph.df)[-1] <- paste0(comparison.df$Sample_ID, ".clean_1.fastq.gz")
+write_tsv(comparison_sylph.df, "29_comparison_reads", "sylph", "merged_relative_abundance.tsv")
+write_tsv(comparison_sylph.df, "29_comparison_reads", "sylph", "merged_sequence_abundance.tsv")
+singlem_lineage.v <- vapply(strsplit(comparison_lineages.v, "|", fixed = TRUE),
+                            function(x) paste(c("Root", x[1:6]), collapse = "; "), character(1))
+coverage.m <- rowsum(abundance.m, singlem_lineage.v) * stats::runif(nrow(comparison.df), 0.2, 0.6)
+write_tsv(data.frame(sample = rep(paste0(comparison.df$Sample_ID, "_R1"), each = nrow(coverage.m)),
+                     coverage = round(as.vector(coverage.m), 2), taxonomy = rep(rownames(coverage.m), nrow(comparison.df)))[
+            as.vector(coverage.m) > 0, ],
+          "29_comparison_reads", "singlem", "metagenome.condensed.tsv")
+cat("MAG, strain and comparison examples written to", root.s, "\n")
