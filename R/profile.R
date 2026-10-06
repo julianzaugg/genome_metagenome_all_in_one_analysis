@@ -13,7 +13,7 @@ profile_value_types <- function(){
 #' @param features.df Optional annotation data frame with a `Feature_ID` column matching the row names.
 #'   A `Label` column is used for display; it defaults to `Feature_ID`.
 #' @param value_type What the values are; one of `"relative_abundance"` (percent, each sample
-#'   sums to 100), `"read_share"` (percent of the reads that went into mapping, e.g. CoverM
+#'   sums to 100), `"read_share"` (relative abundance scaled to the share of reads mapped, e.g. CoverM
 #'   relative abundance, where unmapped reads make up the rest), `"coverage"`, `"read_count"`, `"rpkm"`,
 #'   `"normalised_rpkm"`, `"presence"`, `"copy_number"`, `"covered_fraction"` (share of a genome covered by
 #'   reads, 0 to 1), `"value"`.

@@ -99,6 +99,8 @@ show_plot(tracs.gg)
 inStrain reports nucleotide diversity for each genome in each sample.
 Testing genome by genome would count a sample once per genome, so `instrain_sample_summary()` first summarises each sample over its well-covered genomes (`min_breadth`: the share of the genome inStrain covers at its minimum depth).
 
+As for alpha diversity, `show_test = FALSE` and `brackets = FALSE` leave the statistics off the figure (or `show_statistics.b <- FALSE` at the top of `code/strains.R`).
+
 ```{r diversity}
 diversity.df <- gmaio::instrain_sample_summary(strains.l$instrain_genomes, min_breadth = 0.5)
 metadata.df$Treatment_time <- factor(paste(metadata.df$Treatment, metadata.df$Time),

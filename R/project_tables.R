@@ -66,7 +66,7 @@ write_project_tables <- function(project.l){
       names.v <- grep(paste0("^", prefix.s), names(project.l$profiles), value = TRUE)
       if (length(names.v) == 0) next
       abundance.l <- lapply(stats::setNames(names.v, sub(prefix.s, "", names.v)), function(n){
-        profile_to_wide_df(project.l$profiles[[n]], c("Feature_ID", "Short_ID", "Genome_type", "Label"))
+        profile_to_wide_df(project.l$profiles[[n]], c("Feature_ID", "Short_ID", "Genome_type", "Representative_type", "Label"))
       })
       write.f(abundance.l, paste0("MAG_", set.s, "_abundances.xlsx"), number_format = "0.0000")
       write.f(taxonomy_tables(project.l$profiles[[paste0(prefix.s, "relative_abundance")]], include_native = FALSE),

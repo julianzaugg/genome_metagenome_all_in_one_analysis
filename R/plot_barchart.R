@@ -113,7 +113,7 @@ annotation_strip_plot <- function(metadata.df, variables.v, colours.l, facet_var
 value_type_label <- function(value_type){
   switch(value_type,
     relative_abundance = "Relative abundance (%)",
-    read_share = "Reads (% after QC and host removal)",
+    read_share = "Scaled abundance (% of reads after QC and host removal)",
     coverage = "Coverage",
     read_count = "Read count",
     rpkm = "RPKM",

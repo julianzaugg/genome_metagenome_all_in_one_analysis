@@ -12,8 +12,9 @@ if (is.null(group.s)) gmaio::skip_analysis("No group variable; set analysis: gro
 show_statistics.b <- TRUE
 # name = profile, rank (NA for unaggregated features)
 datasets.df <- data.frame(
-  profile = c("sylph_taxonomic", "singlem_relative", "singlem_relative", "mags_hq_derep_bins_relative_abundance"),
-  rank = c("species", "species", "genus", NA)
+  profile = c("sylph_taxonomic", "singlem_relative", "singlem_relative", "mags_hq_derep_bins_relative_abundance",
+              "mags_hq_ref_bins_relative_abundance"),
+  rank = c("species", "species", "genus", NA, NA)
 )
 
 tables.l <- list()
@@ -35,6 +36,7 @@ for (i in seq_len(nrow(datasets.df))){
 # Short dataset names keep sheet names within Excel's 31 characters (e.g. singlem__species_pairwise)
 names(tables.l) <- names(tables.l) |>
   gsub(pattern = "mags_hq_derep_bins_relative_abundance", replacement = "mags_hq_derep") |>
+  gsub(pattern = "mags_hq_ref_bins_relative_abundance", replacement = "mags_hq_ref") |>
   gsub(pattern = "sylph_taxonomic", replacement = "sylph") |>
   gsub(pattern = "singlem_relative", replacement = "singlem")
 gmaio::write_xlsx_tables(tables.l, gmaio::output_path(config.l, "tables", "Alpha_diversity.xlsx"))

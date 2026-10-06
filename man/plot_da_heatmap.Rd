@@ -40,7 +40,7 @@ plot_da_heatmap(
 
 \item{not_called_colour}{Track colour where a method did not call the feature.}
 
-\item{conflict_colour}{Track colour for features called higher in different groups.}
+\item{conflict_colour}{Track colour for features whose methods call the same contrast in opposite directions.}
 
 \item{...}{Options passed to \code{\link[=plot_heatmap]{plot_heatmap()}}, overriding the defaults set here
 (\code{column_split = group}, \code{row_split = "Higher_in"}).}
@@ -51,6 +51,10 @@ A \code{Heatmap}, or \code{NULL} when fewer than two features pass.
 \description{
 Abundance of every feature called by at least \code{min_methods} methods, with row tracks for
 the group the feature is higher in, the group each method called it for (so disagreement
-between methods shows as a colour mismatch) and features whose methods conflict in direction.
+between methods shows as a colour mismatch) and features whose methods call the same contrast
+in opposite directions (see \code{\link[=da_consensus]{da_consensus()}}). With more than two groups a feature can be called
+higher in several groups (in different contrasts); it is shown under the group with the most
+methods calling it (then the most contrasts), and each method's track shows its call for that
+group when it makes one, otherwise its call for another group.
 Built on \code{\link[=plot_heatmap]{plot_heatmap()}}; any of its options can be passed to change the figure.
 }

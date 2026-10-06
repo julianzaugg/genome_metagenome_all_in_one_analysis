@@ -89,6 +89,11 @@ test_that("reference genomes are kept apart from the MAGs and never assigned to 
   expect_setequal(hq_ref.p$features$Genome_type, c("MAG", "Reference"))
   expect_equal(hq_ref.p$features$Short_ID[hq_ref.p$features$Feature_ID == "S1_isolate_ref"],
                references.df$Short_ID[references.df$Bin_ID == "S1_isolate_ref"])
+  # GCA_000123.1 represents a cluster holding S12.rosella.5; S1_isolate_ref has no study MAG
+  types.v <- stats::setNames(hq_ref.p$features$Representative_type, hq_ref.p$features$Feature_ID)
+  expect_equal(unname(types.v[c("GCA_000123.1", "S1_isolate_ref", "S1.metabat2.1")]),
+               c("Reference with study MAGs", "Reference only", "MAG"))
+  expect_null(project.l$profiles$mags_hq_derep_bins_relative_abundance$features$Representative_type)
 })
 
 test_that("without a reference CheckM2 report, genomes no MAG report lists are references", {

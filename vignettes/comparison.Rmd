@@ -92,8 +92,13 @@ gmaio::run_pairwise_permanova(ordination$distance, metadata.df, "Comparison_grou
 
 ## Distances to each group
 
-`comparison_distances()` takes each study sample's mean distance to the samples of every group (its own group without itself).
-A study sample closer to a comparison group than to its own study group stands out at once.
+`comparison_distances()` measures, for every study sample, how far it is from each group separately.
+It takes the sample's distance (in the ordination's distance, here robust Aitchison) to every sample of one group and averages them, then does the same for the next group, and so on.
+For the sample's own group, the sample itself is left out.
+So each study sample gives one value per group: its mean distance to the other samples of its own Location, and its mean distance to the samples of each other Location and of each comparison group.
+
+The figure has one panel per study group (`From <group>`) and one box per group the distances go to (`To samples of`); each point is one study sample.
+A low box for the sample's own group and higher boxes for the rest means the study groups are distinct; a comparison group with a box as low as the own-group box holds samples as similar as the study group's own.
 Points from one sample are not independent, so the figure draws no tests; the PERMANOVA results are the inference.
 
 ```{r distances}
@@ -125,6 +130,8 @@ show_plot(barchart.gg)
 
 ## Alpha diversity
 
+Statistics on the figure can be left off with `show_test = FALSE` and `brackets = FALSE` (or `show_statistics.b <- FALSE` at the top of `code/comparison.R`); the tests are still returned.
+
 ```{r diversity}
 diversity.l <- gmaio::plot_alpha_diversity(gmaio::alpha_diversity(genus.p), metadata.df, "Comparison_group",
                                            project.l$palettes$Comparison_group)
@@ -139,7 +146,8 @@ Comparison samples are often sequenced to a different depth than the study's, so
 
 ## Detecting the study's MAGs
 
-Comparison reads are mapped to the study's dereplicated bins.
+The pipeline maps comparison reads with CoverM to the study's dereplicated bins: the representatives of all bins of any quality after dereplication at 95% ANI (`<n>_dereplicated_bins`, the `derep_bins` set), the same genomes the study samples are mapped to in `<n>_coverm_bins`.
+Reference genomes (`--reference_genomes`) are not part of this mapping, whatever the settings; they reach the comparison samples only through the gene catalogue, when the run has `--reference_genomes_in_catalogue`.
 `mag_detection()` counts, for each genome, the samples of each group in which reads cover at least `min_covered_fraction` of it; requiring breadth guards against reads from relatives that hit only conserved regions.
 The table goes to `Study_vs_comparison_MAG_detection.xlsx`, and the script draws the covered fraction of the HQ bins as a heatmap.
 

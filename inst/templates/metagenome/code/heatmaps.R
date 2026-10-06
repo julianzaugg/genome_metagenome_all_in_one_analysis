@@ -7,8 +7,10 @@ config.l <- project.l$config
 metadata.df <- gmaio::analysis_metadata(project.l)
 group.s <- gmaio::primary_group(project.l)
 
-# Profiles to plot; names(project.l$profiles) lists everything main.R produced
-profiles.v <- c("sylph_taxonomic", "singlem_relative", "mags_hq_derep_bins_relative_abundance")
+# Profiles to plot (names(project.l$profiles) lists everything main.R produced); mags_hq_ref_bins adds the
+# pipeline's --reference_genomes to the HQ MAGs (skipped when the run had none)
+profiles.v <- c("sylph_taxonomic", "singlem_relative", "mags_hq_derep_bins_relative_abundance",
+                "mags_hq_ref_bins_relative_abundance")
 # Keep taxa reaching this relative abundance (%) in at least one sample, then at most max_features.n by mean
 min_abundance.v <- c(phylum = 0.1, class = 0.5, order = 0.5, family = 0.5, genus = 0.5, species = 1)
 max_features.n <- 60

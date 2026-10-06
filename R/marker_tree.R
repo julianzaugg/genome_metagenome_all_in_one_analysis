@@ -15,6 +15,14 @@ read_marker_trees <- function(paths.v){
 
 #' Read the marker tree neighbour tables
 #'
+#' The pipeline (`--marker_tree_use_closest`) picks, for each genome placed in the tree, the GTDB
+#' genomes with the shortest branch-length path to it in GTDB-Tk's classify tree
+#' (`--marker_tree_closest_n`, 2 by default). For bacteria this is GTDB-Tk's backbone tree, so the
+#' neighbour shows where a genome sits rather than its closest GTDB genome (GTDB-Tk's
+#' `closest_genome_reference`). `reference_genomes.tsv` lists every GTDB genome in the tree: these
+#' neighbours plus context genomes (one per order shared with a placed genome but from another
+#' family, `--marker_tree_use_related`, and any `--marker_tree_reference_accessions`).
+#'
 #' @param closest_paths.v Paths to `<domain>.closest_references.tsv` (genome, GTDB accession; no header).
 #' @param reference_paths.v Paths to `<domain>.reference_genomes.tsv` (GTDB accession, lineage; no header).
 #' @return Data frame with `Bin_ID`, `Domain_tree`, `Neighbour` (GTDB accession), `Neighbour_rank`
@@ -80,7 +88,8 @@ add_marker_tree <- function(project.l){
 #' Plot a marker gene tree of the MAGs
 #'
 #' A tree with a point at every MAG and reference genome tip, filled by phylum, and small grey
-#' points for the GTDB genomes the pipeline added for context. Large trees are drawn circular
+#' points for the GTDB genomes the pipeline added: each placed genome's nearest GTDB genomes and
+#' context genomes from related orders (see [read_marker_tree_neighbours()]). Large trees are drawn circular
 #' without labels; small ones (up to `label_max_tips` tips) rectangular with tip labels.
 #'
 #' @param tree An `ape::phylo` tree, e.g. `project.l$tables$marker_tree$trees$bac120`.

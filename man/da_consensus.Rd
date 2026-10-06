@@ -14,12 +14,20 @@ da_consensus(results.df, alpha = 0.05, min_stability = 0.7)
 \item{min_stability}{sPLS-DA selection stability threshold.}
 }
 \value{
-Data frame, one row per feature and enriched group, with per-method effects,
-q values and \code{N_methods} (number of methods calling it).
+Data frame, one row per feature and enriched group, with \code{Contrasts}, per-method
+effects, q values, \code{N_methods} (number of methods calling it) and \code{Conflicting_direction}.
 }
 \description{
 A feature counts as significant for MaAsLin3 (abundance model) and LinDA when
 \code{Q_value <= alpha}, and for sPLS-DA when selected with \code{Stability >= min_stability}.
 Methods agree when they call the feature enriched in the same group, which works for
 any number of groups (the dump scripts compared incompatible group labels).
+}
+\details{
+With more than two groups, MaAsLin3 and LinDA test each group against the reference level, so
+one feature can be higher in several groups (e.g. higher in B than A and higher in C than A):
+each gets its own row, and \code{Contrasts} lists the comparisons behind it. That is not a
+conflict. \code{Conflicting_direction} is set when MaAsLin3 and LinDA call the same contrast in
+opposite directions, or when sPLS-DA (whose call is the group with the highest mean) names a
+group that MaAsLin3 or LinDA find significantly lower than another group.
 }

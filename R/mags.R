@@ -101,10 +101,11 @@ mimag_tier <- function(summary.df){
 #' @param bin_summary.df Table from [build_bin_summary()].
 #' @param set_name Name of the mapped genome set, used as the profile source.
 #' @return Named list of `gm_profile`: `coverage`, `read_count`, `relative_abundance`
-#'   (coverage normalised to 100 per sample among genomes), `coverm_relative_abundance`
-#'   (CoverM's own value: a share of the reads that went into mapping, i.e. after QC and host
-#'   removal, with the unmapped rest left out; value type `"read_share"`, so it is never
-#'   rescaled to 100) and `covered_fraction` (share of each genome covered by reads, for detection).
+#'   (mean coverage normalised to 100 per sample among genomes), `coverm_relative_abundance`
+#'   (CoverM's own value: the same mean-coverage share scaled by the percent of the sample's reads,
+#'   after QC and host removal, that map to the set, so the unmapped share is left out; value type
+#'   `"read_share"`, so it is never rescaled to 100) and `covered_fraction` (share of each genome
+#'   covered by reads, for detection).
 #' @export
 build_mag_profiles <- function(coverm.df, bin_summary.df, set_name){
   require_columns(coverm.df, c("Sample_ID", "Genome", "Mean_coverage", "Read_count", "Relative_abundance"), "CoverM table")

@@ -35,10 +35,22 @@ for (rank.s in c("phylum", "family")){
 within_sample.l <- gmaio::within_sample_mag_summary(project.l)
 gmaio::write_xlsx_tables(list(Samples = within_sample.l$samples, Mapping = within_sample.l$mapping),
                          gmaio::output_path(config.l, "tables", "MAG_per_sample_recovery.xlsx"))
-if (any(c("ws_hq_bins", "hq_derep_bins") %in% within_sample.l$mapping$Set)){
-  gmaio::save_plot(gmaio::plot_mag_mapping(within_sample.l$mapping, metadata.df, sets = c("ws_hq_bins", "hq_derep_bins"),
+# hq_ref_bins (HQ MAGs plus the pipeline's --reference_genomes) shows how much more the reference genomes explain.
+mapping_sets.v <- c("ws_hq_bins", "hq_derep_bins", "hq_ref_bins")
+if (any(mapping_sets.v %in% within_sample.l$mapping$Set)){
+  gmaio::save_plot(gmaio::plot_mag_mapping(within_sample.l$mapping, metadata.df, sets = mapping_sets.v,
                                            facet_variable = group.s),
                    gmaio::figure_path(config.l, "mags", "reads_mapped_to_mags"))
+}
+# What the HQ MAG plus reference genome abundance is made of: study MAGs, reference genomes that represent study MAGs
+# of the same species (dereplication kept the reference), and reference genomes of species no study MAG recovered
+if ("mags_hq_ref_bins_relative_abundance" %in% names(project.l$profiles)){
+  type.p <- gmaio::aggregate_profile(gmaio::get_profile(project.l, "mags_hq_ref_bins_relative_abundance"),
+                                     by = "Representative_type")
+  type_colours.v <- c(MAG = "#0072B2", `Reference with study MAGs` = "#CC79A7", `Reference only` = "#E69F00")
+  gmaio::save_plot(gmaio::plot_stacked_barchart(type.p, metadata.df, type_colours.v, merge_unassigned = FALSE,
+                                                facet_variable = group.s, legend_title = "Genome"),
+                   gmaio::figure_path(config.l, "mags", "hq_ref_mag_vs_reference_share"))
 }
 # Composition of each sample's own HQ MAGs, as a share of its reads after QC and host removal (the gap to
 # 100% is not explained by its own HQ MAGs).

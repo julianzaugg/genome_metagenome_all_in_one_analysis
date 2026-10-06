@@ -16,5 +16,11 @@ Data frame with \code{Bin_ID}, \code{Domain_tree}, \code{Neighbour} (GTDB access
 (1 for the closest) and \code{Neighbour_classification}.
 }
 \description{
-Read the marker tree neighbour tables
+The pipeline (\code{--marker_tree_use_closest}) picks, for each genome placed in the tree, the GTDB
+genomes with the shortest branch-length path to it in GTDB-Tk's classify tree
+(\code{--marker_tree_closest_n}, 2 by default). For bacteria this is GTDB-Tk's backbone tree, so the
+neighbour shows where a genome sits rather than its closest GTDB genome (GTDB-Tk's
+\code{closest_genome_reference}). \code{reference_genomes.tsv} lists every GTDB genome in the tree: these
+neighbours plus context genomes (one per order shared with a placed genome but from another
+family, \code{--marker_tree_use_related}, and any \code{--marker_tree_reference_accessions}).
 }

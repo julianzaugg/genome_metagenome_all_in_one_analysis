@@ -99,3 +99,31 @@ test_that("the DA heatmap shows each method's call as a track", {
   expect_null(plot_da_heatmap(profile, consensus.df[1, ], metadata.df, "Treatment"))
   expect_null(plot_da_consensus(consensus.df, methods = "sPLS-DA", min_methods = 1))
 })
+
+test_that("a feature higher in several groups than the reference is not a conflict", {
+  results.df <- data.frame(
+    Method = c("MaAsLin3", "LinDA", "MaAsLin3", "LinDA", "MaAsLin3", "LinDA"), Model = "abundance",
+    Feature_ID = c("f1", "f1", "f1", "f1", "f2", "f2"), Label = c("A", "A", "A", "A", "B", "B"), Variable = "Site",
+    Contrast = c("B", "B", "C", "C", "B", "B"), Reference = "A", Effect = c(2, 1.5, 1, 0.8, 1, -1),
+    Effect_type = "log2", SE = 0.1, P_value = 0.001, Q_value = 0.01, Stability = NA_real_,
+    Enriched_in = c("B", "B", "C", "C", "B", "A"))
+  consensus.df <- da_consensus(results.df)
+  f1.df <- consensus.df[consensus.df$Feature_ID == "f1", ]
+  expect_setequal(f1.df$Enriched_in, c("B", "C"))
+  expect_equal(f1.df$Contrasts[f1.df$Enriched_in == "C"], "C vs A")
+  expect_false(any(f1.df$Conflicting_direction))
+  # MaAsLin3 and LinDA disagree on the same contrast
+  expect_true(all(consensus.df$Conflicting_direction[consensus.df$Feature_ID == "f2"]))
+})
+
+test_that("sPLS-DA conflicts with a contrast that finds its group lower", {
+  base.df <- data.frame(Method = c("LinDA", "sPLS-DA"), Model = c("abundance", "component_1"), Feature_ID = "f1", Label = "A",
+                        Variable = "Site", Contrast = c("B", NA), Reference = "A", Effect = c(-2, 0.5), Effect_type = "x",
+                        SE = NA_real_, P_value = 0.001, Q_value = c(0.01, NA), Stability = c(NA, 0.9))
+  # LinDA: B lower than A; sPLS-DA: highest mean in B
+  conflict.df <- da_consensus(cbind(base.df, Enriched_in = c("A", "B")))
+  expect_true(all(conflict.df$Conflicting_direction))
+  # sPLS-DA's highest mean in C, which LinDA did not test against A or B: no conflict
+  agree.df <- da_consensus(cbind(base.df, Enriched_in = c("A", "C")))
+  expect_false(any(agree.df$Conflicting_direction))
+})

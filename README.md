@@ -175,7 +175,7 @@ MAG abundance profiles are named `mags_<set>_<type>`.
 The cross-sample sets (`derep_bins`, `hq_bins`, `hq_derep_bins`, `hq_ref_bins`) map every sample to one catalogue of genomes pooled across samples; `hq_derep_bins` is the one the analysis scripts use.
 With the pipeline's `--within_sample_dereplication`, gmaio also loads `ws_derep_bins` and `ws_hq_bins`, where each sample is mapped only to its own bins.
 A genome can then only be detected in the sample it came from, so these are for per-sample summaries (`within_sample_mag_summary()`, `plot_mag_mapping()`), not ordination or differential abundance; those functions warn if given one.
-`<type>` is `relative_abundance` (each sample sums to 100), `coverm_relative_abundance` (CoverM's value: % of the reads after QC and host removal, not rescaled), `coverage`, `read_count` or `covered_fraction` (share of each genome covered by reads, for detection).
+`<type>` is `relative_abundance` (each sample sums to 100), `coverm_relative_abundance` (CoverM's value: `relative_abundance` scaled by the % of reads, after QC and host removal, that map to the set; not rescaled to 100), `coverage`, `read_count` or `covered_fraction` (share of each genome covered by reads, for detection).
 
 Genomes from the pipeline's `--reference_genomes` are kept apart from the MAGs.
 `project.l$tables$bin_summary` (the `Bins` sheet of `MAG_summary.xlsx`) has the MAGs only, and `project.l$tables$reference_genomes` (the `Reference_genomes` sheet) the references, with their CheckM2 quality from the pipeline's reference report and their GTDB-Tk taxonomy.

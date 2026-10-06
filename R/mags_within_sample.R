@@ -137,9 +137,9 @@ plot_mag_mapping <- function(mapping.df, metadata.df, sets = c("ws_hq_bins", "hq
 }
 
 mag_set_descriptions <- function(){
-  c(derep_bins = "MAG catalogue (all samples)", hq_bins = "HQ representatives (all samples)",
+  c(derep_bins = "Bin catalogue (all samples)", hq_bins = "HQ representatives (all samples)",
     hq_derep_bins = "HQ MAG catalogue (all samples)", hq_ref_bins = "HQ MAGs and references (all samples)",
-    ws_derep_bins = "Own MAGs (within sample)", ws_hq_bins = "Own HQ MAGs (within sample)")
+    ws_derep_bins = "Own bins (within sample)", ws_hq_bins = "Own HQ MAGs (within sample)")
 }
 
 mag_set_colours <- function(){

@@ -232,11 +232,18 @@ run_differential_abundance <- function(profile, metadata.df, variable, covariate
 #' Methods agree when they call the feature enriched in the same group, which works for
 #' any number of groups (the dump scripts compared incompatible group labels).
 #'
+#' With more than two groups, MaAsLin3 and LinDA test each group against the reference level, so
+#' one feature can be higher in several groups (e.g. higher in B than A and higher in C than A):
+#' each gets its own row, and `Contrasts` lists the comparisons behind it. That is not a
+#' conflict. `Conflicting_direction` is set when MaAsLin3 and LinDA call the same contrast in
+#' opposite directions, or when sPLS-DA (whose call is the group with the highest mean) names a
+#' group that MaAsLin3 or LinDA find significantly lower than another group.
+#'
 #' @param results.df `results` from [run_differential_abundance()].
 #' @param alpha Q value threshold.
 #' @param min_stability sPLS-DA selection stability threshold.
-#' @return Data frame, one row per feature and enriched group, with per-method effects,
-#'   q values and `N_methods` (number of methods calling it).
+#' @return Data frame, one row per feature and enriched group, with `Contrasts`, per-method
+#'   effects, q values, `N_methods` (number of methods calling it) and `Conflicting_direction`.
 #' @export
 da_consensus <- function(results.df, alpha = 0.05, min_stability = 0.7){
   if (is.null(results.df) || nrow(results.df) == 0) return(data.frame())
@@ -245,6 +252,22 @@ da_consensus <- function(results.df, alpha = 0.05, min_stability = 0.7){
        !is.na(results.df$Q_value) & results.df$Q_value <= alpha) |
       (results.df$Method == "sPLS-DA" & !is.na(results.df$Stability) & results.df$Stability >= min_stability), , drop = FALSE]
   if (nrow(significant.df) == 0) return(data.frame())
+  # Contrasts behind each call, and conflicts: two contrast methods calling one contrast in opposite directions
+  is_contrast.v <- significant.df$Method %in% c("MaAsLin3", "LinDA") & !is.na(significant.df$Contrast)
+  contrast.df <- significant.df[is_contrast.v, , drop = FALSE]
+  contrast.df$Comparison <- paste(contrast.df$Contrast, "vs", contrast.df$Reference)
+  directions.v <- tapply(contrast.df$Enriched_in, paste(contrast.df$Feature_ID, contrast.df$Comparison, sep = "\r"),
+                         function(x) length(unique(x)))
+  conflict.v <- unique(sub("\r.*$", "", names(directions.v)[directions.v > 1]))
+  # sPLS-DA calls the group with the highest mean; a contrast finding that group significantly lower contradicts it
+  splsda.df <- unique(significant.df[significant.df$Method == "sPLS-DA", c("Feature_ID", "Enriched_in"), drop = FALSE])
+  if (nrow(splsda.df) > 0 && nrow(contrast.df) > 0){
+    joined.df <- merge(splsda.df, contrast.df[, c("Feature_ID", "Contrast", "Reference", "Enriched_in")], by = "Feature_ID",
+                       suffixes = c("_splsda", "_contrast"))
+    tested.v <- joined.df$Enriched_in_splsda == joined.df$Contrast | joined.df$Enriched_in_splsda == joined.df$Reference
+    contradicted.v <- tested.v & joined.df$Enriched_in_splsda != joined.df$Enriched_in_contrast
+    conflict.v <- unique(c(conflict.v, joined.df$Feature_ID[contradicted.v]))
+  }
   significant.df <- significant.df[order(significant.df$Method, -abs(significant.df$Effect)), , drop = FALSE]
   significant.df <- significant.df[!duplicated(significant.df[, c("Method", "Feature_ID", "Enriched_in")]), , drop = FALSE]
 
@@ -258,7 +281,13 @@ da_consensus <- function(results.df, alpha = 0.05, min_stability = 0.7){
       if (method.s == "sPLS-DA") method.df$Stability[index.v] else method.df$Q_value[index.v]
   }
   keys.df$N_methods <- rowSums(!is.na(keys.df[, grep("_effect$", names(keys.df)), drop = FALSE]))
-  conflict.v <- keys.df$Feature_ID[duplicated(keys.df$Feature_ID)]
+  comparisons.v <- vapply(paste(keys.df$Feature_ID, keys.df$Enriched_in), function(key.s){
+    hits.v <- sort(unique(contrast.df$Comparison[paste(contrast.df$Feature_ID, contrast.df$Enriched_in) == key.s]))
+    if (length(hits.v) == 0) NA_character_ else paste(hits.v, collapse = "; ")
+  }, character(1))
+  keys.df <- data.frame(keys.df[, c("Feature_ID", "Label", "Variable", "Enriched_in")], Contrasts = unname(comparisons.v),
+                        keys.df[, setdiff(names(keys.df), c("Feature_ID", "Label", "Variable", "Enriched_in")), drop = FALSE],
+                        check.names = FALSE, stringsAsFactors = FALSE)
   keys.df$Conflicting_direction <- keys.df$Feature_ID %in% conflict.v
   keys.df <- keys.df[order(-keys.df$N_methods, keys.df$Enriched_in, keys.df$Label), , drop = FALSE]
   rownames(keys.df) <- NULL
@@ -323,7 +352,11 @@ wrap_labels <- function(labels.v, width){
 #'
 #' Abundance of every feature called by at least `min_methods` methods, with row tracks for
 #' the group the feature is higher in, the group each method called it for (so disagreement
-#' between methods shows as a colour mismatch) and features whose methods conflict in direction.
+#' between methods shows as a colour mismatch) and features whose methods call the same contrast
+#' in opposite directions (see [da_consensus()]). With more than two groups a feature can be called
+#' higher in several groups (in different contrasts); it is shown under the group with the most
+#' methods calling it (then the most contrasts), and each method's track shows its call for that
+#' group when it makes one, otherwise its call for another group.
 #' Built on [plot_heatmap()]; any of its options can be passed to change the figure.
 #'
 #' @param profile The `gm_profile` the differential abundance was run on.
@@ -336,7 +369,7 @@ wrap_labels <- function(labels.v, width){
 #' @param methods Methods drawn as tracks.
 #' @param rank_annotation Feature column drawn as the first track (e.g. `"Phylum"`), when present.
 #' @param not_called_colour Track colour where a method did not call the feature.
-#' @param conflict_colour Track colour for features called higher in different groups.
+#' @param conflict_colour Track colour for features whose methods call the same contrast in opposite directions.
 #' @param ... Options passed to [plot_heatmap()], overriding the defaults set here
 #'   (`column_split = group`, `row_split = "Higher_in"`).
 #' @return A `Heatmap`, or `NULL` when fewer than two features pass.
@@ -346,7 +379,11 @@ plot_da_heatmap <- function(profile, consensus.df, metadata.df, group, palettes.
                             not_called_colour = "#F2F2F2", conflict_colour = "#D7191C", ...){
   if (nrow(consensus.df) == 0) return(NULL)
   shown.df <- consensus.df[consensus.df$N_methods >= min_methods, , drop = FALSE]
-  shown.df <- shown.df[order(-shown.df$N_methods), , drop = FALSE]
+  n_contrasts.v <- rep(0, nrow(shown.df))
+  if ("Contrasts" %in% names(shown.df)){
+    n_contrasts.v <- ifelse(is.na(shown.df$Contrasts), 0, lengths(strsplit(shown.df$Contrasts, "; ", fixed = TRUE)))
+  }
+  shown.df <- shown.df[order(-shown.df$N_methods, -n_contrasts.v), , drop = FALSE]
   features.v <- utils::head(unique(shown.df$Feature_ID), max_features)
   features.v <- intersect(features.v, rownames(profile$values))
   if (length(features.v) < 2) return(NULL)
@@ -360,8 +397,10 @@ plot_da_heatmap <- function(profile, consensus.df, metadata.df, group, palettes.
   effect_columns.v <- effect_columns.v[vapply(effect_columns.v, function(x) any(!is.na(consensus.df[[x]])), logical(1))]
   for (method.s in names(effect_columns.v)){
     called.df <- consensus.df[!is.na(consensus.df[[effect_columns.v[[method.s]]]]), , drop = FALSE]
-    called.v <- called.df$Enriched_in[match(features.df$Feature_ID, called.df$Feature_ID)]
-    features.df[[method.s]] <- ifelse(is.na(called.v), "Not called", called.v)
+    # The method's call for the row's group when it makes one, else its call for another group
+    same.v <- paste(features.df$Feature_ID, features.df$Higher_in) %in% paste(called.df$Feature_ID, called.df$Enriched_in)
+    other.v <- called.df$Enriched_in[match(features.df$Feature_ID, called.df$Feature_ID)]
+    features.df[[method.s]] <- ifelse(same.v, features.df$Higher_in, ifelse(is.na(other.v), "Not called", other.v))
   }
   conflict.v <- features.df$Feature_ID %in% consensus.df$Feature_ID[consensus.df$Conflicting_direction]
   features.df$Conflict <- ifelse(conflict.v, "Yes", "No")

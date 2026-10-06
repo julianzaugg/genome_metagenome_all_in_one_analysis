@@ -49,6 +49,7 @@ A ggplot (ggtree).
 }
 \description{
 A tree with a point at every MAG and reference genome tip, filled by phylum, and small grey
-points for the GTDB genomes the pipeline added for context. Large trees are drawn circular
+points for the GTDB genomes the pipeline added: each placed genome's nearest GTDB genomes and
+context genomes from related orders (see \code{\link[=read_marker_tree_neighbours]{read_marker_tree_neighbours()}}). Large trees are drawn circular
 without labels; small ones (up to \code{label_max_tips} tips) rectangular with tip labels.
 }

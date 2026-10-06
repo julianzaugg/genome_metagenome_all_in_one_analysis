@@ -91,18 +91,23 @@ The `Name` column is how each set is labelled in figures, e.g. in `reads_mapped_
 | Sheet | What it is | Sums to |
 |---|---|---|
 | `relative_abundance` | Mean coverage of each genome as a share of all genomes in the set: the share of genome copies | 100 per sample |
-| `coverm_relative_abundance` | CoverM relative abundance: % of the sample's reads (after QC and host removal) that map to the genome | the % of reads mapped to the set |
+| `coverm_relative_abundance` | CoverM relative abundance: `relative_abundance` scaled by the % of the sample's reads (after QC and host removal) that map to the set | the % of reads mapped to the set |
 | `coverage` | Mean read depth over the genome (x) | - |
 | `read_count` | Reads mapped to the genome | reads mapped |
 | `covered_fraction` | Share of the genome covered by at least one read, 0 to 1; a genome is usually called present from about 0.3 | - |
 
 Use `relative_abundance` to compare composition between samples; it is what the templates plot and test.
-Use `coverm_relative_abundance` when the unmapped share matters, e.g. "this genome is 5% of all the reads in the sample".
+Both are based on mean coverage, so they count genome copies whatever the genome size (see [CoverM's calculation methods](https://github.com/wwood/CoverM#calculation-methods)); between genomes in one sample their ratios are the same.
+Use `coverm_relative_abundance` when the unmapped share matters, e.g. "this genome is 5% of the sample once reads the set does not explain are counted".
 `MAG_<set>_taxonomy_relative_abundance.xlsx` is `relative_abundance` summed to each GTDB rank.
 
 ### Finding a MAG across sets
 
 `MAG_summary.xlsx` has every bin from every sample, with its quality and taxonomy (`Bins`), the reference genomes (`Reference_genomes`) and, with the pipeline's marker gene tree, the GTDB genomes placed next to each genome (`Marker_tree_neighbours`; the closest is also in the `Tree_neighbour` column).
+The neighbours come from the pipeline's `<domain>.closest_references.tsv`: for each genome placed in the tree, the GTDB genomes with the shortest branch-length path to it in GTDB-Tk's classify tree (`--marker_tree_closest_n`, 2 by default).
+For bacteria that is GTDB-Tk's backbone tree, which holds a few thousand GTDB genomes, so a neighbour shows where the bin sits rather than its closest GTDB genome; that is GTDB-Tk's `closest_genome_reference` column.
+The marker tree also holds GTDB genomes picked only for context, which are not neighbours: one per order shared with a placed genome but from a family none of them belongs to (`--marker_tree_use_related`), and any `--marker_tree_reference_accessions`.
+Only placed genomes have neighbours: representatives at >= 90% completeness and <= 5% contamination by default, plus the `--reference_genomes`.
 For each set it has two columns: `Is_representative_<set>` (the bin is in that set) and `Representative_<set>` (the bin that represents its cluster there).
 So to follow one genome from its sample into the pooled catalogue:
 

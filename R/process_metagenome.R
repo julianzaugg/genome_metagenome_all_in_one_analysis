@@ -82,6 +82,8 @@ within_sample_sets <- function() grep("^ws_", names(mag_sets()), value = TRUE)
 #' `project.l$tables$bin_summary` has the MAGs only and `project.l$tables$reference_genomes`
 #' the references, with their CheckM2 quality and GTDB-Tk taxonomy when available. Both
 #' annotate the `hq_ref_bins` profiles, whose `Genome_type` feature column tells them apart.
+#' Their `Representative_type` column also says whether a reference genome stands in for study MAGs of
+#' the same species (it was chosen as the representative of a cluster holding MAGs) or has no study MAG.
 #'
 #' Sets `derep_bins`, `hq_bins`, `hq_derep_bins` and `hq_ref_bins` map every sample to one
 #' catalogue of genomes pooled across samples, so they can be compared between samples.
@@ -141,6 +143,9 @@ add_mags <- function(project.l){
     coverm.df <- read_coverm_abundances(locate_output(config.l, key.s))
     coverm.df <- link_table_samples(coverm.df, "Sample", project.l$metadata, paste("CoverM", set.s))
     profiles.l <- build_mag_profiles(coverm.df, genomes.df, set_name = paste0("mags_", set.s))
+    if (any(clusters.l[[set.s]]$Bin_ID %in% genomes.df$Bin_ID[genomes.df$Genome_type == "Reference"])){
+      profiles.l <- lapply(profiles.l, add_representative_type, clusters.l[[set.s]], genomes.df)
+    }
     # Samples without genomes of their own get no CoverM table in within-sample runs; they have zero of them
     if (set.s %in% within_sample_sets()) profiles.l <- lapply(profiles.l, add_zero_samples, project.l$metadata$Sample_ID)
     for (type.s in names(profiles.l)){
@@ -159,6 +164,18 @@ add_mags <- function(project.l){
                                   "use them for per-sample summaries, not between-sample comparisons")))
   }
   project.l
+}
+
+# Representative_type for sets dereplicated with reference genomes: a MAG, a reference genome that stands in for
+# study MAGs of the same species (it was chosen as the cluster representative), or a reference with no study MAG
+add_representative_type <- function(profile, clusters.df, genomes.df){
+  references.v <- genomes.df$Bin_ID[genomes.df$Genome_type == "Reference"]
+  with_mags.v <- unique(clusters.df$Representative[!clusters.df$Bin_ID %in% references.v])
+  feature.v <- profile$features$Feature_ID
+  profile$features$Representative_type <- ifelse(!feature.v %in% references.v, "MAG",
+                                                 ifelse(feature.v %in% with_mags.v, "Reference with study MAGs",
+                                                        "Reference only"))
+  profile
 }
 
 #' Add gene catalogue functional profiles

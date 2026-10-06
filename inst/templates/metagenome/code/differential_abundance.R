@@ -9,10 +9,13 @@ metadata.df <- gmaio::analysis_metadata(project.l)
 group.s <- gmaio::primary_group(project.l)
 if (is.null(group.s)) gmaio::skip_analysis("No group variable; set analysis: group_variables in config.yml")
 
-# name = profile, rank (NA for unaggregated features)
+# name = profile, rank (NA for unaggregated features). mags_hq_ref_bins adds the pipeline's --reference_genomes to the HQ
+# MAGs; functions_expanded_* use the expanded gene catalogue. Datasets the run did not produce are skipped.
 datasets.df <- data.frame(
-  profile = c("sylph_taxonomic", "singlem_relative", "mags_hq_derep_bins_relative_abundance", "functions_ko", "functions_cazy"),
-  rank = c("genus", "genus", NA, NA, NA)
+  profile = c("sylph_taxonomic", "singlem_relative", "mags_hq_derep_bins_relative_abundance",
+              "mags_hq_ref_bins_relative_abundance", "functions_ko", "functions_cazy", "functions_expanded_ko",
+              "functions_expanded_cazy"),
+  rank = c("genus", "genus", NA, NA, NA, NA, NA, NA)
 )
 methods.v <- c("maaslin3", "linda", "splsda")
 min_prevalence.n <- 0.1
@@ -56,7 +59,11 @@ for (i in seq_len(nrow(datasets.df))){
     gmaio::save_plot(boxplots.gg, figure_path.f(if (length(pages.l) > 1) paste0("boxplots_page", page.n) else "boxplots"))
   }
 }
-short_names.f <- function(x) substr(gsub("mags_hq_derep_bins_relative_abundance", "mags_hq_derep", x), 1, 31)
+short_names.f <- function(x){
+  x <- gsub("mags_hq_derep_bins_relative_abundance", "mags_hq_derep", x)
+  x <- gsub("mags_hq_ref_bins_relative_abundance", "mags_hq_ref", x)
+  substr(x, 1, 31)
+}
 names(results.l) <- short_names.f(names(results.l))
 names(consensus.l) <- short_names.f(names(consensus.l))
 gmaio::write_xlsx_tables(results.l, gmaio::output_path(config.l, "tables", "Differential_abundance_all_results.xlsx"))

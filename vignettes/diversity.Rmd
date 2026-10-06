@@ -130,6 +130,22 @@ diversity.l <- gmaio::plot_alpha_diversity(diversity.df, metadata.df, "Group",
 show_plot(diversity.l$plot)
 ```
 
+### Leaving the statistics off the figure
+
+`show_test = FALSE` drops the panel test (Wilcoxon or Kruskal-Wallis p value) and `brackets = FALSE` the pairwise brackets.
+The tests are still run and returned (`diversity.l$tests`, `diversity.l$pairwise`), so the tables keep them.
+Every template script that draws boxplots by group has a `show_statistics.b` switch at the top that sets both: `diversity.R`, `comparison.R`, `strains.R`, `genomespot.R`, `nonpareil.R` and `mobile_elements.R`.
+The same two arguments work for every boxplot function built on `plot_group_boxplots()`, such as `plot_nonpareil_metrics()`, `plot_community_traits()` and `plot_instrain_diversity()`.
+
+```{r no-statistics}
+diversity.l <- gmaio::plot_alpha_diversity(diversity.df, metadata.df, "Group", measures = c("Richness", "Shannon"),
+                                           show_test = FALSE, brackets = FALSE)
+```
+
+```{r no-statistics-show, echo = FALSE}
+show_plot(diversity.l$plot)
+```
+
 ## Figure options
 
 | Argument | Controls | Default |

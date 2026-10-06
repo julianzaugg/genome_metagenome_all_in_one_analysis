@@ -10,11 +10,16 @@ metadata.df <- gmaio::analysis_metadata(project.l)
 group.s <- gmaio::primary_group(project.l)
 analysis.l <- config.l$analysis
 
-# One row per dataset: profile name, rank to aggregate to (NA keeps the features as they are) and figure title
+# One row per dataset: profile name, rank to aggregate to (NA keeps the features as they are) and figure title.
+# mags_hq_ref_bins adds the pipeline's --reference_genomes to the HQ MAGs; functions_expanded_* use the gene catalogue
+# expanded with reference genome and/or comparison assembly genes. Datasets the run did not produce are skipped.
 datasets.df <- data.frame(
-  profile = c("sylph_taxonomic", "singlem_relative", "mags_hq_derep_bins_relative_abundance", "functions_ko", "functions_cazy"),
-  rank = c("genus", "genus", NA, NA, NA),
-  title = c("sylph genus", "SingleM genus", "High-quality MAGs", "KEGG orthologues", "CAZy families")
+  profile = c("sylph_taxonomic", "singlem_relative", "mags_hq_derep_bins_relative_abundance",
+              "mags_hq_ref_bins_relative_abundance", "functions_ko", "functions_cazy", "functions_expanded_ko",
+              "functions_expanded_cazy"),
+  rank = c("genus", "genus", NA, NA, NA, NA, NA, NA),
+  title = c("sylph genus", "SingleM genus", "High-quality MAGs", "High-quality MAGs and reference genomes",
+            "KEGG orthologues", "CAZy families", "KEGG orthologues (expanded catalogue)", "CAZy families (expanded catalogue)")
 )
 # Ordination methods, as arguments to gmaio::run_ordination()
 methods.l <- list(pca_rclr = list(method = "pca_rclr"),

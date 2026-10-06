@@ -103,7 +103,11 @@ consensus.df <- gmaio::da_consensus(da.l$results, alpha = 0.05, min_stability = 
 consensus.df[, c("Label", "Enriched_in", "MaAsLin3_q", "LinDA_q", "sPLSDA_stability", "N_methods")]
 ```
 
-`N_methods` counts the methods agreeing, and `Conflicting_direction` flags features called higher in different groups by different methods.
+`N_methods` counts the methods agreeing.
+With more than two groups, MaAsLin3 and LinDA compare each group with the reference level, so a feature can be called higher in several groups (higher in B than A, and higher in C than A); each group gets its own row, and `Contrasts` lists the comparisons behind it.
+sPLS-DA has no contrasts: its call is the group in which the feature has the highest mean.
+`Conflicting_direction` flags only real disagreement: MaAsLin3 and LinDA calling the same contrast in opposite directions, or sPLS-DA naming a group that MaAsLin3 or LinDA find significantly lower than another group.
+A feature can therefore have different groups across methods without conflict: LinDA finding it higher in A than B and C, and sPLS-DA finding its highest mean in D, are both true when D and A do not differ significantly.
 Features found by two or three methods are the ones to report; those found by one are worth a look but less certain.
 The five genera that increase with treatment in the synthetic data are all found by at least two methods.
 Of the five that decrease, only two are found, each by one method: treated mice lose them entirely (zeros), which the log-ratio methods handle differently and which leaves little to test with six mice per group.

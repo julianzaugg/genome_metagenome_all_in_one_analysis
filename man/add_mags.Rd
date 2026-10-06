@@ -23,6 +23,8 @@ Reference genomes (pipeline \code{--reference_genomes}) are kept apart from the 
 \code{project.l$tables$bin_summary} has the MAGs only and \code{project.l$tables$reference_genomes}
 the references, with their CheckM2 quality and GTDB-Tk taxonomy when available. Both
 annotate the \code{hq_ref_bins} profiles, whose \code{Genome_type} feature column tells them apart.
+Their \code{Representative_type} column also says whether a reference genome stands in for study MAGs of
+the same species (it was chosen as the representative of a cluster holding MAGs) or has no study MAG.
 
 Sets \code{derep_bins}, \code{hq_bins}, \code{hq_derep_bins} and \code{hq_ref_bins} map every sample to one
 catalogue of genomes pooled across samples, so they can be compared between samples.
