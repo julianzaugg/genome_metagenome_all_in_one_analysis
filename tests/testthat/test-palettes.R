@@ -47,3 +47,18 @@ test_that("metadata variables avoid each other's colours", {
   saved.l <- build_palettes(metadata.df, c("Treatment", "Time"), existing.l = list(Time = c(W0 = "#E69F00", W4 = "#56B4E9")))
   expect_equal(unname(saved.l$Time), c("#E69F00", "#56B4E9"))
 })
+
+test_that("colours too close within one figure are replaced, most important first", {
+  colours.v <- c(A = "#E4AD8A", B = "#E8AB91", C = "#0072B2", Other = "#D9D9D9", D = "#D8D8D8")
+  separated.v <- separate_colours(colours.v)
+  expect_equal(separated.v[c("A", "C", "Other")], colours.v[c("A", "C", "Other")])
+  distances.m <- farver::compare_colour(farver::decode_colour(separated.v), farver::decode_colour(separated.v), "rgb",
+                                        method = "cie2000")
+  expect_gte(min(distances.m[upper.tri(distances.m)]), 10)
+  expect_equal(separate_colours(colours.v, min_distance = 0), colours.v)
+  # Colours past the curated 30 step around the hue wheel instead of creeping
+  extra.v <- qualitative_palette(40)[31:40]
+  steps.v <- diag(farver::compare_colour(farver::decode_colour(extra.v[-10]), farver::decode_colour(extra.v[-1]), "rgb",
+                                         method = "cie2000"))
+  expect_gt(min(steps.v), 15)
+})

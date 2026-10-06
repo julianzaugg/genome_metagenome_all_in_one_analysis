@@ -27,6 +27,7 @@ plot_mag_quality <- function(bin_summary.df, colours.v = NULL, source = c("Check
   phyla.v <- names(sort(table(plot.df$Phylum), decreasing = TRUE))
   colours.v <- if (is.null(colours.v)) assign_colours(factor(phyla.v, levels = phyla.v)) else
     get_palette(list(taxa = colours.v), "taxa", phyla.v)
+  colours.v <- separate_colours(colours.v[phyla.v])
   threshold.df <- data.frame(Completeness = c(quality_threshold, 100),
                              Contamination = c(0, (100 - quality_threshold) / quality_weight))
   quality.gg <- ggplot2::ggplot(plot.df, ggplot2::aes(x = .data$Completeness, y = .data$Contamination)) +
@@ -96,6 +97,7 @@ plot_mag_taxonomy <- function(bin_summary.df, bins.v = bin_summary.df$Bin_ID, ra
   counts.df$Taxon <- factor(counts.df$Taxon, levels = rev(levels.v))
   colours.v <- if (is.null(colours.v)) assign_colours(factor(levels.v, levels = levels.v)) else
     get_palette(list(taxa = colours.v), "taxa", levels.v)
+  colours.v <- separate_colours(colours.v[levels.v])
   taxonomy.gg <- ggplot2::ggplot(counts.df, ggplot2::aes(x = .data$Freq, y = .data$Taxon, fill = .data$Taxon)) +
     ggplot2::geom_col(width = 0.7, colour = "grey20", linewidth = 0.1, show.legend = FALSE) +
     ggplot2::scale_fill_manual(values = colours.v) +

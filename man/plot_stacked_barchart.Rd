@@ -24,7 +24,8 @@ plot_stacked_barchart(
   outline_colour = "grey20",
   outline_width = 0.1,
   x_text_angle = 90,
-  base_size = 9
+  base_size = 9,
+  min_colour_distance = 10
 )
 }
 \arguments{
@@ -65,6 +66,10 @@ differ; \code{"mean"} keeps exactly the \code{top_n} highest by mean.}
 \item{x_text_angle}{Angle of the sample labels.}
 
 \item{base_size}{Base font size, in points.}
+
+\item{min_colour_distance}{Taxa whose saved colour is within this CIEDE2000 difference of a more
+abundant taxon's in the same figure get a more distinct colour (see \code{\link[=separate_colours]{separate_colours()}}); \code{0}
+keeps the saved colours.}
 }
 \value{
 A ggplot (or patchwork when annotation strips are drawn), sized for \code{\link[=save_plot]{save_plot()}}.

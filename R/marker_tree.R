@@ -155,7 +155,7 @@ plot_marker_tree <- function(tree, bin_summary.df, reference_genomes.df = NULL, 
   if (!is.null(colours.v)) fill.v[] <- unname(colours.v[shown.v])
   missing.v <- shown.v[is.na(fill.v)]
   if (length(missing.v) > 0) fill.v[missing.v] <- assign_colours(missing.v, avoid.v = c(stats::na.omit(fill.v)))[missing.v]
-  fill.v <- c(fill.v, Other = special_colours()[["Other"]], Unassigned = special_colours()[["Unassigned"]])
+  fill.v <- separate_colours(c(fill.v, Other = special_colours()[["Other"]], Unassigned = special_colours()[["Unassigned"]]))
 
   types.v <- c("HQ MAG", "Other bin", "Reference genome", "GTDB genome")
   types.v <- intersect(types.v, tips.df$Tip_type)

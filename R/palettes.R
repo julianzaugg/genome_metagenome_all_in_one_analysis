@@ -36,10 +36,49 @@ qualitative_palette <- function(n){
   if (n <= 10) return(families.l$tableau10[seq_len(n)])
   if (n <= 20) return(families.l$distinct20[seq_len(n)])
   if (n <= 30) return(families.l$distinct30[seq_len(n)])
-  extra.n <- n - 30
-  hues.v <- seq(15, 375, length.out = extra.n + 1)[seq_len(extra.n)]
+  # Golden-angle hue steps with lightness and chroma cycling: colours next to each other in the order (taxa of
+  # similar abundance, often shown together) differ in hue by about 137 degrees and in lightness, instead of
+  # creeping around the wheel a degree at a time
+  index.v <- seq_len(n - 30) - 1
   c(families.l$distinct30,
-    grDevices::hcl(h = hues.v, c = rep(c(70, 50), length.out = extra.n), l = rep(c(55, 75, 40), length.out = extra.n)))
+    grDevices::hcl(h = (20 + index.v * 137.508) %% 360, c = c(70, 50)[(index.v %/% 3) %% 2 + 1],
+                   l = c(55, 75, 40)[index.v %% 3 + 1]))
+}
+
+#' Make the colours of one figure distinguishable
+#'
+#' Project palettes give each taxon one colour across all figures, so two taxa shown together can
+#' end up with similar colours. Going through `colours.v` in order (put the most important first,
+#' e.g. the most abundant), each colour is kept unless it is within `min_distance` (CIEDE2000) of
+#' one already kept, in which case it is replaced by the available colour most different from all
+#' those kept. `Other`, `Unassigned` and `Missing` keep their colours.
+#'
+#' @param colours.v Named colours, in priority order.
+#' @param min_distance Smallest CIEDE2000 difference allowed between two colours; about 10 is
+#'   needed to tell small legend keys apart. `0` keeps every colour.
+#' @return `colours.v` with clashing colours replaced.
+#' @export
+separate_colours <- function(colours.v, min_distance = 10){
+  if (length(colours.v) < 2 || min_distance <= 0) return(colours.v)
+  distance.f <- function(a.v, b.v){
+    farver::compare_colour(farver::decode_colour(a.v), farver::decode_colour(b.v), "rgb", method = "cie2000")
+  }
+  pool.v <- unique(toupper(c(qualitative_palette(30),
+                             grDevices::hcl(h = rep(seq(0, 345, by = 15), 3), c = rep(c(75, 55, 40), each = 24),
+                                            l = rep(c(50, 68, 82), each = 24)))))
+  pool.v <- setdiff(pool.v, toupper(special_colours()))
+  keep.v <- c("Other", "Unassigned", "Missing")
+  kept.v <- unname(colours.v[names(colours.v) %in% keep.v])
+  for (name.s in setdiff(names(colours.v), keep.v)){
+    colour.s <- colours.v[[name.s]]
+    if (length(kept.v) > 0 && min(distance.f(colour.s, kept.v)) < min_distance){
+      free.v <- setdiff(pool.v, toupper(kept.v))
+      colour.s <- free.v[which.max(apply(distance.f(free.v, kept.v), 1, min))]
+      colours.v[[name.s]] <- colour.s
+    }
+    kept.v <- c(kept.v, colour.s)
+  }
+  colours.v
 }
 
 #' Assign colours to the values of a variable

@@ -9,6 +9,9 @@
 #' @param colours.v Named colours by feature label, usually the project taxa palette
 #'   (`project.l$palettes$taxa`); labels without a colour get unused colours.
 #' @param top_n,min_abundance,merge_unassigned Passed to [collapse_top_n()].
+#' @param min_colour_distance Taxa whose saved colour is within this CIEDE2000 difference of a more
+#'   abundant taxon's in the same figure get a more distinct colour (see [separate_colours()]); `0`
+#'   keeps the saved colours.
 #' @param top_method How [collapse_top_n()] picks features: `"per_sample"` keeps the `top_n` most
 #'   abundant of every sample, so the legend can hold many more than `top_n` taxa when samples
 #'   differ; `"mean"` keeps exactly the `top_n` highest by mean.
@@ -32,7 +35,7 @@ plot_stacked_barchart <- function(profile, metadata.df, colours.v = NULL, top_n 
                                   annotation_variables = NULL, annotation_colours = list(), annotation_height = 0.4,
                                   y_label = NULL, legend_title = NULL, legend_ncol = NULL, legend_position = "right",
                                   bar_width = 0.85, outline_colour = "grey20", outline_width = 0.1, x_text_angle = 90,
-                                  base_size = 9){
+                                  base_size = 9, min_colour_distance = 10){
   collapsed.p <- collapse_top_n(profile, top_n = top_n, min_abundance = min_abundance, method = match.arg(top_method),
                                 merge_unassigned = merge_unassigned)
   metadata.df <- metadata.df[metadata.df$Sample_ID %in% profile_samples(collapsed.p), , drop = FALSE]
@@ -44,6 +47,7 @@ plot_stacked_barchart <- function(profile, metadata.df, colours.v = NULL, top_n 
   long.df$Sample_label <- factor(long.df$Sample_label, levels = metadata.df$Sample_label)
   colours.v <- if (is.null(colours.v)) assign_colours(factor(legend_levels.v, levels = legend_levels.v)) else
     get_palette(list(taxa = colours.v), "taxa", legend_levels.v)
+  colours.v <- separate_colours(colours.v[legend_levels.v], min_colour_distance)
   legend_ncol <- legend_ncol %||% if (length(legend_levels.v) > 25) 2 else 1
 
   barchart.gg <- ggplot2::ggplot(long.df, ggplot2::aes(x = .data$Sample_label, y = .data$Value, fill = .data$Label)) +
