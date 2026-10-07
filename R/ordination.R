@@ -6,11 +6,11 @@
 #' `binary = TRUE` values above `detection` count as present (e.g. Jaccard on presence).
 #'
 #' @param profile A `gm_profile` (samples as columns).
-#' @param method `"pca_rclr"` or `"pcoa"`.
-#' @param distance Distance for PCoA, e.g. `"bray"` or `"jaccard"`.
-#' @param binary Use presence/absence for the PCoA distance.
+#' @param method `"pca_rclr"` (default) or `"pcoa"`, as described above.
+#' @param distance Distance for PCoA, e.g. `"bray"` (default) or `"jaccard"`; ignored for `"pca_rclr"`.
+#' @param binary Use presence/absence for the PCoA distance (default `FALSE`).
 #' @param detection Percent of the sample total above which a feature counts as present
-#'   when `binary = TRUE`.
+#'   when `binary = TRUE` (default `0`, any non-zero value).
 #' @param scaling PCA score scaling (see [vegan::scores.rda()]): `1` preserves distances between
 #'   samples (default), `2` correlations between features, `3` (`"symmetric"`) is a compromise.
 #'   Only affects the plotted scores and loadings, not the distances used for statistics.
@@ -102,15 +102,17 @@ orient_ordination <- function(ordination, metadata.df, variable){
 #' @param ordination A `gm_ordination` from [run_ordination()] or [ordinate_distance()].
 #' @param metadata.df Metadata.
 #' @param colour_by Metadata column for point fill; numeric columns get a continuous scale.
-#' @param colours.v Named colours for `colour_by` (usually `project.l$palettes[[colour_by]]`).
+#' @param colours.v Named colours for `colour_by` (usually `project.l$palettes[[colour_by]]`); generated
+#'   when `NULL` (default). Ignored for numeric columns.
 #' @param shape_by Optional metadata column for point shape.
 #' @param shapes.v Named shapes for `shape_by`; defaults to filled shapes (21 to 25) first.
 #' @param label_by Optional metadata column for point labels (e.g. `"Sample_label"`).
 #' @param group_by Metadata column defining groups for ellipses, hulls, spiders and centroids;
 #'   defaults to `colour_by`. When it differs from `colour_by`, the group layers get their own
 #'   colours and legend.
-#' @param group_colours.v Named colours for `group_by` when it differs from `colour_by`.
-#' @param axes Two axes to plot, by number.
+#' @param group_colours.v Named colours for `group_by` when it differs from `colour_by`; generated when
+#'   `NULL` (default).
+#' @param axes Two axes to plot, by number (default the first two).
 #' @param title,subtitle,caption Plot titles; the subtitle defaults to the distance used.
 #'
 #' @param point_size,point_alpha Point size and opacity.

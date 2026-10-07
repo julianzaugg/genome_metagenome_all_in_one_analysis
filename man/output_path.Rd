@@ -9,7 +9,7 @@ output_path(config.l, type = c("tables", "figures", "other"), ...)
 \arguments{
 \item{config.l}{A \code{gm_config}.}
 
-\item{type}{One of \code{"tables"}, \code{"figures"}, \code{"other"}.}
+\item{type}{Output folder: \code{"tables"} (default), \code{"figures"} or \code{"other"}, as set in the config \verb{outputs:}.}
 
 \item{...}{Path components below the output directory.}
 }

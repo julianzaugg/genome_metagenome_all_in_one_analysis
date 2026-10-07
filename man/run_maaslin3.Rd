@@ -20,22 +20,25 @@ run_maaslin3(
 \arguments{
 \item{profile}{A \code{gm_profile} (relative abundance, counts or normalised RPKM).}
 
-\item{metadata.df}{Metadata.}
+\item{metadata.df}{Metadata with \code{Sample_ID}; samples with a missing value in any model column are left out.}
 
-\item{variable}{Variable of interest.}
+\item{variable}{Metadata column of interest; for a categorical variable the first factor level is the reference.}
 
-\item{covariates}{Additional fixed effects.}
+\item{covariates}{Additional fixed effects (metadata columns); none by default.}
 
-\item{random_effects}{Optional random effect columns (e.g. subject for repeated measures).}
+\item{random_effects}{Random effect columns (e.g. subject for repeated measures); none by default.}
 
-\item{normalization, transform}{Passed to \code{\link[maaslin3:maaslin3]{maaslin3::maaslin3()}}; the default normalisation is
-\code{"TSS"} for relative abundance and counts and \code{"NONE"} for already normalised values.}
+\item{normalization}{Passed to \code{\link[maaslin3:maaslin3]{maaslin3::maaslin3()}}; \code{NULL} (default) uses \code{"TSS"} for relative
+abundance and counts and \code{"NONE"} for values that are already normalised (\code{rpkm},
+\code{normalised_rpkm}, \code{copy_number}).}
 
-\item{min_prevalence}{Minimum fraction of samples with the feature.}
+\item{transform}{Passed to \code{\link[maaslin3:maaslin3]{maaslin3::maaslin3()}} (default \code{"LOG"}).}
 
-\item{output_dir}{Directory for MaAsLin3's own output.}
+\item{min_prevalence}{Minimum fraction of samples in which a feature is non-zero (default \code{0.1}).}
 
-\item{cores}{Number of cores.}
+\item{output_dir}{Directory for MaAsLin3's own output; a new temporary directory by default.}
+
+\item{cores}{Number of cores (default 1).}
 }
 \value{
 Tidy data frame (see \code{\link[=run_differential_abundance]{run_differential_abundance()}}).

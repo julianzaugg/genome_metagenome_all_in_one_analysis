@@ -22,11 +22,13 @@ run_permanova(
 
 \item{terms.v}{Model terms (metadata columns).}
 
-\item{permutations}{Number of permutations.}
+\item{permutations}{Number of permutations (default 999).}
 
-\item{strata}{Optional metadata column restricting permutations.}
+\item{strata}{Optional metadata column restricting permutations (e.g. subject for repeated measures);
+unrestricted when \code{NULL} (default).}
 
-\item{by}{\code{"margin"} (each term adjusted for the others) or \code{"terms"} (sequential).}
+\item{by}{\code{"margin"} (default; each term adjusted for the others) or \code{"terms"} (sequential, in
+the order of \code{terms.v}).}
 
 \item{seed}{Random seed.}
 

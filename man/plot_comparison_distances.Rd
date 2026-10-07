@@ -13,7 +13,7 @@ plot_comparison_distances(
 \arguments{
 \item{distances.df}{Result of \code{\link[=comparison_distances]{comparison_distances()}}.}
 
-\item{colours.v}{Named colours for the groups (\code{project.l$palettes$Comparison_group}).}
+\item{colours.v}{Named colours for the groups (\code{project.l$palettes$Comparison_group}); generated when \code{NULL} (default).}
 
 \item{y_label}{Y axis title, e.g. the distance used.}
 }

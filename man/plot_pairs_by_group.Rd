@@ -14,7 +14,7 @@ plot_pairs_by_group(
 \arguments{
 \item{comparison.l}{Result of \code{\link[=compare_pairs_by_group]{compare_pairs_by_group()}}.}
 
-\item{colours.v}{Named colours for the groups; between-group pairs are grey.}
+\item{colours.v}{Named colours for the groups; generated when \code{NULL} (default). Between-group pairs are grey.}
 
 \item{y_label}{Y axis title.}
 

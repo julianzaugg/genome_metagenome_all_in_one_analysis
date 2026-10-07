@@ -104,7 +104,7 @@ A figure usually starts with a few steps that choose the data, each taking and r
 |---|---|
 | `aggregate_profile(profile, rank = "genus")` | Sum features to a taxonomic rank, or `by =` any feature column |
 | `filter_profile(profile, min_abundance, min_prevalence)` | Keep features reaching an abundance in any sample, or present in enough samples |
-| `top_features(profile, n)` | Keep the `n` most abundant features (by mean or max) |
+| `top_features(profile, n)` | Keep the `n` most abundant features (by mean; `by = "max"` for maximum) |
 | `collapse_top_n(profile, top_n)` | Keep the top features and sum the rest into `"Other"` (for barcharts) |
 | `subset_features()`, `subset_samples()` | Keep given features or samples |
 | `as_relative_abundance()` | Rescale each sample to 100 |

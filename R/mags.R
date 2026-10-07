@@ -11,10 +11,13 @@
 #' Bins get `Bin` short IDs whatever their quality, which is given by `High_quality` and `MIMAG_tier`.
 #'
 #' @param checkm2.df,checkm1.df,gtdb.df Tables from [read_checkm2()], [read_checkm1()], [read_gtdbtk()] (each optional).
-#' @param clusters.l Named list of cluster tables from [read_cluster_definition()].
-#' @param sample_ids.v Sample IDs used to assign bins to samples.
-#' @param quality_weight,quality_threshold HQ rule parameters.
-#' @param quality_source Which CheckM report(s) decide HQ: `"both"` (either passes), `"checkm1"`, `"checkm2"`.
+#' @param clusters.l Named list of cluster tables from [read_cluster_definition()]; none by default.
+#' @param sample_ids.v Sample IDs used to assign bins to samples; bins are not assigned when `NULL` (default).
+#' @param quality_weight,quality_threshold HQ rule: a genome is high quality when
+#'   completeness - `quality_weight` x contamination >= `quality_threshold` (defaults 3 and 50,
+#'   as in the pipeline).
+#' @param quality_source Which CheckM report(s) decide HQ: `"both"` (default; either passing is enough),
+#'   `"checkm1"` or `"checkm2"`.
 #' @param reference_checkm2.df Optional CheckM2 report of the reference genomes ([read_checkm2()]).
 #' @return Data frame, one row per genome, MAGs first; `Genome_type` is `"MAG"` or `"Reference"`.
 #' @export

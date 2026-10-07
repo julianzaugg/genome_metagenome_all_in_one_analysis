@@ -13,6 +13,7 @@ if (!paste0(catalogue.s, "_ko") %in% names(project.l$profiles)){
   gmaio::skip_analysis(paste("No", catalogue.s, "profiles in the processed project"))
 }
 
+# Features per heatmap: the most abundant by mean across samples (top_features(by = "max") ranks by maximum)
 heatmap_profiles.v <- c(ko = 50, cazy = 50, peptidase = 30)
 names(heatmap_profiles.v) <- paste0(catalogue.s, "_", names(heatmap_profiles.v))
 for (name.s in intersect(names(heatmap_profiles.v), names(project.l$profiles))){

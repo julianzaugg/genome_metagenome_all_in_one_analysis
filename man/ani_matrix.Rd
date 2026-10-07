@@ -9,9 +9,9 @@ ani_matrix(ani.df, genomes.v = NULL, floor_value = 75)
 \arguments{
 \item{ani.df}{Result of \code{\link[=read_fastani]{read_fastani()}}.}
 
-\item{genomes.v}{Optional genome order.}
+\item{genomes.v}{Genomes to include, in order; \code{NULL} (default) uses every genome in \code{ani.df}, sorted.}
 
-\item{floor_value}{ANI used for pairs fastANI did not report.}
+\item{floor_value}{ANI used for pairs fastANI did not report (default 75).}
 }
 \value{
 Symmetric numeric matrix with 100 on the diagonal.

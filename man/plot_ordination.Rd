@@ -67,7 +67,8 @@ plot_ordination(
 
 \item{colour_by}{Metadata column for point fill; numeric columns get a continuous scale.}
 
-\item{colours.v}{Named colours for \code{colour_by} (usually \code{project.l$palettes[[colour_by]]}).}
+\item{colours.v}{Named colours for \code{colour_by} (usually \code{project.l$palettes[[colour_by]]}); generated
+when \code{NULL} (default). Ignored for numeric columns.}
 
 \item{shape_by}{Optional metadata column for point shape.}
 
@@ -79,9 +80,10 @@ plot_ordination(
 defaults to \code{colour_by}. When it differs from \code{colour_by}, the group layers get their own
 colours and legend.}
 
-\item{group_colours.v}{Named colours for \code{group_by} when it differs from \code{colour_by}.}
+\item{group_colours.v}{Named colours for \code{group_by} when it differs from \code{colour_by}; generated when
+\code{NULL} (default).}
 
-\item{axes}{Two axes to plot, by number.}
+\item{axes}{Two axes to plot, by number (default the first two).}
 
 \item{title, subtitle, caption}{Plot titles; the subtitle defaults to the distance used.}
 

@@ -9,7 +9,8 @@ mobile_element_summary(profile, min_length = NULL)
 \arguments{
 \item{profile}{A cluster presence \code{gm_profile} (\code{virus_clusters} or \code{plasmid_clusters}).}
 
-\item{min_length}{Optional minimum representative length (bp); needs a \code{Length} feature column.}
+\item{min_length}{Optional minimum representative length (bp); needs a \code{Length} feature column.
+Every cluster is kept when \code{NULL} (default).}
 }
 \value{
 List with \code{richness} (clusters per sample) and \code{prevalence} (samples per cluster).

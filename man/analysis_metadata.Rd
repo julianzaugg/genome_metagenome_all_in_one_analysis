@@ -9,7 +9,8 @@ analysis_metadata(project.l, include_excluded = FALSE)
 \arguments{
 \item{project.l}{A \code{gm_project}.}
 
-\item{include_excluded}{Keep excluded samples.}
+\item{include_excluded}{Keep samples excluded from analyses (\code{Excluded}: config \code{exclude_column} or
+\code{exclude_samples}); default \code{FALSE}.}
 }
 \value{
 Data frame.

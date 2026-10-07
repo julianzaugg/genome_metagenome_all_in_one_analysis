@@ -11,8 +11,9 @@ read_stats_tables(read_stats.df, metadata.df = NULL, bases = TRUE)
 
 \item{metadata.df}{Optional metadata; adds \code{Sample_label} after \code{Sample_ID}.}
 
-\item{bases}{Include the base-level mapping columns in \code{Read_stats} (default for long reads;
-for short reads of equal length they repeat the read percentages).}
+\item{bases}{Include the base-level mapping columns in \code{Read_stats} (default \code{TRUE}, suited to long
+reads; \code{\link[=write_project_tables]{write_project_tables()}} turns it off for short-read runs, where with equal read lengths
+they repeat the read percentages).}
 }
 \value{
 Named list of data frames \code{Read_stats}, \code{Read_stats_full} (\code{NULL} when it would repeat

@@ -36,23 +36,28 @@ plot_stacked_barchart(
 \item{colours.v}{Named colours by feature label, usually the project taxa palette
 (\code{project.l$palettes$taxa}); labels without a colour get unused colours.}
 
-\item{top_n, min_abundance, merge_unassigned}{Passed to \code{\link[=collapse_top_n]{collapse_top_n()}}.}
+\item{top_n, min_abundance}{Passed to \code{\link[=collapse_top_n]{collapse_top_n()}}: the number of taxa kept (per sample by
+default, see \code{top_method}; default 10) and the minimum value to be kept (default \code{0}).}
 
-\item{top_method}{How \code{\link[=collapse_top_n]{collapse_top_n()}} picks features: \code{"per_sample"} keeps the \code{top_n} most
-abundant of every sample, so the legend can hold many more than \code{top_n} taxa when samples
-differ; \code{"mean"} keeps exactly the \code{top_n} highest by mean.}
+\item{top_method}{How \code{\link[=collapse_top_n]{collapse_top_n()}} picks features: \code{"per_sample"} (default) keeps the \code{top_n}
+most abundant of every sample, so the legend can hold many more than \code{top_n} taxa when samples
+differ; \code{"mean"} keeps at most \code{top_n}, the highest by mean.}
+
+\item{merge_unassigned}{Merge features with nothing below domain into one \code{"Unassigned"} bar
+segment (default \code{TRUE}, unlike \code{\link[=collapse_top_n]{collapse_top_n()}}).}
 
 \item{facet_variable}{Optional metadata column splitting samples into panels.}
 
 \item{annotation_variables}{Optional metadata columns drawn as colour strips under the bars.}
 
-\item{annotation_colours}{Named list of colour vectors for \code{annotation_variables}.}
+\item{annotation_colours}{Named list of colour vectors for \code{annotation_variables}; variables not in
+it get generated colours.}
 
 \item{annotation_height}{Height of each annotation strip, in cm.}
 
 \item{y_label}{Y axis title; defaults from the profile value type.}
 
-\item{legend_title}{Legend title.}
+\item{legend_title}{Legend title; none by default.}
 
 \item{legend_ncol}{Legend columns; by default two when there are more than 25 entries.}
 

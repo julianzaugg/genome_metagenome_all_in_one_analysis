@@ -19,7 +19,7 @@ plot_mag_taxonomy(
 
 \item{rank}{Rank to count (e.g. \code{"phylum"} or \code{"family"}).}
 
-\item{colours.v}{Named colours (the project taxa palette).}
+\item{colours.v}{Named colours (the project taxa palette); generated when \code{NULL} (default).}
 
 \item{top_n}{Show the most common taxa; the rest are grouped as \code{Other}.}
 }

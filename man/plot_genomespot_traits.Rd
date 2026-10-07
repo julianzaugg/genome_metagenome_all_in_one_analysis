@@ -18,7 +18,7 @@ plot_genomespot_traits(
 
 \item{bins.v}{Bins to include (e.g. high-quality representatives).}
 
-\item{colours.v}{Named phylum colours (the project taxa palette).}
+\item{colours.v}{Named phylum colours (the project taxa palette); generated when \code{NULL} (default).}
 }
 \value{
 List with \code{traits} (optimum predictions by phylum) and \code{oxygen} (oxygen tolerance by phylum) ggplots.

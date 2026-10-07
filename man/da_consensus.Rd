@@ -9,9 +9,9 @@ da_consensus(results.df, alpha = 0.05, min_stability = 0.7)
 \arguments{
 \item{results.df}{\code{results} from \code{\link[=run_differential_abundance]{run_differential_abundance()}}.}
 
-\item{alpha}{Q value threshold.}
+\item{alpha}{Q value threshold for MaAsLin3 and LinDA (default \code{0.05}).}
 
-\item{min_stability}{sPLS-DA selection stability threshold.}
+\item{min_stability}{sPLS-DA selection stability threshold, 0 to 1 (default \code{0.7}).}
 }
 \value{
 Data frame, one row per feature and enriched group, with \code{Contrasts}, per-method

@@ -20,7 +20,7 @@ plot_dram_heatmap(
 
 \item{bins.v}{Genomes to include.}
 
-\item{colours.v}{Named phylum colours.}
+\item{colours.v}{Named phylum colours; generated when \code{NULL} (default).}
 
 \item{min_value}{Drop modules whose maximum across genomes is below this.}
 

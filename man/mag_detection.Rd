@@ -19,7 +19,8 @@ comparison reads to \code{derep_bins}).}
 
 \item{min_covered_fraction}{Covered fraction (0 to 1) for detection.}
 
-\item{include_excluded}{Keep samples excluded from analyses.}
+\item{include_excluded}{Keep samples excluded from analyses (\code{Excluded}: config \code{exclude_column} or
+\code{exclude_samples}); default \code{FALSE}.}
 }
 \value{
 Data frame with one row per genome: \code{Bin_ID}, \code{Short_ID}, \code{Label}, \code{High_quality},

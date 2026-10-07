@@ -15,11 +15,11 @@ plot_mag_quality(
 \arguments{
 \item{bin_summary.df}{Bin summary from \code{\link[=add_mags]{add_mags()}}.}
 
-\item{colours.v}{Named phylum colours (the project taxa palette).}
+\item{colours.v}{Named phylum colours (the project taxa palette); generated when \code{NULL} (default).}
 
-\item{source}{\code{"CheckM2"} or \code{"CheckM1"} estimates.}
+\item{source}{\code{"CheckM2"} (default) or \code{"CheckM1"} estimates.}
 
-\item{quality_weight, quality_threshold}{HQ rule parameters, drawn as a dashed line.}
+\item{quality_weight, quality_threshold}{HQ rule (completeness - \code{quality_weight} x contamination= quality_threshold; defaults 3 and 50), drawn as a dashed line. Point shapes show theHigh_quality column of the bin summary, which was set by build_bin_summary().}
 }
 \value{
 A ggplot.

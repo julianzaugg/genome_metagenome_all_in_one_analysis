@@ -9,8 +9,8 @@ separate_colours(colours.v, min_distance = 10)
 \arguments{
 \item{colours.v}{Named colours, in priority order.}
 
-\item{min_distance}{Smallest CIEDE2000 difference allowed between two colours; about 10 is
-needed to tell small legend keys apart. \code{0} keeps every colour.}
+\item{min_distance}{Smallest CIEDE2000 difference allowed between two colours (default 10, about
+what is needed to tell small legend keys apart). \code{0} keeps every colour.}
 }
 \value{
 \code{colours.v} with clashing colours replaced.

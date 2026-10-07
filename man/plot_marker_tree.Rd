@@ -28,11 +28,12 @@ plot_marker_tree(
 
 \item{gtdb_lineages.df}{Optional lineages of the GTDB genomes (\code{project.l$tables$marker_tree$gtdb_lineages}).}
 
-\item{colours.v}{Named phylum colours (the project taxa palette).}
+\item{colours.v}{Named phylum colours (the project taxa palette); phyla without a colour get generated ones.}
 
-\item{highlight}{Which bins get a full-size point: \code{"all"} or \code{"hq"} (other bins get a small one).}
+\item{highlight}{Which bins get a full-size point: \code{"all"} (default) or \code{"hq"} (other bins get a small one).}
 
-\item{top_n}{Phyla shown in the legend; the rest are grouped as \code{Other}.}
+\item{top_n}{Number of phyla shown in the legend, most common first (default 15); the rest are
+grouped as \code{Other}.}
 
 \item{show_gtdb}{Draw the GTDB context genomes; \code{FALSE} drops them from the tree.}
 

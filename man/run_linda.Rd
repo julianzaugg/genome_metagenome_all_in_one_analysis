@@ -18,19 +18,20 @@ run_linda(
 \arguments{
 \item{profile}{A \code{gm_profile} (relative abundance, counts or normalised RPKM).}
 
-\item{metadata.df}{Metadata.}
+\item{metadata.df}{Metadata with \code{Sample_ID}; samples with a missing value in any model column are left out.}
 
-\item{variable}{Variable of interest.}
+\item{variable}{Metadata column of interest; for a categorical variable the first factor level is the reference.}
 
-\item{covariates}{Additional fixed effects.}
+\item{covariates}{Additional fixed effects (metadata columns); none by default.}
 
-\item{random_effects}{Optional random effect columns (e.g. subject for repeated measures).}
+\item{random_effects}{Random effect columns (e.g. subject for repeated measures); none by default.}
 
-\item{data_type}{\code{"count"} for read counts, otherwise \code{"proportion"} (default from the value type).}
+\item{data_type}{\code{"count"} or \code{"proportion"}; \code{NULL} (default) uses \code{"count"} for read counts and
+\code{"proportion"} for every other value type.}
 
-\item{min_prevalence}{Minimum fraction of samples with the feature.}
+\item{min_prevalence}{Minimum fraction of samples in which a feature is non-zero (default \code{0.1}).}
 
-\item{min_nonzero}{Features nonzero in fewer samples are left out before fitting; LinDA
+\item{min_nonzero}{Features nonzero in fewer samples are left out before fitting (default 3); LinDA
 flags features below 3 as having virtually no statistical power.}
 }
 \value{

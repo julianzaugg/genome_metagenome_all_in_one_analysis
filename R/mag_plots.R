@@ -4,9 +4,11 @@
 #' placed and are left out; the caption says how many.
 #'
 #' @param bin_summary.df Bin summary from [add_mags()].
-#' @param colours.v Named phylum colours (the project taxa palette).
-#' @param source `"CheckM2"` or `"CheckM1"` estimates.
-#' @param quality_weight,quality_threshold HQ rule parameters, drawn as a dashed line.
+#' @param colours.v Named phylum colours (the project taxa palette); generated when `NULL` (default).
+#' @param source `"CheckM2"` (default) or `"CheckM1"` estimates.
+#' @param quality_weight,quality_threshold HQ rule (completeness - `quality_weight` x contamination
+#'   >= `quality_threshold`; defaults 3 and 50), drawn as a dashed line. Point shapes show the
+#'   `High_quality` column of the bin summary, which was set by [build_bin_summary()].
 #' @return A ggplot.
 #' @export
 plot_mag_quality <- function(bin_summary.df, colours.v = NULL, source = c("CheckM2", "CheckM1"), quality_weight = 3,
@@ -81,7 +83,7 @@ plot_mag_counts <- function(bin_summary.df, metadata.df, facet_variable = NULL){
 #' @param bin_summary.df Bin summary.
 #' @param bins.v Bins to include (e.g. representatives).
 #' @param rank Rank to count (e.g. `"phylum"` or `"family"`).
-#' @param colours.v Named colours (the project taxa palette).
+#' @param colours.v Named colours (the project taxa palette); generated when `NULL` (default).
 #' @param top_n Show the most common taxa; the rest are grouped as `Other`.
 #' @return A ggplot.
 #' @export
@@ -112,7 +114,7 @@ plot_mag_taxonomy <- function(bin_summary.df, bins.v = bin_summary.df$Bin_ID, ra
 #' @param values.m Genomes x modules matrix (`read_dram_product()` completeness or presence).
 #' @param bin_summary.df Bin summary (for labels and phylum annotation).
 #' @param bins.v Genomes to include.
-#' @param colours.v Named phylum colours.
+#' @param colours.v Named phylum colours; generated when `NULL` (default).
 #' @param min_value Drop modules whose maximum across genomes is below this.
 #' @param cell_size Cell size in centimetres.
 #' @return A ComplexHeatmap `Heatmap`.

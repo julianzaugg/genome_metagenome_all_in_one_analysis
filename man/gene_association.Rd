@@ -13,7 +13,7 @@ gene_association(profile, metadata.df, variable, min_present = 2)
 
 \item{variable}{Categorical metadata column.}
 
-\item{min_present}{Skip features present in fewer genomes.}
+\item{min_present}{Skip features present in fewer genomes (default 2).}
 }
 \value{
 Data frame with counts, prevalence per group, odds ratio (two groups), p and q values.

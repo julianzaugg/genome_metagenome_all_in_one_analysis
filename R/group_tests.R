@@ -41,8 +41,8 @@ group_tests <- function(long.df, by, group){
 #' @param long.df Long data with `Value`.
 #' @param by Column defining separate test families (e.g. metric).
 #' @param group Grouping column.
-#' @param method `"dunn"` or `"wilcoxon"`.
-#' @param p_adjust_method Correction within each family, see [stats::p.adjust()].
+#' @param method `"dunn"` (default) or `"wilcoxon"`, as described above.
+#' @param p_adjust_method Correction within each family, see [stats::p.adjust()] (default `"BH"`).
 #' @return Data frame with one row per pair and family: `Group_1`, `Group_2`, `N_1`, `N_2`,
 #'   `Mean_1`, `Mean_2`, `Median_1`, `Median_2`, `Test`, `Statistic` (z for Dunn, positive when
 #'   `Group_2` ranks higher; W for Wilcoxon),
@@ -111,22 +111,26 @@ significance_stars <- function(p.v){
 #' @param long.df Long data with `Value`, the `by` and `group` columns and any `shape_by` column.
 #' @param by Column with one panel per level (e.g. `"Measure"`).
 #' @param group Column on the x axis.
-#' @param colours.v Named colours for `group`.
+#' @param colours.v Named colours for `group`; generated when `NULL` (default).
 #' @param pairwise_test `"dunn"` (default, post-hoc after Kruskal-Wallis) or `"wilcoxon"`,
 #'   for more than two groups.
-#' @param p_adjust_method Correction for the pairwise tests within each panel.
-#' @param show_test Print the panel test (Wilcoxon or Kruskal-Wallis p) above the boxes.
-#' @param brackets Draw brackets between pairs with `P_adjusted < bracket_alpha` (more than two groups).
-#' @param bracket_alpha Adjusted p value below which a pair gets a bracket.
-#' @param bracket_label `"stars"` (`*`, `**`, `***`) or `"p"` (the adjusted p value).
+#' @param p_adjust_method Correction for the pairwise tests within each panel (default `"BH"`,
+#'   see [stats::p.adjust()]).
+#' @param show_test Print the panel test (Wilcoxon or Kruskal-Wallis p) above the boxes (default `TRUE`).
+#' @param brackets Draw brackets between pairs with `P_adjusted < bracket_alpha` (default `TRUE`;
+#'   more than two groups only).
+#' @param bracket_alpha Adjusted p value below which a pair gets a bracket (default `0.05`).
+#' @param bracket_label `"stars"` (default; `*`, `**`, `***`) or `"p"` (the adjusted p value).
 #' @param bracket_size Font size of bracket labels, in points.
 #' @param shape_by Optional column shown as point shape (a legend is added).
 #' @param shapes Named point shapes for `shape_by`; filled shapes (21-25) take the group colour.
+#'   `NULL` (default) uses filled shapes 21, 24, 22, 23, 25 in turn.
 #' @param box_width,box_alpha Box width and fill transparency.
 #' @param point_size,point_alpha,jitter_width Point size, transparency and horizontal jitter.
-#' @param panel_labels Named panel titles, e.g. `c(Richness = "Observed genera")`.
-#' @param x_label,y_label Axis titles.
-#' @param ncol Number of panel columns.
+#' @param panel_labels Named panel titles, e.g. `c(Richness = "Observed genera")`; panels not named
+#'   keep their `by` value.
+#' @param x_label,y_label Axis titles; none by default.
+#' @param ncol Number of panel columns; `NULL` (default) uses up to 4.
 #' @param free_y Give every panel its own y axis.
 #' @param x_text_angle Angle of the group labels.
 #' @param base_size Base font size, in points.

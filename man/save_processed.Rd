@@ -12,9 +12,10 @@ load_processed(config_path = "config.yml", path = NULL)
 \arguments{
 \item{project.l}{A \code{gm_project}.}
 
-\item{path}{Path to the rds file; defaults to the project's \code{Result_other/processed.rds}.}
+\item{path}{Path to the rds file; \code{NULL} (default) uses the project's \code{Result_other/processed.rds}.}
 
-\item{config_path}{Path to \code{config.yml}, used to find the project when \code{path} is not given.}
+\item{config_path}{Path to \code{config.yml} (default \code{"config.yml"} in the working directory), used to
+find the project when \code{path} is not given.}
 }
 \value{
 \code{save_processed()} returns the path invisibly; \code{load_processed()} returns the \code{gm_project}.

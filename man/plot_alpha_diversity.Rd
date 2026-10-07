@@ -20,9 +20,10 @@ plot_alpha_diversity(
 
 \item{group}{Metadata column.}
 
-\item{colours.v}{Named colours for \code{group}.}
+\item{colours.v}{Named colours for \code{group}; generated when \code{NULL} (default).}
 
-\item{measures}{Measures to plot, in order (those not in \code{diversity.df} are skipped).}
+\item{measures}{Measures to plot, in order (default richness, Shannon and Simpson; those not in
+\code{diversity.df} are skipped).}
 
 \item{...}{Figure and test options passed to \code{\link[=plot_group_boxplots]{plot_group_boxplots()}}.}
 }

@@ -11,11 +11,15 @@ top_features(profile, n, by = c("mean", "max"))
 
 \item{n}{Number of features to keep.}
 
-\item{by}{Rank features by their \code{"mean"} or \code{"max"} value across samples.}
+\item{by}{How features are ranked: \code{"mean"} (default) by their mean value across samples,
+or \code{"max"} by their highest value in any sample, which also keeps features abundant in
+only a few samples.}
 }
 \value{
 \code{gm_profile} with at most \code{n} features, most abundant first.
 }
 \description{
+Features are ranked by their mean value across samples (or their maximum with \code{by = "max"})
+and the \code{n} highest kept.
 Unlike \code{\link[=collapse_top_n]{collapse_top_n()}}, the remaining features are dropped rather than summed into \code{"Other"}.
 }

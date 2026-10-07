@@ -50,7 +50,8 @@ read_comparison_metadata <- function(config.l){
 #' Run after [add_mags()] and [add_gene_catalogue_functions()].
 #'
 #' @param project.l A `gm_project`.
-#' @param min_annotated_fraction Error when fewer catalogue genes than this have a DRAM row.
+#' @param min_annotated_fraction Stop with an error when less than this fraction (0 to 1) of catalogue
+#'   genes have a DRAM annotation row (default `0.9`), which points to mismatched gene IDs.
 #' @return Updated `gm_project` with `project.l$comparison`: `metadata`, `profiles`, `tables`
 #'   and `catalogue` (`"expanded"` or `"base"`, the catalogue of the function profiles).
 #' @export
@@ -212,7 +213,8 @@ merge_profiles <- function(profiles.l, source = NULL){
 #' Metadata of study and comparison samples together
 #'
 #' @param project.l A `gm_project` with comparison samples ([add_comparison()]).
-#' @param include_excluded Keep samples excluded from analyses.
+#' @param include_excluded Keep samples excluded from analyses (`Excluded`: config `exclude_column` or
+#'   `exclude_samples`); default `FALSE`.
 #' @return Data frame with `Sample_ID`, `Sample_label`, `Excluded`, `Dataset` (the
 #'   `comparison$dataset_labels`), `Comparison_group` (the study's primary group variable for study
 #'   samples, `comparison$group_variable` for comparison samples, as a factor with the study levels
@@ -278,8 +280,10 @@ study_profile_name <- function(project.l, name){
 #' @param project.l A `gm_project` with comparison samples ([add_comparison()]).
 #' @param name Profile name, as in `names(project.l$comparison$profiles)`; function profiles
 #'   (`functions_ko`, ...) are joined with the study's profiles of the same catalogue.
-#' @param include_excluded Keep samples excluded from analyses.
-#' @param renormalise Rescale relative abundance to 100 after removing samples.
+#' @param include_excluded Keep samples excluded from analyses (`Excluded`: config `exclude_column` or
+#'   `exclude_samples`); default `FALSE`.
+#' @param renormalise Rescale each sample of a relative abundance profile to sum to 100 after removing
+#'   samples (default `TRUE`); other value types are not changed.
 #' @return `gm_profile` with samples in [combined_metadata()] order.
 #' @export
 combined_profile <- function(project.l, name, include_excluded = FALSE, renormalise = TRUE){
@@ -306,7 +310,8 @@ combined_profile <- function(project.l, name, include_excluded = FALSE, renormal
 #' @param set Genome set mapped for both study and comparison samples (the pipeline maps
 #'   comparison reads to `derep_bins`).
 #' @param min_covered_fraction Covered fraction (0 to 1) for detection.
-#' @param include_excluded Keep samples excluded from analyses.
+#' @param include_excluded Keep samples excluded from analyses (`Excluded`: config `exclude_column` or
+#'   `exclude_samples`); default `FALSE`.
 #' @return Data frame with one row per genome: `Bin_ID`, `Short_ID`, `Label`, `High_quality`,
 #'   `Classification`, then `Detected_<group>` (samples with the genome) and `Prevalence_<group>`
 #'   (percent of the group's samples) for each `Comparison_group`, and the same per `Dataset`.
@@ -375,7 +380,7 @@ comparison_distances <- function(distance.d, metadata.df, dataset = levels(metad
 #' results for inference.
 #'
 #' @param distances.df Result of [comparison_distances()].
-#' @param colours.v Named colours for the groups (`project.l$palettes$Comparison_group`).
+#' @param colours.v Named colours for the groups (`project.l$palettes$Comparison_group`); generated when `NULL` (default).
 #' @param y_label Y axis title, e.g. the distance used.
 #' @return A ggplot.
 #' @export

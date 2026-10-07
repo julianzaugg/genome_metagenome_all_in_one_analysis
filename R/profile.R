@@ -85,11 +85,14 @@ update_profile <- function(profile, values.m, features.df = NULL, value_type = p
 
 #' Aggregate a profile to a taxonomic rank or annotation column
 #'
+#' Values of features in the same group are summed (presence profiles stay 0/1).
+#'
 #' @param profile A `gm_profile`.
-#' @param rank Taxonomic rank; features need rank columns (`Domain`..`Species`).
-#' @param by Alternatively, an annotation column to group by. `NA` becomes `"Unassigned"`.
+#' @param rank Taxonomic rank, e.g. `"genus"`; features need rank columns (`Domain`..`Species`).
+#'   Give exactly one of `rank` or `by`.
+#' @param by Annotation column to group by, instead of `rank`. `NA` and empty values become `"Unassigned"`.
 #' @param split Separator for multi-valued `by` entries (e.g. `";"` for `"GH13;GH77"`);
-#'   each value receives the full feature value.
+#'   each value receives the full feature value. `NULL` (default) treats every entry as one value.
 #' @return Aggregated `gm_profile`.
 #' @export
 aggregate_profile <- function(profile, rank = NULL, by = NULL, split = NULL){
@@ -156,8 +159,9 @@ scale_profile <- function(profile, factors.v, value_type = profile$value_type){
 #'
 #' @param profile A `gm_profile`.
 #' @param sample_ids.v Samples to keep, in order.
-#' @param drop_empty Drop features that are zero in every kept sample.
-#' @param renormalise Rescale relative abundance to 100 after subsetting.
+#' @param drop_empty Drop features that are zero in every kept sample (default `TRUE`).
+#' @param renormalise Rescale each kept sample to sum to 100 (default `FALSE`); the result is a
+#'   relative abundance profile whatever the input value type.
 #' @return `gm_profile`.
 #' @export
 subset_samples <- function(profile, sample_ids.v, drop_empty = TRUE, renormalise = FALSE){
@@ -185,10 +189,14 @@ subset_features <- function(profile, feature_ids.v){
 #' Filter profile features by abundance and prevalence
 #'
 #' @param profile A `gm_profile`.
-#' @param min_abundance Keep features whose maximum value is at least this.
-#' @param min_prevalence Keep features present in at least this many samples
-#'   (a value below 1 is a fraction of samples).
-#' @param detection Value above which a feature counts as present.
+#' Features that are zero in every sample are always dropped; with the defaults nothing else is.
+#'
+#' @param profile A `gm_profile`.
+#' @param min_abundance Keep features whose maximum value across samples is at least this
+#'   (default `0`, no filter).
+#' @param min_prevalence Keep features present in at least this many samples; a value below 1 is
+#'   a fraction of samples, e.g. `0.1` (default `0`, no filter).
+#' @param detection Value above which a feature counts as present for `min_prevalence` (default `0`).
 #' @return Filtered `gm_profile`.
 #' @export
 filter_profile <- function(profile, min_abundance = 0, min_prevalence = 0, detection = 0){
@@ -202,11 +210,15 @@ filter_profile <- function(profile, min_abundance = 0, min_prevalence = 0, detec
 
 #' Keep the most abundant features
 #'
+#' Features are ranked by their mean value across samples (or their maximum with `by = "max"`)
+#' and the `n` highest kept.
 #' Unlike [collapse_top_n()], the remaining features are dropped rather than summed into `"Other"`.
 #'
 #' @param profile A `gm_profile`.
 #' @param n Number of features to keep.
-#' @param by Rank features by their `"mean"` or `"max"` value across samples.
+#' @param by How features are ranked: `"mean"` (default) by their mean value across samples,
+#'   or `"max"` by their highest value in any sample, which also keeps features abundant in
+#'   only a few samples.
 #' @return `gm_profile` with at most `n` features, most abundant first.
 #' @export
 top_features <- function(profile, n, by = c("mean", "max")){
@@ -219,16 +231,19 @@ top_features <- function(profile, n, by = c("mean", "max")){
 
 #' Keep the top features and sum the rest into "Other"
 #'
-#' Features are kept if they are among the `top_n` most abundant in any sample
-#' (`method = "per_sample"`) or by mean across samples (`method = "mean"`), and reach
-#' `min_abundance` there. Remaining values are summed into an `"Other"` row.
+#' By default (`method = "per_sample"`) a feature is kept if it is among the `top_n` most
+#' abundant in any sample and reaches `min_abundance` there, so more than `top_n` features can be
+#' kept when samples differ.
+#' With `method = "mean"`, the `top_n` features with the highest mean across samples are kept
+#' (those whose maximum reaches `min_abundance`).
+#' Remaining values are summed into an `"Other"` row; kept features are ordered by mean, decreasing.
 #'
 #' @param profile A `gm_profile`.
-#' @param top_n Number of features.
-#' @param min_abundance Minimum value for a feature to be kept.
-#' @param method `"per_sample"` or `"mean"`.
+#' @param top_n Number of features kept per sample (`"per_sample"`) or in total (`"mean"`); default 10.
+#' @param min_abundance Minimum value for a feature to be kept (default `0`, no minimum).
+#' @param method `"per_sample"` (default) or `"mean"`, as described above.
 #' @param merge_unassigned Merge features with no rank below domain (`Unassigned`,
-#'   `Unclassified d__...`) into one `"Unassigned"` row.
+#'   `Unclassified d__...`) into one `"Unassigned"` row, which is always kept (default `FALSE`).
 #' @return `gm_profile` with an `Other` row when anything was collapsed.
 #' @export
 collapse_top_n <- function(profile, top_n = 10, min_abundance = 0, method = c("per_sample", "mean"),
@@ -302,8 +317,10 @@ profile_to_long <- function(profile, metadata.df = NULL){
 #' Profile as a wide data frame for export
 #'
 #' @param profile A `gm_profile`.
-#' @param annotation_columns Feature annotation columns to include before the samples.
-#' @param sample_labels Optional named vector mapping sample IDs to column names.
+#' @param annotation_columns Feature annotation columns to include before the samples (missing ones are
+#'   skipped); the `Feature_ID` column is renamed to the profile's feature level.
+#' @param sample_labels Optional named vector mapping sample IDs to column names; `NULL` (default)
+#'   keeps the sample IDs.
 #' @return Data frame.
 #' @export
 profile_to_wide_df <- function(profile, annotation_columns = c("Feature_ID", "Label"), sample_labels = NULL){

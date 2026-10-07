@@ -191,8 +191,9 @@ add_representative_type <- function(profile, clusters.df, genomes.df){
 #' it is the catalogue the comparison samples are mapped to (see [add_comparison()]).
 #'
 #' @param project.l A `gm_project`.
-#' @param catalogue `"base"` or `"expanded"`.
-#' @param min_annotated_fraction Error when fewer catalogue genes than this have a DRAM row.
+#' @param catalogue `"base"` (default) or `"expanded"`, as described above.
+#' @param min_annotated_fraction Stop with an error when less than this fraction (0 to 1) of catalogue
+#'   genes have a DRAM annotation row (default `0.9`), which points to mismatched gene IDs.
 #' @return Updated `gm_project` with `functions_ko`, `functions_cazy`, `functions_cazy_substrate`
 #'   and `functions_peptidase` profiles and an `annotation_coverage` table; for the expanded
 #'   catalogue `functions_expanded_ko`, ... and `annotation_coverage_expanded`.

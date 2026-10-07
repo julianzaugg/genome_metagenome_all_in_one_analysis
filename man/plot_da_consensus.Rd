@@ -21,9 +21,9 @@ plot_da_consensus(
 \arguments{
 \item{consensus.df}{Result of \code{\link[=da_consensus]{da_consensus()}}.}
 
-\item{colours.v}{Named colours for the enriched groups.}
+\item{colours.v}{Named colours for the enriched groups; generated when \code{NULL} (default).}
 
-\item{min_methods}{Minimum number of agreeing methods to show a feature.}
+\item{min_methods}{Minimum number of agreeing methods to show a feature (default 2).}
 
 \item{max_features}{Maximum number of features shown (most methods first).}
 

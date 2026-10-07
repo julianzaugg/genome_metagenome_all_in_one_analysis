@@ -16,14 +16,14 @@ run_ordination(
 \arguments{
 \item{profile}{A \code{gm_profile} (samples as columns).}
 
-\item{method}{\code{"pca_rclr"} or \code{"pcoa"}.}
+\item{method}{\code{"pca_rclr"} (default) or \code{"pcoa"}, as described above.}
 
-\item{distance}{Distance for PCoA, e.g. \code{"bray"} or \code{"jaccard"}.}
+\item{distance}{Distance for PCoA, e.g. \code{"bray"} (default) or \code{"jaccard"}; ignored for \code{"pca_rclr"}.}
 
-\item{binary}{Use presence/absence for the PCoA distance.}
+\item{binary}{Use presence/absence for the PCoA distance (default \code{FALSE}).}
 
 \item{detection}{Percent of the sample total above which a feature counts as present
-when \code{binary = TRUE}.}
+when \code{binary = TRUE} (default \code{0}, any non-zero value).}
 
 \item{scaling}{PCA score scaling (see \code{\link[vegan:scores.rda]{vegan::scores.rda()}}): \code{1} preserves distances between
 samples (default), \code{2} correlations between features, \code{3} (\code{"symmetric"}) is a compromise.

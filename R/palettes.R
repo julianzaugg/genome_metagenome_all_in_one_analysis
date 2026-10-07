@@ -54,8 +54,8 @@ qualitative_palette <- function(n){
 #' those kept. `Other`, `Unassigned` and `Missing` keep their colours.
 #'
 #' @param colours.v Named colours, in priority order.
-#' @param min_distance Smallest CIEDE2000 difference allowed between two colours; about 10 is
-#'   needed to tell small legend keys apart. `0` keeps every colour.
+#' @param min_distance Smallest CIEDE2000 difference allowed between two colours (default 10, about
+#'   what is needed to tell small legend keys apart). `0` keeps every colour.
 #' @return `colours.v` with clashing colours replaced.
 #' @export
 separate_colours <- function(colours.v, min_distance = 10){
@@ -89,8 +89,8 @@ separate_colours <- function(colours.v, min_distance = 10){
 #' result is deterministic.
 #'
 #' @param values.v Vector (factor levels are respected, otherwise sorted unique values).
-#' @param existing.v Named vector of previously assigned colours.
-#' @param fixed.v Named vector of user-fixed colours.
+#' @param existing.v Named vector of previously assigned colours; none by default.
+#' @param fixed.v Named vector of user-fixed colours, which take precedence over `existing.v`; none by default.
 #' @param avoid.v Colours to leave out when generating new ones (e.g. those of another
 #'   variable), as long as enough other colours remain.
 #' @return Named character vector of colours.
@@ -129,9 +129,10 @@ assign_colours <- function(values.v, existing.v = NULL, fixed.v = NULL, avoid.v 
 #' phylum has many taxa). Unassigned taxa are grey.
 #'
 #' @param taxa.df Data frame with `Label`, `Phylum` and `Abundance` (used for ordering).
-#' @param existing.v Named vector of saved colours (by label).
-#' @param fixed.v Named vector of user-fixed colours (by label).
-#' @param scheme `"distinct"` or `"hierarchical"`.
+#' @param existing.v Named vector of saved colours (by label); none by default.
+#' @param fixed.v Named vector of user-fixed colours (by label), which take precedence over `existing.v`;
+#'   none by default.
+#' @param scheme `"distinct"` (default) or `"hierarchical"`, as described above.
 #' @return Named character vector of colours by label.
 #' @export
 assign_taxa_colours <- function(taxa.df, existing.v = NULL, fixed.v = NULL, scheme = c("distinct", "hierarchical")){
@@ -199,10 +200,11 @@ assign_shapes <- function(values.v){
 #'
 #' @param metadata.df Metadata from [read_metadata()].
 #' @param variables.v Metadata columns to colour.
-#' @param taxa.df Optional taxa table for [assign_taxa_colours()].
-#' @param existing.l Previously saved palettes (see [read_palettes()]).
-#' @param fixed.l User-fixed colours from the config `colours:` section.
-#' @param taxa_scheme Passed to [assign_taxa_colours()].
+#' @param taxa.df Optional taxa table for [assign_taxa_colours()]; no `taxa` palette is built when `NULL` (default).
+#' @param existing.l Previously saved palettes (see [read_palettes()]); none by default.
+#' @param fixed.l User-fixed colours from the config `colours:` section, which take precedence over
+#'   `existing.l`; none by default.
+#' @param taxa_scheme Passed to [assign_taxa_colours()]: `"distinct"` (default) or `"hierarchical"`.
 #' @return List with one named colour vector per variable plus `taxa`.
 #' @export
 build_palettes <- function(metadata.df, variables.v, taxa.df = NULL, existing.l = list(), fixed.l = list(),
@@ -252,8 +254,8 @@ write_palettes <- function(palettes.l, path){
 #'
 #' @param palettes.l Project palettes, or a processed project list containing `palettes`.
 #' @param variable Variable name, or `"taxa"`.
-#' @param values.v Optional values to return colours for. Taxa without a saved colour
-#'   get an unused colour; other variables must already be covered.
+#' @param values.v Optional values to return colours for, in that order; `NULL` (default) returns the
+#'   whole palette. Taxa without a saved colour get an unused colour; other variables must already be covered.
 #' @return Named character vector.
 #' @export
 get_palette <- function(palettes.l, variable, values.v = NULL){

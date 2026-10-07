@@ -18,7 +18,8 @@ plot_mag_mapping(
 
 \item{metadata.df}{Metadata (sample order and labels, facet variable).}
 
-\item{sets}{Genome sets to show, in legend order; sets without data are dropped.
+\item{sets}{Genome sets to show, in legend order (default the within-sample and dereplicated HQ
+bins); sets without data are dropped.
 See \code{unique(mapping.df$Set)} for what is available.}
 
 \item{metric}{What to plot (see \code{\link[=within_sample_mag_summary]{within_sample_mag_summary()}} for the denominators):

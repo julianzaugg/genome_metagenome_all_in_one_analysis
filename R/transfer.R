@@ -8,7 +8,7 @@
 #' trailing `/` the source directory name comes first and they fail; each such pattern is
 #' therefore also given with a leading `*/`.
 #'
-#' @param mode `"all"`, `"metagenome"` or `"isolate"`.
+#' @param mode `"all"` (default, both modes), `"metagenome"` or `"isolate"`.
 #' @return Character vector of filter lines.
 #' @export
 rsync_filter <- function(mode = c("all", "metagenome", "isolate")){
@@ -28,7 +28,7 @@ rsync_filter <- function(mode = c("all", "metagenome", "isolate")){
 #' run progresses; only new or changed files are transferred.
 #' [fetch_pipeline_results()] does the same from within R using `config.yml`.
 #'
-#' @param path Filter file to write.
+#' @param path Filter file to write (default `"gmaio_filter.txt"` in the working directory).
 #' @inheritParams rsync_filter
 #' @return `path`, invisibly.
 #' @export
@@ -51,8 +51,9 @@ write_rsync_filter <- function(path = "gmaio_filter.txt", mode = c("all", "metag
 #' run the script from a terminal rather than RStudio.
 #'
 #' @param config_path Path to `config.yml`.
-#' @param source Override `pipeline_remote`.
-#' @param dry_run List what would be copied without copying.
+#' @param source Source to copy from (`user@server:/path` or a local path); `NULL` (default) uses the
+#'   config `pipeline_remote`.
+#' @param dry_run List what would be copied without copying (default `FALSE`).
 #' @param rsync_args Extra arguments passed to rsync, e.g. `"--progress"`.
 #' @return The `check_inputs()` table, invisibly (`NULL` for a dry run).
 #' @export

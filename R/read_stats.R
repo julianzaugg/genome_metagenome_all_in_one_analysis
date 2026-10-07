@@ -14,8 +14,9 @@
 #'
 #' @param read_stats.df Pipeline read statistics (`project.l$read_stats`).
 #' @param metadata.df Optional metadata; adds `Sample_label` after `Sample_ID`.
-#' @param bases Include the base-level mapping columns in `Read_stats` (default for long reads;
-#'   for short reads of equal length they repeat the read percentages).
+#' @param bases Include the base-level mapping columns in `Read_stats` (default `TRUE`, suited to long
+#'   reads; [write_project_tables()] turns it off for short-read runs, where with equal read lengths
+#'   they repeat the read percentages).
 #' @return Named list of data frames `Read_stats`, `Read_stats_full` (`NULL` when it would repeat
 #'   `Read_stats`) and `Column_descriptions` (`Sheet`, `Column`, `Description`), or `NULL` when
 #'   `read_stats.df` is `NULL`.

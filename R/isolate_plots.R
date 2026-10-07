@@ -3,8 +3,8 @@
 #' Both directions are averaged; missing pairs (below fastANI's reporting limit) are set to `floor_value`.
 #'
 #' @param ani.df Result of [read_fastani()].
-#' @param genomes.v Optional genome order.
-#' @param floor_value ANI used for pairs fastANI did not report.
+#' @param genomes.v Genomes to include, in order; `NULL` (default) uses every genome in `ani.df`, sorted.
+#' @param floor_value ANI used for pairs fastANI did not report (default 75).
 #' @return Symmetric numeric matrix with 100 on the diagonal.
 #' @export
 ani_matrix <- function(ani.df, genomes.v = NULL, floor_value = 75){
@@ -31,13 +31,14 @@ ani_matrix <- function(ani.df, genomes.v = NULL, floor_value = 75){
 #'
 #' @param values.m Symmetric matrix (ANI or cgMLST allele distances).
 #' @param genomes.df Genome metadata from [genome_metadata()].
-#' @param palettes.l Project palettes.
-#' @param annotation_variables Metadata columns shown as annotations (above and left).
-#' @param type `"ani"` (high is similar) or `"distance"` (low is similar).
-#' @param breaks Colour breaks; defaults suit ANI (85 to 100) or allele distances.
+#' @param palettes.l Project palettes; annotation variables without one get generated colours.
+#' @param annotation_variables Metadata columns shown as annotations (above and left); none by default.
+#' @param type `"ani"` (default; high is similar) or `"distance"` (low is similar).
+#' @param breaks Colour breaks; `NULL` (default) uses 85, 95, 97, 99, 100 for ANI and 0 to the
+#'   largest distance (0, 5, 10, 25, 50, 100, 200, ...) for allele distances.
 #' @param colours Colours at `breaks`, from least to most similar for ANI and from 0 upwards
-#'   for distances; defaults to blues (ANI) or yellow-orange-red (distances).
-#' @param legend_title Legend title.
+#'   for distances; `NULL` (default) uses blues (ANI) or yellow-orange-red (distances).
+#' @param legend_title Legend title; `NULL` (default) uses `"ANI (%)"` or `"Allele differences"`.
 #' @param split_by Metadata column splitting rows and columns into blocks (e.g. `"ST"`);
 #'   genomes are then clustered within blocks.
 #' @param cluster Cluster genomes (average linkage on the distances); `FALSE` keeps the
@@ -166,10 +167,12 @@ plot_pangenome_categories <- function(profile){
 #'
 #' @param profile Pangenome profile (or any presence profile, e.g. `amr_genes`).
 #' @param genomes.df Genome metadata from [genome_metadata()] (or analysis metadata).
-#' @param palettes.l Project palettes.
-#' @param annotation_variables Metadata columns shown above the columns.
-#' @param categories Pangenome categories to include (ignored when the profile has no `Category`).
-#' @param max_features Keep the most variable features (prevalence closest to 50%).
+#' @param palettes.l Project palettes; annotation variables without one get generated colours.
+#' @param annotation_variables Metadata columns shown above the columns; none by default.
+#' @param categories Pangenome categories to include (default shell and cloud genes; ignored when
+#'   the profile has no `Category`).
+#' @param max_features When there are more features, keep this many with prevalence closest to 50%
+#'   (default 150).
 #' @param row_split Optional feature column splitting the rows (e.g. `"Class"` for AMR genes).
 #' @param column_split Optional metadata column splitting the genomes (e.g. `"ST"`).
 #' @param colours Colours for absent and present.
@@ -234,10 +237,11 @@ plot_presence_heatmap <- function(profile, genomes.df, palettes.l = list(), anno
 #'
 #' @param summary.df `project.l$tables$genome_summary`.
 #' @param metadata.df Metadata (order, labels, optional fill variable).
-#' @param fill_by Optional metadata column for bar colour.
-#' @param colours.v Named colours for `fill_by`.
+#' @param fill_by Optional metadata column for bar colour; all bars are blue when `NULL` (default).
+#' @param colours.v Named colours for `fill_by`; generated when `NULL` (default).
 #' @param metrics Columns of `summary.df` to show, in order: any of `"Genome_size"`, `"Contigs"`,
-#'   `"Contig_N50"`, `"GC_content"`, `"Completeness"`, `"Contamination"`, `"Mean_coverage"`, `"CDS"`.
+#'   `"Contig_N50"`, `"GC_content"`, `"Completeness"`, `"Contamination"`, `"Mean_coverage"`, `"CDS"`
+#'   (all by default; those missing from `summary.df` are skipped).
 #' @param bar_width Bar width.
 #' @param base_size Base font size, in points.
 #' @return A ggplot.
@@ -277,16 +281,17 @@ plot_genome_summary <- function(summary.df, metadata.df, fill_by = NULL, colours
 #' @param tree An `ape::phylo` tree (e.g. from [read_tree()]).
 #' @param genomes.df Genome metadata from [genome_metadata()].
 #' @param colour_by Optional metadata column for tip point colour.
-#' @param colours.v Named colours for `colour_by`.
-#' @param midpoint Midpoint-root the tree first (needs phangorn).
+#' @param colours.v Named colours for `colour_by`; generated when `NULL` (default).
+#' @param midpoint Midpoint-root the tree first (default `TRUE`; skipped when phangorn is not installed).
 #' @param shape_by Optional metadata column for tip point shape (e.g. `"Entry_type"`).
-#' @param shapes Named filled shapes (21-25) for `shape_by`.
+#' @param shapes Named filled shapes (21-25) for `shape_by`; `NULL` (default) uses 21, 22, 24, 23, 25 in
+#'   turn (circles and diamonds when the levels are `"Sample"` and `"Reference"`).
 #' @param label_by Metadata column used for tip labels; `NULL` for no labels.
 #' @param label_size Font size of tip labels, in mm (ggplot text size).
 #' @param align_labels Line the labels up at the right, joined to their tips by dotted lines.
 #' @param point_size Size of tip points.
-#' @param layout `"rectangular"` or `"circular"`.
-#' @param ladderize Ladderize the tree.
+#' @param layout `"rectangular"` (default) or `"circular"`.
+#' @param ladderize Ladderize the tree (default `TRUE`).
 #' @param scale_bar Draw a scale bar instead of an x axis.
 #' @param x_label Axis title (or scale bar caption).
 #' @param label_space Room for labels as a fraction of the tree width; by default from the

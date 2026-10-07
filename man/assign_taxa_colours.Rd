@@ -14,11 +14,12 @@ assign_taxa_colours(
 \arguments{
 \item{taxa.df}{Data frame with \code{Label}, \code{Phylum} and \code{Abundance} (used for ordering).}
 
-\item{existing.v}{Named vector of saved colours (by label).}
+\item{existing.v}{Named vector of saved colours (by label); none by default.}
 
-\item{fixed.v}{Named vector of user-fixed colours (by label).}
+\item{fixed.v}{Named vector of user-fixed colours (by label), which take precedence over \code{existing.v};
+none by default.}
 
-\item{scheme}{\code{"distinct"} or \code{"hierarchical"}.}
+\item{scheme}{\code{"distinct"} (default) or \code{"hierarchical"}, as described above.}
 }
 \value{
 Named character vector of colours by label.

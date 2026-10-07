@@ -19,16 +19,16 @@ plot_strain_sharing_matrix(
 
 \item{metadata.df}{Analysis metadata (labels, group annotation).}
 
-\item{palettes.l}{Project palettes.}
+\item{palettes.l}{Project palettes; \code{group} colours are generated when it has no palette.}
 
 \item{group}{Optional metadata column annotating and splitting the samples.}
 
-\item{type}{\code{"count"} (genomes with a shared strain, from \code{instrain_counts}) or \code{"popani"}
+\item{type}{\code{"count"} (default; genomes with a shared strain, from \code{instrain_counts}) or \code{"popani"}
 (popANI in percent for one genome; inStrain calls the same strain at >= 99.999\%).}
 
 \item{title}{Optional title above the matrix (e.g. the genome label).}
 
-\item{show_values}{Print values in the cells.}
+\item{show_values}{Print values in the cells; by default for \code{"count"} only.}
 }
 \value{
 A ComplexHeatmap \code{Heatmap}.

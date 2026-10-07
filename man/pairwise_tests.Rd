@@ -19,9 +19,9 @@ pairwise_tests(
 
 \item{group}{Grouping column.}
 
-\item{method}{\code{"dunn"} or \code{"wilcoxon"}.}
+\item{method}{\code{"dunn"} (default) or \code{"wilcoxon"}, as described above.}
 
-\item{p_adjust_method}{Correction within each family, see \code{\link[stats:p.adjust]{stats::p.adjust()}}.}
+\item{p_adjust_method}{Correction within each family, see \code{\link[stats:p.adjust]{stats::p.adjust()}} (default \code{"BH"}).}
 }
 \value{
 Data frame with one row per pair and family: \code{Group_1}, \code{Group_2}, \code{N_1}, \code{N_2},

@@ -32,13 +32,15 @@ plot_presence_heatmap(
 
 \item{genomes.df}{Genome metadata from \code{\link[=genome_metadata]{genome_metadata()}} (or analysis metadata).}
 
-\item{palettes.l}{Project palettes.}
+\item{palettes.l}{Project palettes; annotation variables without one get generated colours.}
 
-\item{annotation_variables}{Metadata columns shown above the columns.}
+\item{annotation_variables}{Metadata columns shown above the columns; none by default.}
 
-\item{categories}{Pangenome categories to include (ignored when the profile has no \code{Category}).}
+\item{categories}{Pangenome categories to include (default shell and cloud genes; ignored when
+the profile has no \code{Category}).}
 
-\item{max_features}{Keep the most variable features (prevalence closest to 50\%).}
+\item{max_features}{When there are more features, keep this many with prevalence closest to 50\%
+(default 150).}
 
 \item{row_split}{Optional feature column splitting the rows (e.g. \code{"Class"} for AMR genes).}
 

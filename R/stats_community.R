@@ -22,9 +22,11 @@ align_distance <- function(distance.d, metadata.df, variables.v){
 #' @param distance.d A `dist` object labelled by sample ID (e.g. `ordination$distance`).
 #' @param metadata.df Metadata.
 #' @param terms.v Model terms (metadata columns).
-#' @param permutations Number of permutations.
-#' @param strata Optional metadata column restricting permutations.
-#' @param by `"margin"` (each term adjusted for the others) or `"terms"` (sequential).
+#' @param permutations Number of permutations (default 999).
+#' @param strata Optional metadata column restricting permutations (e.g. subject for repeated measures);
+#'   unrestricted when `NULL` (default).
+#' @param by `"margin"` (default; each term adjusted for the others) or `"terms"` (sequential, in
+#'   the order of `terms.v`).
 #' @param seed Random seed.
 #' @param label Optional label added as a column.
 #' @return Data frame with `Term`, `Df`, `SumOfSqs`, `R2`, `F`, `P_value`, `N`, `Permutations`.
@@ -96,8 +98,8 @@ run_permdisp <- function(distance.d, metadata.df, group, permutations = 999, see
 #'
 #' @inheritParams run_permanova
 #' @param group Metadata column.
-#' @param p_adjust_method Multiple testing correction.
-#' @param min_group_size Skip pairs where a group has fewer samples.
+#' @param p_adjust_method Multiple testing correction across pairs, see [stats::p.adjust()] (default `"BH"`).
+#' @param min_group_size Skip pairs where a group has fewer samples (default 3).
 #' @return Data frame with one row per pair.
 #' @export
 run_pairwise_permanova <- function(distance.d, metadata.df, group, permutations = 999, strata = NULL,

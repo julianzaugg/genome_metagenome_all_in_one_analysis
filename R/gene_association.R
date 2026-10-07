@@ -8,7 +8,7 @@
 #' @param profile A `gm_profile`; values above zero count as present.
 #' @param metadata.df Metadata (or genome metadata) with `Sample_ID`.
 #' @param variable Categorical metadata column.
-#' @param min_present Skip features present in fewer genomes.
+#' @param min_present Skip features present in fewer genomes (default 2).
 #' @return Data frame with counts, prevalence per group, odds ratio (two groups), p and q values.
 #' @export
 gene_association <- function(profile, metadata.df, variable, min_present = 2){

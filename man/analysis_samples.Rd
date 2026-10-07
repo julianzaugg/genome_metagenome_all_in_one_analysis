@@ -9,7 +9,8 @@ analysis_samples(metadata.df, include_excluded = FALSE)
 \arguments{
 \item{metadata.df}{Metadata from \code{\link[=read_metadata]{read_metadata()}}.}
 
-\item{include_excluded}{Keep samples flagged as excluded.}
+\item{include_excluded}{Keep samples excluded from analyses (\code{Excluded}: config \code{exclude_column} or
+\code{exclude_samples}); default \code{FALSE}.}
 }
 \value{
 Character vector in metadata order.

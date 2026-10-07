@@ -39,15 +39,17 @@ da_formula <- function(variable, covariates, random_effects){
 #' taxonomy strings are never mangled. Both the abundance and prevalence models are returned.
 #'
 #' @param profile A `gm_profile` (relative abundance, counts or normalised RPKM).
-#' @param metadata.df Metadata.
-#' @param variable Variable of interest.
-#' @param covariates Additional fixed effects.
-#' @param random_effects Optional random effect columns (e.g. subject for repeated measures).
-#' @param normalization,transform Passed to [maaslin3::maaslin3()]; the default normalisation is
-#'   `"TSS"` for relative abundance and counts and `"NONE"` for already normalised values.
-#' @param min_prevalence Minimum fraction of samples with the feature.
-#' @param output_dir Directory for MaAsLin3's own output.
-#' @param cores Number of cores.
+#' @param metadata.df Metadata with `Sample_ID`; samples with a missing value in any model column are left out.
+#' @param variable Metadata column of interest; for a categorical variable the first factor level is the reference.
+#' @param covariates Additional fixed effects (metadata columns); none by default.
+#' @param random_effects Random effect columns (e.g. subject for repeated measures); none by default.
+#' @param normalization Passed to [maaslin3::maaslin3()]; `NULL` (default) uses `"TSS"` for relative
+#'   abundance and counts and `"NONE"` for values that are already normalised (`rpkm`,
+#'   `normalised_rpkm`, `copy_number`).
+#' @param transform Passed to [maaslin3::maaslin3()] (default `"LOG"`).
+#' @param min_prevalence Minimum fraction of samples in which a feature is non-zero (default `0.1`).
+#' @param output_dir Directory for MaAsLin3's own output; a new temporary directory by default.
+#' @param cores Number of cores (default 1).
 #' @return Tidy data frame (see [run_differential_abundance()]).
 #' @export
 run_maaslin3 <- function(profile, metadata.df, variable, covariates = character(), random_effects = character(),
@@ -78,9 +80,10 @@ run_maaslin3 <- function(profile, metadata.df, variable, covariates = character(
 #' Differential abundance with LinDA
 #'
 #' @inheritParams run_maaslin3
-#' @param data_type `"count"` for read counts, otherwise `"proportion"` (default from the value type).
-#' @param min_prevalence Minimum fraction of samples with the feature.
-#' @param min_nonzero Features nonzero in fewer samples are left out before fitting; LinDA
+#' @param data_type `"count"` or `"proportion"`; `NULL` (default) uses `"count"` for read counts and
+#'   `"proportion"` for every other value type.
+#' @param min_prevalence Minimum fraction of samples in which a feature is non-zero (default `0.1`).
+#' @param min_nonzero Features nonzero in fewer samples are left out before fitting (default 3); LinDA
 #'   flags features below 3 as having virtually no statistical power.
 #' @return Tidy data frame (see [run_differential_abundance()]).
 #' @export
@@ -122,9 +125,10 @@ enriched_group <- function(effect.v, contrast.v, reference.v){
 #' selection stability is taken from the per-component `perf()` output.
 #'
 #' @inheritParams run_maaslin3
-#' @param n_components Maximum number of components.
-#' @param folds,n_repeats Cross-validation folds (capped at the smallest group size) and repeats.
-#' @param test_keep_x Candidate numbers of features per component.
+#' @param n_components Maximum number of components (default 3); the number used is tuned by cross-validation.
+#' @param folds,n_repeats Cross-validation folds (default 5, capped at the smallest group size) and
+#'   repeats (default 50).
+#' @param test_keep_x Candidate numbers of features per component, from which cross-validation picks one.
 #' @param seed Random seed.
 #' @return List with `results` (tidy table of selected features: loading as effect,
 #'   stability, and the group with the highest mean), `model` and `performance`.
@@ -194,8 +198,11 @@ run_splsda <- function(profile, metadata.df, variable, n_components = 3, folds =
 #' feature is higher). All results are kept, not only significant ones.
 #'
 #' @inheritParams run_maaslin3
-#' @param methods Any of `"maaslin3"`, `"linda"`, `"splsda"`.
-#' @param splsda_repeats Cross-validation repeats for sPLS-DA.
+#' @param methods Any of `"maaslin3"`, `"linda"`, `"splsda"`; all three by default. A method that fails
+#'   is skipped with a warning.
+#' @param min_prevalence Minimum fraction of samples in which a feature is non-zero (default `0.1`),
+#'   applied by every method.
+#' @param splsda_repeats Cross-validation repeats for sPLS-DA (default 50).
 #' @param seed Random seed.
 #' @return List with `results` (combined table) and `splsda` (model, when run).
 #' @export
@@ -240,8 +247,8 @@ run_differential_abundance <- function(profile, metadata.df, variable, covariate
 #' group that MaAsLin3 or LinDA find significantly lower than another group.
 #'
 #' @param results.df `results` from [run_differential_abundance()].
-#' @param alpha Q value threshold.
-#' @param min_stability sPLS-DA selection stability threshold.
+#' @param alpha Q value threshold for MaAsLin3 and LinDA (default `0.05`).
+#' @param min_stability sPLS-DA selection stability threshold, 0 to 1 (default `0.7`).
 #' @return Data frame, one row per feature and enriched group, with `Contrasts`, per-method
 #'   effects, q values, `N_methods` (number of methods calling it) and `Conflicting_direction`.
 #' @export
@@ -299,8 +306,8 @@ da_consensus <- function(results.df, alpha = 0.05, min_stability = 0.7){
 #' One bar per method and feature, coloured by the group the feature is higher in.
 #'
 #' @param consensus.df Result of [da_consensus()].
-#' @param colours.v Named colours for the enriched groups.
-#' @param min_methods Minimum number of agreeing methods to show a feature.
+#' @param colours.v Named colours for the enriched groups; generated when `NULL` (default).
+#' @param min_methods Minimum number of agreeing methods to show a feature (default 2).
 #' @param max_features Maximum number of features shown (most methods first).
 #' @param methods Methods shown, as panels in this order.
 #' @param bar_width Bar width.
@@ -363,10 +370,11 @@ wrap_labels <- function(labels.v, width){
 #' @param consensus.df Result of [da_consensus()].
 #' @param metadata.df Metadata.
 #' @param group Metadata column that was tested; used for the column split and the track colours.
-#' @param palettes.l Project palettes (`project.l$palettes`).
-#' @param min_methods Minimum number of methods calling a feature.
+#' @param palettes.l Project palettes (`project.l$palettes`); group colours are generated when
+#'   `group` has no palette.
+#' @param min_methods Minimum number of methods calling a feature (default 1, every called feature).
 #' @param max_features Maximum number of features shown (most methods first).
-#' @param methods Methods drawn as tracks.
+#' @param methods Methods drawn as tracks (methods without results are skipped).
 #' @param rank_annotation Feature column drawn as the first track (e.g. `"Phylum"`), when present.
 #' @param not_called_colour Track colour where a method did not call the feature.
 #' @param conflict_colour Track colour for features whose methods call the same contrast in opposite directions.
@@ -429,11 +437,12 @@ plot_da_heatmap <- function(profile, consensus.df, metadata.df, group, palettes.
 #' @param metadata.df Metadata.
 #' @param feature_ids.v Features to show, in panel order.
 #' @param group Metadata column on the x axis.
-#' @param colours.v Named colours for `group`.
-#' @param log_scale Use a log10 y axis (zeros are shown at half the smallest non-zero value).
+#' @param colours.v Named colours for `group`; generated when `NULL` (default).
+#' @param log_scale Use a log10 y axis (default `TRUE`; zeros are shown at half the smallest non-zero value).
 #' @param ncol Facet columns.
 #' @param shape_by Optional metadata column shown as point shape.
 #' @param shapes Named point shapes for `shape_by`; filled shapes (21-25) take the group colour.
+#'   `NULL` (default) uses filled shapes 21, 24, 22, 23, 25 in turn.
 #' @param box_width,box_alpha Box width and fill transparency.
 #' @param point_size,jitter_width Point size and horizontal jitter.
 #' @param label_width Wrap panel titles longer than this many characters.

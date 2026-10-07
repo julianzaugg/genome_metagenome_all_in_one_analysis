@@ -18,15 +18,16 @@ run_splsda(
 \arguments{
 \item{profile}{A \code{gm_profile} (relative abundance, counts or normalised RPKM).}
 
-\item{metadata.df}{Metadata.}
+\item{metadata.df}{Metadata with \code{Sample_ID}; samples with a missing value in any model column are left out.}
 
-\item{variable}{Variable of interest.}
+\item{variable}{Metadata column of interest; for a categorical variable the first factor level is the reference.}
 
-\item{n_components}{Maximum number of components.}
+\item{n_components}{Maximum number of components (default 3); the number used is tuned by cross-validation.}
 
-\item{folds, n_repeats}{Cross-validation folds (capped at the smallest group size) and repeats.}
+\item{folds, n_repeats}{Cross-validation folds (default 5, capped at the smallest group size) and
+repeats (default 50).}
 
-\item{test_keep_x}{Candidate numbers of features per component.}
+\item{test_keep_x}{Candidate numbers of features per component, from which cross-validation picks one.}
 
 \item{seed}{Random seed.}
 }

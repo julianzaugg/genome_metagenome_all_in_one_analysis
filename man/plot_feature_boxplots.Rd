@@ -36,15 +36,16 @@ plot_feature_boxplots(
 
 \item{group}{Metadata column on the x axis.}
 
-\item{colours.v}{Named colours for \code{group}.}
+\item{colours.v}{Named colours for \code{group}; generated when \code{NULL} (default).}
 
-\item{log_scale}{Use a log10 y axis (zeros are shown at half the smallest non-zero value).}
+\item{log_scale}{Use a log10 y axis (default \code{TRUE}; zeros are shown at half the smallest non-zero value).}
 
 \item{ncol}{Facet columns.}
 
 \item{shape_by}{Optional metadata column shown as point shape.}
 
-\item{shapes}{Named point shapes for \code{shape_by}; filled shapes (21-25) take the group colour.}
+\item{shapes}{Named point shapes for \code{shape_by}; filled shapes (21-25) take the group colour.
+\code{NULL} (default) uses filled shapes 21, 24, 22, 23, 25 in turn.}
 
 \item{box_width, box_alpha}{Box width and fill transparency.}
 

@@ -23,13 +23,14 @@ run_pairwise_permanova(
 
 \item{group}{Metadata column.}
 
-\item{permutations}{Number of permutations.}
+\item{permutations}{Number of permutations (default 999).}
 
-\item{strata}{Optional metadata column restricting permutations.}
+\item{strata}{Optional metadata column restricting permutations (e.g. subject for repeated measures);
+unrestricted when \code{NULL} (default).}
 
-\item{p_adjust_method}{Multiple testing correction.}
+\item{p_adjust_method}{Multiple testing correction across pairs, see \code{\link[stats:p.adjust]{stats::p.adjust()}} (default \code{"BH"}).}
 
-\item{min_group_size}{Skip pairs where a group has fewer samples.}
+\item{min_group_size}{Skip pairs where a group has fewer samples (default 3).}
 
 \item{seed}{Random seed.}
 

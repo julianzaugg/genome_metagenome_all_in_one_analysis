@@ -22,7 +22,7 @@ plot_richness_vs_depth(
 
 \item{colour_by}{Metadata column for colour.}
 
-\item{colours.v}{Named colours.}
+\item{colours.v}{Named colours; generated when \code{NULL} (default).}
 
 \item{depth_column}{Read statistics column used as depth.}
 }

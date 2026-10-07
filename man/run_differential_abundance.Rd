@@ -20,21 +20,23 @@ run_differential_abundance(
 \arguments{
 \item{profile}{A \code{gm_profile} (relative abundance, counts or normalised RPKM).}
 
-\item{metadata.df}{Metadata.}
+\item{metadata.df}{Metadata with \code{Sample_ID}; samples with a missing value in any model column are left out.}
 
-\item{variable}{Variable of interest.}
+\item{variable}{Metadata column of interest; for a categorical variable the first factor level is the reference.}
 
-\item{covariates}{Additional fixed effects.}
+\item{covariates}{Additional fixed effects (metadata columns); none by default.}
 
-\item{random_effects}{Optional random effect columns (e.g. subject for repeated measures).}
+\item{random_effects}{Random effect columns (e.g. subject for repeated measures); none by default.}
 
-\item{methods}{Any of \code{"maaslin3"}, \code{"linda"}, \code{"splsda"}.}
+\item{methods}{Any of \code{"maaslin3"}, \code{"linda"}, \code{"splsda"}; all three by default. A method that fails
+is skipped with a warning.}
 
-\item{min_prevalence}{Minimum fraction of samples with the feature.}
+\item{min_prevalence}{Minimum fraction of samples in which a feature is non-zero (default \code{0.1}),
+applied by every method.}
 
-\item{splsda_repeats}{Cross-validation repeats for sPLS-DA.}
+\item{splsda_repeats}{Cross-validation repeats for sPLS-DA (default 50).}
 
-\item{output_dir}{Directory for MaAsLin3's own output.}
+\item{output_dir}{Directory for MaAsLin3's own output; a new temporary directory by default.}
 
 \item{seed}{Random seed.}
 }

@@ -19,7 +19,7 @@ plot_instrain_diversity(
 
 \item{group}{Metadata column.}
 
-\item{colours.v}{Named colours for \code{group}.}
+\item{colours.v}{Named colours for \code{group}; generated when \code{NULL} (default).}
 
 \item{...}{Figure and test options passed to \code{\link[=plot_group_boxplots]{plot_group_boxplots()}}.}
 }

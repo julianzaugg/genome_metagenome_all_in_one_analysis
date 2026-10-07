@@ -11,9 +11,11 @@ get_profile(project.l, name, include_excluded = FALSE, renormalise = TRUE)
 
 \item{name}{Profile name (see \code{names(project.l$profiles)}).}
 
-\item{include_excluded}{Keep excluded samples.}
+\item{include_excluded}{Keep samples excluded from analyses (\code{Excluded}: config \code{exclude_column} or
+\code{exclude_samples}); default \code{FALSE}.}
 
-\item{renormalise}{Rescale relative abundance to 100 after removing samples.}
+\item{renormalise}{Rescale each sample of a relative abundance profile to sum to 100 after removing
+samples (default \code{TRUE}); other value types are not changed.}
 }
 \value{
 \code{gm_profile}.

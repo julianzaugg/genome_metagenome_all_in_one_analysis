@@ -71,17 +71,20 @@ plot_heatmap(
 
 \item{palettes.l}{Project palettes, used for column annotations and the taxa row annotation.}
 
-\item{transform}{Value transform: \code{"log10"}, \code{"sqrt"}, \code{"zscore"} or \code{"none"}.}
+\item{transform}{Value transform: \code{"log10"} (default), \code{"sqrt"}, \code{"zscore"} or \code{"none"}, as described above.}
 
 \item{colours}{Colour ramp for the values: a vector of colours (low to high), or the
 name of a \code{\link[grDevices:hcl.colors]{grDevices::hcl.colors()}} palette such as \code{"Viridis"}, \code{"Mako"} or \code{"YlOrRd"}
 (sequential palettes run light to dark). Default viridis, or blue-white-red for \code{"zscore"}.}
 
-\item{legend_breaks}{Legend (and colour) breaks in original units, e.g. \code{c(0.01, 0.1, 1, 10, 40)}.}
+\item{legend_breaks}{Legend (and colour) breaks in original units, e.g. \code{c(0.01, 0.1, 1, 10, 40)}.
+\code{NULL} (default) uses powers of ten for \code{"log10"} and ComplexHeatmap's own breaks otherwise,
+with the colour ramp spread over the data range.}
 
-\item{legend_labels}{Labels for \code{legend_breaks}, e.g. \code{c("0.01", "0.1", "1", "10", ">= 40")}.}
+\item{legend_labels}{Labels for \code{legend_breaks}, e.g. \code{c("0.01", "0.1", "1", "10", ">= 40")};
+\code{NULL} (default) prints the break values.}
 
-\item{legend_title}{Legend title; defaults from the transform.}
+\item{legend_title}{Legend title; \code{NULL} (default) uses \code{"Value"}, or \code{"Z-score"} for \code{"zscore"}.}
 
 \item{zero_colour}{Colour for cells with a value of zero; \code{NULL} to colour them from the ramp.}
 
@@ -95,17 +98,17 @@ name of a \code{\link[grDevices:hcl.colors]{grDevices::hcl.colors()}} palette su
 
 \item{row_title_side, column_title_side}{Sides for the axis titles.}
 
-\item{column_split}{Metadata column splitting the columns into blocks.}
+\item{column_split}{Metadata column splitting the columns into blocks; no split by default.}
 
-\item{row_split}{Feature column splitting the rows into blocks (e.g. \code{"Phylum"}).}
+\item{row_split}{Feature column splitting the rows into blocks (e.g. \code{"Phylum"}); no split by default.}
 
-\item{column_annotations}{Metadata columns drawn as column annotations. Discrete columns use
-the project palettes; numeric columns get a continuous colour scale.}
+\item{column_annotations}{Metadata columns drawn as column annotations; none by default. Discrete
+columns use the project palettes; numeric columns get a continuous colour scale.}
 
 \item{annotation_colours}{Named list of colours for column annotations, overriding
 \code{palettes.l}: named vectors for discrete columns, \code{\link[circlize:colorRamp2]{circlize::colorRamp2()}} functions for numeric ones.}
 
-\item{row_annotation}{Feature columns drawn as row annotations (e.g. \code{"Phylum"}).}
+\item{row_annotation}{Feature columns drawn as row annotations (e.g. \code{"Phylum"}); none by default.}
 
 \item{row_annotation_colours}{Colours for \code{row_annotation}: a named vector (one annotation) or
 a named list of them. Defaults to the taxa palette for rank columns, else generated colours.}
@@ -117,12 +120,14 @@ several tracks share one set of colours.}
 
 \item{annotation_size}{Height (column) or width (row) of each annotation track, in cm.}
 
-\item{cluster_rows, cluster_columns}{Cluster rows/columns (within splits).}
+\item{cluster_rows, cluster_columns}{Cluster rows/columns (within splits); by default rows are
+clustered (\code{cluster_rows = TRUE}) and columns are not (\code{cluster_columns = FALSE}).}
 
-\item{show_row_dend, show_column_dend}{Draw the dendrograms.}
+\item{show_row_dend, show_column_dend}{Draw the dendrograms (both \code{FALSE} by default).}
 
-\item{clustering_distance, clustering_method}{Distance (see \code{\link[stats:dist]{stats::dist()}}) and linkage
-(see \code{\link[stats:hclust]{stats::hclust()}}) for clustering, applied to the transformed values.}
+\item{clustering_distance, clustering_method}{Distance (see \code{\link[stats:dist]{stats::dist()}}; default \code{"euclidean"})
+and linkage (see \code{\link[stats:hclust]{stats::hclust()}}; default \code{"average"}) for clustering, applied to the
+transformed values.}
 
 \item{order_rows_by}{When rows are not clustered: \code{NULL} (profile order), \code{"abundance"}
 (mean, decreasing), \code{"label"}, or feature columns (e.g. \code{"Phylum"}, then by abundance).}
@@ -134,7 +139,7 @@ or metadata columns to sort by.}
 
 \item{cell_border_colour, cell_border_width}{Cell border colour and line width.}
 
-\item{show_values}{Print values in the cells (original units).}
+\item{show_values}{Print values in the cells, in original units (default \code{FALSE}).}
 
 \item{value_digits}{Significant digits for printed values.}
 
@@ -158,7 +163,7 @@ or metadata columns to sort by.}
 
 \item{legend_side}{Side for all legends (\code{"right"}, \code{"left"}, \code{"top"} or \code{"bottom"}).}
 
-\item{merge_legends}{Put the value legend and annotation legends in one column.}
+\item{merge_legends}{Put the value legend and annotation legends in one column (default \code{FALSE}).}
 
 \item{padding}{Space around the figure in mm: bottom, left, top, right.}
 
@@ -174,8 +179,8 @@ first (e.g. \code{\link[=filter_profile]{filter_profile()}} and \code{\link[=top
 See \code{vignette("heatmaps", package = "gmaio")} for worked examples.
 }
 \details{
-\strong{Values and colours.} \code{transform} is explicit: \code{"log10"} (log10 of value plus half
-the smallest non-zero value, legend back-transformed to the original units), \code{"sqrt"},
+\strong{Values and colours.} \code{transform} is \code{"log10"} by default (log10 of value plus half
+the smallest non-zero value, legend back-transformed to the original units), or \code{"sqrt"},
 \code{"zscore"} (per feature, of log10 values) or \code{"none"}. Zeros are drawn in \code{zero_colour}
 (except for \code{"zscore"}) so they are never confused with small values. \code{legend_breaks}
 are in the original units; the colour ramp is spread evenly over them, and values beyond

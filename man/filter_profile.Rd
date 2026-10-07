@@ -9,12 +9,13 @@ filter_profile(profile, min_abundance = 0, min_prevalence = 0, detection = 0)
 \arguments{
 \item{profile}{A \code{gm_profile}.}
 
-\item{min_abundance}{Keep features whose maximum value is at least this.}
+\item{min_abundance}{Keep features whose maximum value across samples is at least this
+(default \code{0}, no filter).}
 
-\item{min_prevalence}{Keep features present in at least this many samples
-(a value below 1 is a fraction of samples).}
+\item{min_prevalence}{Keep features present in at least this many samples; a value below 1 is
+a fraction of samples, e.g. \code{0.1} (default \code{0}, no filter).}
 
-\item{detection}{Value above which a feature counts as present.}
+\item{detection}{Value above which a feature counts as present for \code{min_prevalence} (default \code{0}).}
 }
 \value{
 Filtered \code{gm_profile}.

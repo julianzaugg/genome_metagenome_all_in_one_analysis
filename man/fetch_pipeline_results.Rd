@@ -14,9 +14,10 @@ fetch_pipeline_results(
 \arguments{
 \item{config_path}{Path to \code{config.yml}.}
 
-\item{source}{Override \code{pipeline_remote}.}
+\item{source}{Source to copy from (\verb{user@server:/path} or a local path); \code{NULL} (default) uses the
+config \code{pipeline_remote}.}
 
-\item{dry_run}{List what would be copied without copying.}
+\item{dry_run}{List what would be copied without copying (default \code{FALSE}).}
 
 \item{rsync_args}{Extra arguments passed to rsync, e.g. \code{"--progress"}.}
 }

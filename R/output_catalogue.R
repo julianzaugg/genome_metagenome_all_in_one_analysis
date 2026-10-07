@@ -308,7 +308,7 @@ output_entries <- function(){
 #' The same descriptions are written to an `About` sheet in each file and to `README.md` in
 #' the table directory; `vignette("outputs", package = "gmaio")` explains them with examples.
 #'
-#' @param mode `"all"`, `"metagenome"` or `"isolate"`.
+#' @param mode `"all"` (default, both modes), `"metagenome"` or `"isolate"`.
 #' @return Data frame with `File`, `Mode`, `Written_by` and `Description`.
 #' @export
 output_catalogue <- function(mode = c("all", "metagenome", "isolate")){
@@ -442,7 +442,7 @@ write_output_index <- function(dir){
 #' Each analysis script saves its figures to one folder of the project figure directory.
 #' `save_plot()` keeps a `README.md` index of them in the figure directory.
 #'
-#' @param mode `"all"`, `"metagenome"` or `"isolate"`.
+#' @param mode `"all"` (default, both modes), `"metagenome"` or `"isolate"`.
 #' @return Data frame with `Folder`, `Mode`, `Written_by`, `Files` (file names, with
 #'   `<dataset>` for a profile and rank such as `sylph_taxonomic__genus`) and `Description`.
 #' @export

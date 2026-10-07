@@ -214,7 +214,7 @@ compare_pairs_by_group <- function(pairs.df, value, metadata.df, group, permutat
 #' value), for pairs from each group and between groups, with the permutation test in the caption.
 #'
 #' @param comparison.l Result of [compare_pairs_by_group()].
-#' @param colours.v Named colours for the groups; between-group pairs are grey.
+#' @param colours.v Named colours for the groups; generated when `NULL` (default). Between-group pairs are grey.
 #' @param y_label Y axis title.
 #' @param log_scale Log10 y axis for numeric values (zeros are shown at the axis floor).
 #' @return A ggplot.
@@ -313,12 +313,12 @@ instrain_sample_summary <- function(genomes.df, min_breadth = 0.5){
 #'
 #' @param values.m Matrix from [strain_sharing_matrix()].
 #' @param metadata.df Analysis metadata (labels, group annotation).
-#' @param palettes.l Project palettes.
+#' @param palettes.l Project palettes; `group` colours are generated when it has no palette.
 #' @param group Optional metadata column annotating and splitting the samples.
-#' @param type `"count"` (genomes with a shared strain, from `instrain_counts`) or `"popani"`
+#' @param type `"count"` (default; genomes with a shared strain, from `instrain_counts`) or `"popani"`
 #'   (popANI in percent for one genome; inStrain calls the same strain at >= 99.999%).
 #' @param title Optional title above the matrix (e.g. the genome label).
-#' @param show_values Print values in the cells.
+#' @param show_values Print values in the cells; by default for `"count"` only.
 #' @return A ComplexHeatmap `Heatmap`.
 #' @export
 plot_strain_sharing_matrix <- function(values.m, metadata.df, palettes.l = list(), group = NULL, type = c("count", "popani"),
@@ -346,7 +346,7 @@ plot_strain_sharing_matrix <- function(values.m, metadata.df, palettes.l = list(
 #' @param diversity.df Result of [instrain_sample_summary()].
 #' @param metadata.df Analysis metadata.
 #' @param group Metadata column.
-#' @param colours.v Named colours for `group`.
+#' @param colours.v Named colours for `group`; generated when `NULL` (default).
 #' @param ... Figure and test options passed to [plot_group_boxplots()].
 #' @return List with `plot`, `tests` and `pairwise`, as from [plot_group_boxplots()].
 #' @export

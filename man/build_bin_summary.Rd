@@ -19,13 +19,16 @@ build_bin_summary(
 \arguments{
 \item{checkm2.df, checkm1.df, gtdb.df}{Tables from \code{\link[=read_checkm2]{read_checkm2()}}, \code{\link[=read_checkm1]{read_checkm1()}}, \code{\link[=read_gtdbtk]{read_gtdbtk()}} (each optional).}
 
-\item{clusters.l}{Named list of cluster tables from \code{\link[=read_cluster_definition]{read_cluster_definition()}}.}
+\item{clusters.l}{Named list of cluster tables from \code{\link[=read_cluster_definition]{read_cluster_definition()}}; none by default.}
 
-\item{sample_ids.v}{Sample IDs used to assign bins to samples.}
+\item{sample_ids.v}{Sample IDs used to assign bins to samples; bins are not assigned when \code{NULL} (default).}
 
-\item{quality_weight, quality_threshold}{HQ rule parameters.}
+\item{quality_weight, quality_threshold}{HQ rule: a genome is high quality when
+completeness - \code{quality_weight} x contamination >= \code{quality_threshold} (defaults 3 and 50,
+as in the pipeline).}
 
-\item{quality_source}{Which CheckM report(s) decide HQ: \code{"both"} (either passes), \code{"checkm1"}, \code{"checkm2"}.}
+\item{quality_source}{Which CheckM report(s) decide HQ: \code{"both"} (default; either passing is enough),
+\code{"checkm1"} or \code{"checkm2"}.}
 
 \item{reference_checkm2.df}{Optional CheckM2 report of the reference genomes (\code{\link[=read_checkm2]{read_checkm2()}}).}
 }

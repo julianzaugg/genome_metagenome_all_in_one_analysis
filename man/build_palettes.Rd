@@ -18,13 +18,14 @@ build_palettes(
 
 \item{variables.v}{Metadata columns to colour.}
 
-\item{taxa.df}{Optional taxa table for \code{\link[=assign_taxa_colours]{assign_taxa_colours()}}.}
+\item{taxa.df}{Optional taxa table for \code{\link[=assign_taxa_colours]{assign_taxa_colours()}}; no \code{taxa} palette is built when \code{NULL} (default).}
 
-\item{existing.l}{Previously saved palettes (see \code{\link[=read_palettes]{read_palettes()}}).}
+\item{existing.l}{Previously saved palettes (see \code{\link[=read_palettes]{read_palettes()}}); none by default.}
 
-\item{fixed.l}{User-fixed colours from the config \verb{colours:} section.}
+\item{fixed.l}{User-fixed colours from the config \verb{colours:} section, which take precedence over
+\code{existing.l}; none by default.}
 
-\item{taxa_scheme}{Passed to \code{\link[=assign_taxa_colours]{assign_taxa_colours()}}.}
+\item{taxa_scheme}{Passed to \code{\link[=assign_taxa_colours]{assign_taxa_colours()}}: \code{"distinct"} (default) or \code{"hierarchical"}.}
 }
 \value{
 List with one named colour vector per variable plus \code{taxa}.

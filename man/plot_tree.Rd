@@ -32,13 +32,14 @@ plot_tree(
 
 \item{colour_by}{Optional metadata column for tip point colour.}
 
-\item{colours.v}{Named colours for \code{colour_by}.}
+\item{colours.v}{Named colours for \code{colour_by}; generated when \code{NULL} (default).}
 
-\item{midpoint}{Midpoint-root the tree first (needs phangorn).}
+\item{midpoint}{Midpoint-root the tree first (default \code{TRUE}; skipped when phangorn is not installed).}
 
 \item{shape_by}{Optional metadata column for tip point shape (e.g. \code{"Entry_type"}).}
 
-\item{shapes}{Named filled shapes (21-25) for \code{shape_by}.}
+\item{shapes}{Named filled shapes (21-25) for \code{shape_by}; \code{NULL} (default) uses 21, 22, 24, 23, 25 in
+turn (circles and diamonds when the levels are \code{"Sample"} and \code{"Reference"}).}
 
 \item{label_by}{Metadata column used for tip labels; \code{NULL} for no labels.}
 
@@ -48,9 +49,9 @@ plot_tree(
 
 \item{point_size}{Size of tip points.}
 
-\item{layout}{\code{"rectangular"} or \code{"circular"}.}
+\item{layout}{\code{"rectangular"} (default) or \code{"circular"}.}
 
-\item{ladderize}{Ladderize the tree.}
+\item{ladderize}{Ladderize the tree (default \code{TRUE}).}
 
 \item{scale_bar}{Draw a scale bar instead of an x axis.}
 

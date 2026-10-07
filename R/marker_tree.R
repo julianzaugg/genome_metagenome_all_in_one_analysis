@@ -96,9 +96,10 @@ add_marker_tree <- function(project.l){
 #' @param bin_summary.df MAG bin summary (`project.l$tables$bin_summary`).
 #' @param reference_genomes.df Optional reference genome table (`project.l$tables$reference_genomes`).
 #' @param gtdb_lineages.df Optional lineages of the GTDB genomes (`project.l$tables$marker_tree$gtdb_lineages`).
-#' @param colours.v Named phylum colours (the project taxa palette).
-#' @param highlight Which bins get a full-size point: `"all"` or `"hq"` (other bins get a small one).
-#' @param top_n Phyla shown in the legend; the rest are grouped as `Other`.
+#' @param colours.v Named phylum colours (the project taxa palette); phyla without a colour get generated ones.
+#' @param highlight Which bins get a full-size point: `"all"` (default) or `"hq"` (other bins get a small one).
+#' @param top_n Number of phyla shown in the legend, most common first (default 15); the rest are
+#'   grouped as `Other`.
 #' @param show_gtdb Draw the GTDB context genomes; `FALSE` drops them from the tree.
 #' @param layout `"circular"` or `"rectangular"`; by default rectangular for trees up to `label_max_tips` tips.
 #' @param label_max_tips Label the tips of trees up to this size (rectangular layout only).

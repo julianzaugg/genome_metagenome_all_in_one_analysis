@@ -8,7 +8,7 @@ genomespot_traits <- function(){
 #' @param genomespot.l GenomeSPOT tables from [add_genomespot()] (`project.l$tables$genomespot`).
 #' @param bin_summary.df Bin summary from [add_mags()].
 #' @param bins.v Bins to include (e.g. high-quality representatives).
-#' @param colours.v Named phylum colours (the project taxa palette).
+#' @param colours.v Named phylum colours (the project taxa palette); generated when `NULL` (default).
 #' @return List with `traits` (optimum predictions by phylum) and `oxygen` (oxygen tolerance by phylum) ggplots.
 #' @export
 plot_genomespot_traits <- function(genomespot.l, bin_summary.df, bins.v = bin_summary.df$Bin_ID, colours.v = NULL){
@@ -84,7 +84,7 @@ community_weighted_traits <- function(genomespot.l, profile){
 #' @param traits.df Result of [community_weighted_traits()].
 #' @param metadata.df Metadata.
 #' @param group Metadata column.
-#' @param colours.v Named colours for `group`.
+#' @param colours.v Named colours for `group`; generated when `NULL` (default).
 #' @param ... Figure and test options passed to [plot_group_boxplots()], e.g. `show_test = FALSE`.
 #' @return List with `plot` and `tests`.
 #' @export

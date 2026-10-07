@@ -13,7 +13,7 @@ example_project(
 \item{path}{Project directory for the config, palettes and any outputs; a new temporary
 directory by default.}
 
-\item{mode}{\code{"metagenome"} or \code{"isolate"}.}
+\item{mode}{\code{"metagenome"} (default) or \code{"isolate"}.}
 }
 \value{
 A processed \code{gm_project}, as returned by \code{\link[=load_processed]{load_processed()}} in an analysis script.

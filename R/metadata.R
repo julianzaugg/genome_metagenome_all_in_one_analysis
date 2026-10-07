@@ -163,7 +163,8 @@ link_samples <- function(observed.v, metadata.df, source){
 #' Sample IDs to use in analyses
 #'
 #' @param metadata.df Metadata from [read_metadata()].
-#' @param include_excluded Keep samples flagged as excluded.
+#' @param include_excluded Keep samples excluded from analyses (`Excluded`: config `exclude_column` or
+#'   `exclude_samples`); default `FALSE`.
 #' @return Character vector in metadata order.
 #' @export
 analysis_samples <- function(metadata.df, include_excluded = FALSE){

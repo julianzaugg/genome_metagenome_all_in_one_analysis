@@ -11,9 +11,10 @@ subset_samples(profile, sample_ids.v, drop_empty = TRUE, renormalise = FALSE)
 
 \item{sample_ids.v}{Samples to keep, in order.}
 
-\item{drop_empty}{Drop features that are zero in every kept sample.}
+\item{drop_empty}{Drop features that are zero in every kept sample (default \code{TRUE}).}
 
-\item{renormalise}{Rescale relative abundance to 100 after subsetting.}
+\item{renormalise}{Rescale each kept sample to sum to 100 (default \code{FALSE}); the result is a
+relative abundance profile whatever the input value type.}
 }
 \value{
 \code{gm_profile}.

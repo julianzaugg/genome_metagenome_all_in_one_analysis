@@ -34,18 +34,19 @@ plot_genome_matrix(
 
 \item{genomes.df}{Genome metadata from \code{\link[=genome_metadata]{genome_metadata()}}.}
 
-\item{palettes.l}{Project palettes.}
+\item{palettes.l}{Project palettes; annotation variables without one get generated colours.}
 
-\item{annotation_variables}{Metadata columns shown as annotations (above and left).}
+\item{annotation_variables}{Metadata columns shown as annotations (above and left); none by default.}
 
-\item{type}{\code{"ani"} (high is similar) or \code{"distance"} (low is similar).}
+\item{type}{\code{"ani"} (default; high is similar) or \code{"distance"} (low is similar).}
 
-\item{breaks}{Colour breaks; defaults suit ANI (85 to 100) or allele distances.}
+\item{breaks}{Colour breaks; \code{NULL} (default) uses 85, 95, 97, 99, 100 for ANI and 0 to the
+largest distance (0, 5, 10, 25, 50, 100, 200, ...) for allele distances.}
 
 \item{colours}{Colours at \code{breaks}, from least to most similar for ANI and from 0 upwards
-for distances; defaults to blues (ANI) or yellow-orange-red (distances).}
+for distances; \code{NULL} (default) uses blues (ANI) or yellow-orange-red (distances).}
 
-\item{legend_title}{Legend title.}
+\item{legend_title}{Legend title; \code{NULL} (default) uses \code{"ANI (\%)"} or \code{"Allele differences"}.}
 
 \item{split_by}{Metadata column splitting rows and columns into blocks (e.g. \code{"ST"});
 genomes are then clustered within blocks.}

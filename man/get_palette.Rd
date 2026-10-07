@@ -11,8 +11,8 @@ get_palette(palettes.l, variable, values.v = NULL)
 
 \item{variable}{Variable name, or \code{"taxa"}.}
 
-\item{values.v}{Optional values to return colours for. Taxa without a saved colour
-get an unused colour; other variables must already be covered.}
+\item{values.v}{Optional values to return colours for, in that order; \code{NULL} (default) returns the
+whole palette. Taxa without a saved colour get an unused colour; other variables must already be covered.}
 }
 \value{
 Named character vector.

@@ -8,19 +8,23 @@
 #' @param metadata.df Metadata; samples are shown in metadata order with `Sample_label` as axis labels.
 #' @param colours.v Named colours by feature label, usually the project taxa palette
 #'   (`project.l$palettes$taxa`); labels without a colour get unused colours.
-#' @param top_n,min_abundance,merge_unassigned Passed to [collapse_top_n()].
+#' @param top_n,min_abundance Passed to [collapse_top_n()]: the number of taxa kept (per sample by
+#'   default, see `top_method`; default 10) and the minimum value to be kept (default `0`).
+#' @param merge_unassigned Merge features with nothing below domain into one `"Unassigned"` bar
+#'   segment (default `TRUE`, unlike [collapse_top_n()]).
 #' @param min_colour_distance Taxa whose saved colour is within this CIEDE2000 difference of a more
 #'   abundant taxon's in the same figure get a more distinct colour (see [separate_colours()]); `0`
 #'   keeps the saved colours.
-#' @param top_method How [collapse_top_n()] picks features: `"per_sample"` keeps the `top_n` most
-#'   abundant of every sample, so the legend can hold many more than `top_n` taxa when samples
-#'   differ; `"mean"` keeps exactly the `top_n` highest by mean.
+#' @param top_method How [collapse_top_n()] picks features: `"per_sample"` (default) keeps the `top_n`
+#'   most abundant of every sample, so the legend can hold many more than `top_n` taxa when samples
+#'   differ; `"mean"` keeps at most `top_n`, the highest by mean.
 #' @param facet_variable Optional metadata column splitting samples into panels.
 #' @param annotation_variables Optional metadata columns drawn as colour strips under the bars.
-#' @param annotation_colours Named list of colour vectors for `annotation_variables`.
+#' @param annotation_colours Named list of colour vectors for `annotation_variables`; variables not in
+#'   it get generated colours.
 #' @param annotation_height Height of each annotation strip, in cm.
 #' @param y_label Y axis title; defaults from the profile value type.
-#' @param legend_title Legend title.
+#' @param legend_title Legend title; none by default.
 #' @param legend_ncol Legend columns; by default two when there are more than 25 entries.
 #' @param legend_position Legend position (`"right"`, `"bottom"`, `"none"`, ...).
 #' @param bar_width Bar width (1 leaves no gap between samples).

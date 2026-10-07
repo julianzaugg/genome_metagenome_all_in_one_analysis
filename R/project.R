@@ -4,8 +4,8 @@
 #' Existing files are never overwritten.
 #'
 #' @param path Project directory (created if needed).
-#' @param mode `"metagenome"` or `"isolate"`.
-#' @param overwrite Overwrite existing template files.
+#' @param mode `"metagenome"` (default) or `"isolate"`.
+#' @param overwrite Overwrite existing template files (default `FALSE`, existing files are kept).
 #' @return The project path, invisibly.
 #' @export
 create_project <- function(path, mode = c("metagenome", "isolate"), overwrite = FALSE){
@@ -67,8 +67,9 @@ print.gm_project <- function(x, ...){
 #' loaded it (restart R).
 #'
 #' @param project.l A `gm_project`.
-#' @param path Path to the rds file; defaults to the project's `Result_other/processed.rds`.
-#' @param config_path Path to `config.yml`, used to find the project when `path` is not given.
+#' @param path Path to the rds file; `NULL` (default) uses the project's `Result_other/processed.rds`.
+#' @param config_path Path to `config.yml` (default `"config.yml"` in the working directory), used to
+#'   find the project when `path` is not given.
 #' @return `save_processed()` returns the path invisibly; `load_processed()` returns the `gm_project`.
 #' @export
 save_processed <- function(project.l, path = NULL){
@@ -126,7 +127,8 @@ refresh_palettes <- function(project.l){
 #' Metadata for analyses, with excluded samples removed
 #'
 #' @param project.l A `gm_project`.
-#' @param include_excluded Keep excluded samples.
+#' @param include_excluded Keep samples excluded from analyses (`Excluded`: config `exclude_column` or
+#'   `exclude_samples`); default `FALSE`.
 #' @return Data frame.
 #' @export
 analysis_metadata <- function(project.l, include_excluded = FALSE){
@@ -138,8 +140,10 @@ analysis_metadata <- function(project.l, include_excluded = FALSE){
 #'
 #' @param project.l A `gm_project`.
 #' @param name Profile name (see `names(project.l$profiles)`).
-#' @param include_excluded Keep excluded samples.
-#' @param renormalise Rescale relative abundance to 100 after removing samples.
+#' @param include_excluded Keep samples excluded from analyses (`Excluded`: config `exclude_column` or
+#'   `exclude_samples`); default `FALSE`.
+#' @param renormalise Rescale each sample of a relative abundance profile to sum to 100 after removing
+#'   samples (default `TRUE`); other value types are not changed.
 #' @return `gm_profile`.
 #' @export
 get_profile <- function(project.l, name, include_excluded = FALSE, renormalise = TRUE){
@@ -175,7 +179,7 @@ taxonomic_profile_names <- function(project.l){
 #'
 #' @param path Project directory for the config, palettes and any outputs; a new temporary
 #'   directory by default.
-#' @param mode `"metagenome"` or `"isolate"`.
+#' @param mode `"metagenome"` (default) or `"isolate"`.
 #' @return A processed `gm_project`, as returned by [load_processed()] in an analysis script.
 #' @export
 example_project <- function(path = tempfile("gmaio_example_"), mode = c("metagenome", "isolate")){

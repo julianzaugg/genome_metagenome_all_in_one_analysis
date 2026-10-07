@@ -7,7 +7,7 @@
 rsync_filter(mode = c("all", "metagenome", "isolate"))
 }
 \arguments{
-\item{mode}{\code{"all"}, \code{"metagenome"} or \code{"isolate"}.}
+\item{mode}{\code{"all"} (default, both modes), \code{"metagenome"} or \code{"isolate"}.}
 }
 \value{
 Character vector of filter lines.

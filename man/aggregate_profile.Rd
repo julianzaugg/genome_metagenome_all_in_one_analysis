@@ -9,16 +9,17 @@ aggregate_profile(profile, rank = NULL, by = NULL, split = NULL)
 \arguments{
 \item{profile}{A \code{gm_profile}.}
 
-\item{rank}{Taxonomic rank; features need rank columns (\code{Domain}..\code{Species}).}
+\item{rank}{Taxonomic rank, e.g. \code{"genus"}; features need rank columns (\code{Domain}..\code{Species}).
+Give exactly one of \code{rank} or \code{by}.}
 
-\item{by}{Alternatively, an annotation column to group by. \code{NA} becomes \code{"Unassigned"}.}
+\item{by}{Annotation column to group by, instead of \code{rank}. \code{NA} and empty values become \code{"Unassigned"}.}
 
 \item{split}{Separator for multi-valued \code{by} entries (e.g. \code{";"} for \code{"GH13;GH77"});
-each value receives the full feature value.}
+each value receives the full feature value. \code{NULL} (default) treats every entry as one value.}
 }
 \value{
 Aggregated \code{gm_profile}.
 }
 \description{
-Aggregate a profile to a taxonomic rank or annotation column
+Values of features in the same group are summed (presence profiles stay 0/1).
 }

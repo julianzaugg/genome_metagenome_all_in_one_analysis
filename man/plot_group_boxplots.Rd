@@ -40,36 +40,40 @@ plot_group_boxplots(
 
 \item{group}{Column on the x axis.}
 
-\item{colours.v}{Named colours for \code{group}.}
+\item{colours.v}{Named colours for \code{group}; generated when \code{NULL} (default).}
 
 \item{pairwise_test}{\code{"dunn"} (default, post-hoc after Kruskal-Wallis) or \code{"wilcoxon"},
 for more than two groups.}
 
-\item{p_adjust_method}{Correction for the pairwise tests within each panel.}
+\item{p_adjust_method}{Correction for the pairwise tests within each panel (default \code{"BH"},
+see \code{\link[stats:p.adjust]{stats::p.adjust()}}).}
 
-\item{show_test}{Print the panel test (Wilcoxon or Kruskal-Wallis p) above the boxes.}
+\item{show_test}{Print the panel test (Wilcoxon or Kruskal-Wallis p) above the boxes (default \code{TRUE}).}
 
-\item{brackets}{Draw brackets between pairs with \code{P_adjusted < bracket_alpha} (more than two groups).}
+\item{brackets}{Draw brackets between pairs with \code{P_adjusted < bracket_alpha} (default \code{TRUE};
+more than two groups only).}
 
-\item{bracket_alpha}{Adjusted p value below which a pair gets a bracket.}
+\item{bracket_alpha}{Adjusted p value below which a pair gets a bracket (default \code{0.05}).}
 
-\item{bracket_label}{\code{"stars"} (\code{*}, \verb{**}, \verb{***}) or \code{"p"} (the adjusted p value).}
+\item{bracket_label}{\code{"stars"} (default; \code{*}, \verb{**}, \verb{***}) or \code{"p"} (the adjusted p value).}
 
 \item{bracket_size}{Font size of bracket labels, in points.}
 
 \item{shape_by}{Optional column shown as point shape (a legend is added).}
 
-\item{shapes}{Named point shapes for \code{shape_by}; filled shapes (21-25) take the group colour.}
+\item{shapes}{Named point shapes for \code{shape_by}; filled shapes (21-25) take the group colour.
+\code{NULL} (default) uses filled shapes 21, 24, 22, 23, 25 in turn.}
 
 \item{box_width, box_alpha}{Box width and fill transparency.}
 
 \item{point_size, point_alpha, jitter_width}{Point size, transparency and horizontal jitter.}
 
-\item{panel_labels}{Named panel titles, e.g. \code{c(Richness = "Observed genera")}.}
+\item{panel_labels}{Named panel titles, e.g. \code{c(Richness = "Observed genera")}; panels not named
+keep their \code{by} value.}
 
-\item{x_label, y_label}{Axis titles.}
+\item{x_label, y_label}{Axis titles; none by default.}
 
-\item{ncol}{Number of panel columns.}
+\item{ncol}{Number of panel columns; \code{NULL} (default) uses up to 4.}
 
 \item{free_y}{Give every panel its own y axis.}
 

@@ -2,6 +2,7 @@
 #'
 #' @param profile A cluster presence `gm_profile` (`virus_clusters` or `plasmid_clusters`).
 #' @param min_length Optional minimum representative length (bp); needs a `Length` feature column.
+#'   Every cluster is kept when `NULL` (default).
 #' @return List with `richness` (clusters per sample) and `prevalence` (samples per cluster).
 #' @export
 mobile_element_summary <- function(profile, min_length = NULL){
@@ -41,7 +42,7 @@ plot_mobile_prevalence <- function(prevalence.df, n_samples, title = NULL){
 #' @param read_stats.df Read statistics with `Sample_ID` and a depth column.
 #' @param metadata.df Metadata.
 #' @param colour_by Metadata column for colour.
-#' @param colours.v Named colours.
+#' @param colours.v Named colours; generated when `NULL` (default).
 #' @param depth_column Read statistics column used as depth.
 #' @return List with `plot` and `correlation` (Spearman).
 #' @export

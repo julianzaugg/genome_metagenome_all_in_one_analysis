@@ -90,7 +90,8 @@ within_sample_mag_summary <- function(project.l){
 #'
 #' @param mapping.df The `mapping` table from [within_sample_mag_summary()].
 #' @param metadata.df Metadata (sample order and labels, facet variable).
-#' @param sets Genome sets to show, in legend order; sets without data are dropped.
+#' @param sets Genome sets to show, in legend order (default the within-sample and dereplicated HQ
+#'   bins); sets without data are dropped.
 #'   See `unique(mapping.df$Set)` for what is available.
 #' @param metric What to plot (see [within_sample_mag_summary()] for the denominators):
 #'   `"input_reads"` (% of reads after QC and host removal, from CoverM; default),

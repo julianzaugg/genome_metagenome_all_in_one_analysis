@@ -20,12 +20,13 @@ plot_genome_summary(
 
 \item{metadata.df}{Metadata (order, labels, optional fill variable).}
 
-\item{fill_by}{Optional metadata column for bar colour.}
+\item{fill_by}{Optional metadata column for bar colour; all bars are blue when \code{NULL} (default).}
 
-\item{colours.v}{Named colours for \code{fill_by}.}
+\item{colours.v}{Named colours for \code{fill_by}; generated when \code{NULL} (default).}
 
 \item{metrics}{Columns of \code{summary.df} to show, in order: any of \code{"Genome_size"}, \code{"Contigs"},
-\code{"Contig_N50"}, \code{"GC_content"}, \code{"Completeness"}, \code{"Contamination"}, \code{"Mean_coverage"}, \code{"CDS"}.}
+\code{"Contig_N50"}, \code{"GC_content"}, \code{"Completeness"}, \code{"Contamination"}, \code{"Mean_coverage"}, \code{"CDS"}
+(all by default; those missing from \code{summary.df} are skipped).}
 
 \item{bar_width}{Bar width.}
 

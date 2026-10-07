@@ -8,9 +8,10 @@
 #' richness and adds little to Shannon and Simpson.
 #'
 #' @param profile A `gm_profile`.
-#' @param rarefy_depth Optional depth to rarefy read counts to (samples below it are dropped).
+#' @param rarefy_depth Optional depth to rarefy integer read counts to (samples below it are dropped);
+#'   `NULL` (default) does not rarefy.
 #' @param seed Random seed for rarefying.
-#' @param evenness Also report Pielou evenness.
+#' @param evenness Also report Pielou evenness (default `FALSE`).
 #' @return Data frame with `Sample_ID`, `Richness`, `Shannon`, `Simpson`, `Pielou` (with
 #'   `evenness = TRUE`) and, for counts, `Chao1`.
 #' @export
@@ -50,8 +51,9 @@ alpha_diversity <- function(profile, rarefy_depth = NULL, seed = 1234, evenness 
 #' @param diversity.df Result of [alpha_diversity()].
 #' @param metadata.df Metadata; groups are drawn in factor level order.
 #' @param group Metadata column.
-#' @param colours.v Named colours for `group`.
-#' @param measures Measures to plot, in order (those not in `diversity.df` are skipped).
+#' @param colours.v Named colours for `group`; generated when `NULL` (default).
+#' @param measures Measures to plot, in order (default richness, Shannon and Simpson; those not in
+#'   `diversity.df` are skipped).
 #' @param ... Figure and test options passed to [plot_group_boxplots()].
 #' @return List with `plot`, `tests` (per measure) and `pairwise` (pairwise tests with group
 #'   sizes, means and medians, when more than two groups).

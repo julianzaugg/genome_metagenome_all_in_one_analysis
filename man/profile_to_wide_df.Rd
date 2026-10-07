@@ -13,9 +13,11 @@ profile_to_wide_df(
 \arguments{
 \item{profile}{A \code{gm_profile}.}
 
-\item{annotation_columns}{Feature annotation columns to include before the samples.}
+\item{annotation_columns}{Feature annotation columns to include before the samples (missing ones are
+skipped); the \code{Feature_ID} column is renamed to the profile's feature level.}
 
-\item{sample_labels}{Optional named vector mapping sample IDs to column names.}
+\item{sample_labels}{Optional named vector mapping sample IDs to column names; \code{NULL} (default)
+keeps the sample IDs.}
 }
 \value{
 Data frame.

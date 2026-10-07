@@ -9,7 +9,8 @@ combined_metadata(project.l, include_excluded = FALSE)
 \arguments{
 \item{project.l}{A \code{gm_project} with comparison samples (\code{\link[=add_comparison]{add_comparison()}}).}
 
-\item{include_excluded}{Keep samples excluded from analyses.}
+\item{include_excluded}{Keep samples excluded from analyses (\code{Excluded}: config \code{exclude_column} or
+\code{exclude_samples}); default \code{FALSE}.}
 }
 \value{
 Data frame with \code{Sample_ID}, \code{Sample_label}, \code{Excluded}, \code{Dataset} (the

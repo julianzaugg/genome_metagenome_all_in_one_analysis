@@ -4,8 +4,8 @@
 #' first (e.g. [filter_profile()] and [top_features()]); every feature it contains is drawn.
 #' See `vignette("heatmaps", package = "gmaio")` for worked examples.
 #'
-#' **Values and colours.** `transform` is explicit: `"log10"` (log10 of value plus half
-#' the smallest non-zero value, legend back-transformed to the original units), `"sqrt"`,
+#' **Values and colours.** `transform` is `"log10"` by default (log10 of value plus half
+#' the smallest non-zero value, legend back-transformed to the original units), or `"sqrt"`,
 #' `"zscore"` (per feature, of log10 values) or `"none"`. Zeros are drawn in `zero_colour`
 #' (except for `"zscore"`) so they are never confused with small values. `legend_breaks`
 #' are in the original units; the colour ramp is spread evenly over them, and values beyond
@@ -22,14 +22,17 @@
 #' @param profile A `gm_profile`.
 #' @param metadata.df Metadata; samples are drawn in its row order.
 #' @param palettes.l Project palettes, used for column annotations and the taxa row annotation.
-#' @param transform Value transform: `"log10"`, `"sqrt"`, `"zscore"` or `"none"`.
+#' @param transform Value transform: `"log10"` (default), `"sqrt"`, `"zscore"` or `"none"`, as described above.
 #'
 #' @param colours Colour ramp for the values: a vector of colours (low to high), or the
 #'   name of a [grDevices::hcl.colors()] palette such as `"Viridis"`, `"Mako"` or `"YlOrRd"`
 #'   (sequential palettes run light to dark). Default viridis, or blue-white-red for `"zscore"`.
 #' @param legend_breaks Legend (and colour) breaks in original units, e.g. `c(0.01, 0.1, 1, 10, 40)`.
-#' @param legend_labels Labels for `legend_breaks`, e.g. `c("0.01", "0.1", "1", "10", ">= 40")`.
-#' @param legend_title Legend title; defaults from the transform.
+#'   `NULL` (default) uses powers of ten for `"log10"` and ComplexHeatmap's own breaks otherwise,
+#'   with the colour ramp spread over the data range.
+#' @param legend_labels Labels for `legend_breaks`, e.g. `c("0.01", "0.1", "1", "10", ">= 40")`;
+#'   `NULL` (default) prints the break values.
+#' @param legend_title Legend title; `NULL` (default) uses `"Value"`, or `"Z-score"` for `"zscore"`.
 #' @param zero_colour Colour for cells with a value of zero; `NULL` to colour them from the ramp.
 #' @param zero_legend Label of the legend key for `zero_colour`; `NULL` for no key.
 #'
@@ -38,13 +41,13 @@
 #' @param row_title,column_title Axis titles for the whole heatmap, e.g. `"Genus"` and `"Sample"`.
 #' @param row_title_side,column_title_side Sides for the axis titles.
 #'
-#' @param column_split Metadata column splitting the columns into blocks.
-#' @param row_split Feature column splitting the rows into blocks (e.g. `"Phylum"`).
-#' @param column_annotations Metadata columns drawn as column annotations. Discrete columns use
-#'   the project palettes; numeric columns get a continuous colour scale.
+#' @param column_split Metadata column splitting the columns into blocks; no split by default.
+#' @param row_split Feature column splitting the rows into blocks (e.g. `"Phylum"`); no split by default.
+#' @param column_annotations Metadata columns drawn as column annotations; none by default. Discrete
+#'   columns use the project palettes; numeric columns get a continuous colour scale.
 #' @param annotation_colours Named list of colours for column annotations, overriding
 #'   `palettes.l`: named vectors for discrete columns, [circlize::colorRamp2()] functions for numeric ones.
-#' @param row_annotation Feature columns drawn as row annotations (e.g. `"Phylum"`).
+#' @param row_annotation Feature columns drawn as row annotations (e.g. `"Phylum"`); none by default.
 #' @param row_annotation_colours Colours for `row_annotation`: a named vector (one annotation) or
 #'   a named list of them. Defaults to the taxa palette for rank columns, else generated colours.
 #' @param row_annotation_legends Row annotations that get a legend; `NULL` for all. Useful when
@@ -52,10 +55,12 @@
 #' @param column_annotation_side,row_annotation_side Where annotations are drawn.
 #' @param annotation_size Height (column) or width (row) of each annotation track, in cm.
 #'
-#' @param cluster_rows,cluster_columns Cluster rows/columns (within splits).
-#' @param show_row_dend,show_column_dend Draw the dendrograms.
-#' @param clustering_distance,clustering_method Distance (see [stats::dist()]) and linkage
-#'   (see [stats::hclust()]) for clustering, applied to the transformed values.
+#' @param cluster_rows,cluster_columns Cluster rows/columns (within splits); by default rows are
+#'   clustered (`cluster_rows = TRUE`) and columns are not (`cluster_columns = FALSE`).
+#' @param show_row_dend,show_column_dend Draw the dendrograms (both `FALSE` by default).
+#' @param clustering_distance,clustering_method Distance (see [stats::dist()]; default `"euclidean"`)
+#'   and linkage (see [stats::hclust()]; default `"average"`) for clustering, applied to the
+#'   transformed values.
 #' @param order_rows_by When rows are not clustered: `NULL` (profile order), `"abundance"`
 #'   (mean, decreasing), `"label"`, or feature columns (e.g. `"Phylum"`, then by abundance).
 #' @param order_columns_by When columns are not clustered: `NULL` (metadata order), `"label"`,
@@ -63,7 +68,7 @@
 #'
 #' @param cell_size,cell_width,cell_height Cell size in cm (`cell_width`/`cell_height` default to `cell_size`).
 #' @param cell_border_colour,cell_border_width Cell border colour and line width.
-#' @param show_values Print values in the cells (original units).
+#' @param show_values Print values in the cells, in original units (default `FALSE`).
 #' @param value_digits Significant digits for printed values.
 #' @param value_size Font size of printed values.
 #' @param value_colour Colour of printed values; `NULL` picks black or white by cell colour.
@@ -76,7 +81,7 @@
 #' @param annotation_name_size Font size of annotation names.
 #' @param legend_title_size,legend_label_size Font sizes in legends.
 #' @param legend_side Side for all legends (`"right"`, `"left"`, `"top"` or `"bottom"`).
-#' @param merge_legends Put the value legend and annotation legends in one column.
+#' @param merge_legends Put the value legend and annotation legends in one column (default `FALSE`).
 #' @param padding Space around the figure in mm: bottom, left, top, right.
 #' @param ... Further arguments to [ComplexHeatmap::Heatmap()], overriding those set here.
 #' @return A ComplexHeatmap `Heatmap` with drawing settings attached; save it with [save_plot()]

@@ -20,7 +20,7 @@ run_permdisp(
 
 \item{group}{Metadata column defining groups.}
 
-\item{permutations}{Number of permutations.}
+\item{permutations}{Number of permutations (default 999).}
 
 \item{seed}{Random seed.}
 

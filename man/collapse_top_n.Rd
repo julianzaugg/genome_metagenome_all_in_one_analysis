@@ -15,20 +15,23 @@ collapse_top_n(
 \arguments{
 \item{profile}{A \code{gm_profile}.}
 
-\item{top_n}{Number of features.}
+\item{top_n}{Number of features kept per sample (\code{"per_sample"}) or in total (\code{"mean"}); default 10.}
 
-\item{min_abundance}{Minimum value for a feature to be kept.}
+\item{min_abundance}{Minimum value for a feature to be kept (default \code{0}, no minimum).}
 
-\item{method}{\code{"per_sample"} or \code{"mean"}.}
+\item{method}{\code{"per_sample"} (default) or \code{"mean"}, as described above.}
 
 \item{merge_unassigned}{Merge features with no rank below domain (\code{Unassigned},
-\verb{Unclassified d__...}) into one \code{"Unassigned"} row.}
+\verb{Unclassified d__...}) into one \code{"Unassigned"} row, which is always kept (default \code{FALSE}).}
 }
 \value{
 \code{gm_profile} with an \code{Other} row when anything was collapsed.
 }
 \description{
-Features are kept if they are among the \code{top_n} most abundant in any sample
-(\code{method = "per_sample"}) or by mean across samples (\code{method = "mean"}), and reach
-\code{min_abundance} there. Remaining values are summed into an \code{"Other"} row.
+By default (\code{method = "per_sample"}) a feature is kept if it is among the \code{top_n} most
+abundant in any sample and reaches \code{min_abundance} there, so more than \code{top_n} features can be
+kept when samples differ.
+With \code{method = "mean"}, the \code{top_n} features with the highest mean across samples are kept
+(those whose maximum reaches \code{min_abundance}).
+Remaining values are summed into an \code{"Other"} row; kept features are ordered by mean, decreasing.
 }

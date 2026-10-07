@@ -146,7 +146,7 @@ project_path <- function(config.l, ...){
 #' Build an output path, creating the parent directory
 #'
 #' @param config.l A `gm_config`.
-#' @param type One of `"tables"`, `"figures"`, `"other"`.
+#' @param type Output folder: `"tables"` (default), `"figures"` or `"other"`, as set in the config `outputs:`.
 #' @param ... Path components below the output directory.
 #' @return Character path.
 #' @export

@@ -9,9 +9,9 @@ assign_colours(values.v, existing.v = NULL, fixed.v = NULL, avoid.v = NULL)
 \arguments{
 \item{values.v}{Vector (factor levels are respected, otherwise sorted unique values).}
 
-\item{existing.v}{Named vector of previously assigned colours.}
+\item{existing.v}{Named vector of previously assigned colours; none by default.}
 
-\item{fixed.v}{Named vector of user-fixed colours.}
+\item{fixed.v}{Named vector of user-fixed colours, which take precedence over \code{existing.v}; none by default.}
 
 \item{avoid.v}{Colours to leave out when generating new ones (e.g. those of another
 variable), as long as enough other colours remain.}

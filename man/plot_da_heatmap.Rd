@@ -28,13 +28,14 @@ plot_da_heatmap(
 
 \item{group}{Metadata column that was tested; used for the column split and the track colours.}
 
-\item{palettes.l}{Project palettes (\code{project.l$palettes}).}
+\item{palettes.l}{Project palettes (\code{project.l$palettes}); group colours are generated when
+\code{group} has no palette.}
 
-\item{min_methods}{Minimum number of methods calling a feature.}
+\item{min_methods}{Minimum number of methods calling a feature (default 1, every called feature).}
 
 \item{max_features}{Maximum number of features shown (most methods first).}
 
-\item{methods}{Methods drawn as tracks.}
+\item{methods}{Methods drawn as tracks (methods without results are skipped).}
 
 \item{rank_annotation}{Feature column drawn as the first track (e.g. \code{"Phylum"}), when present.}
 

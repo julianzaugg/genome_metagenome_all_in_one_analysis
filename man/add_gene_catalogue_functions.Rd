@@ -13,9 +13,10 @@ add_gene_catalogue_functions(
 \arguments{
 \item{project.l}{A \code{gm_project}.}
 
-\item{catalogue}{\code{"base"} or \code{"expanded"}.}
+\item{catalogue}{\code{"base"} (default) or \code{"expanded"}, as described above.}
 
-\item{min_annotated_fraction}{Error when fewer catalogue genes than this have a DRAM row.}
+\item{min_annotated_fraction}{Stop with an error when less than this fraction (0 to 1) of catalogue
+genes have a DRAM annotation row (default \code{0.9}), which points to mismatched gene IDs.}
 }
 \value{
 Updated \code{gm_project} with \code{functions_ko}, \code{functions_cazy}, \code{functions_cazy_substrate}

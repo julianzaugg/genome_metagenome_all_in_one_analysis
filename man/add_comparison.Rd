@@ -9,7 +9,8 @@ add_comparison(project.l, min_annotated_fraction = 0.9)
 \arguments{
 \item{project.l}{A \code{gm_project}.}
 
-\item{min_annotated_fraction}{Error when fewer catalogue genes than this have a DRAM row.}
+\item{min_annotated_fraction}{Stop with an error when less than this fraction (0 to 1) of catalogue
+genes have a DRAM annotation row (default \code{0.9}), which points to mismatched gene IDs.}
 }
 \value{
 Updated \code{gm_project} with \code{project.l$comparison}: \code{metadata}, \code{profiles}, \code{tables}

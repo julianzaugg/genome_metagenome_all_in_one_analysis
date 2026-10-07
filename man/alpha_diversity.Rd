@@ -9,11 +9,12 @@ alpha_diversity(profile, rarefy_depth = NULL, seed = 1234, evenness = FALSE)
 \arguments{
 \item{profile}{A \code{gm_profile}.}
 
-\item{rarefy_depth}{Optional depth to rarefy read counts to (samples below it are dropped).}
+\item{rarefy_depth}{Optional depth to rarefy integer read counts to (samples below it are dropped);
+\code{NULL} (default) does not rarefy.}
 
 \item{seed}{Random seed for rarefying.}
 
-\item{evenness}{Also report Pielou evenness.}
+\item{evenness}{Also report Pielou evenness (default \code{FALSE}).}
 }
 \value{
 Data frame with \code{Sample_ID}, \code{Richness}, \code{Shannon}, \code{Simpson}, \code{Pielou} (with

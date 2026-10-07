@@ -20,7 +20,7 @@ plot_nonpareil_curves(
 
 \item{colour_by}{Metadata column for colour (default \code{"Sample_label"}).}
 
-\item{colours.v}{Named colours for \code{colour_by}.}
+\item{colours.v}{Named colours for \code{colour_by}; generated when \code{NULL} (default).}
 
 \item{facet_by}{Optional metadata column for panels.}
 

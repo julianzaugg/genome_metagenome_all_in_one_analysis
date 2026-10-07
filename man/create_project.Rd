@@ -9,9 +9,9 @@ create_project(path, mode = c("metagenome", "isolate"), overwrite = FALSE)
 \arguments{
 \item{path}{Project directory (created if needed).}
 
-\item{mode}{\code{"metagenome"} or \code{"isolate"}.}
+\item{mode}{\code{"metagenome"} (default) or \code{"isolate"}.}
 
-\item{overwrite}{Overwrite existing template files.}
+\item{overwrite}{Overwrite existing template files (default \code{FALSE}, existing files are kept).}
 }
 \value{
 The project path, invisibly.

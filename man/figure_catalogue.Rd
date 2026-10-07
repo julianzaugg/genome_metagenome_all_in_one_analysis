@@ -7,7 +7,7 @@
 figure_catalogue(mode = c("all", "metagenome", "isolate"))
 }
 \arguments{
-\item{mode}{\code{"all"}, \code{"metagenome"} or \code{"isolate"}.}
+\item{mode}{\code{"all"} (default, both modes), \code{"metagenome"} or \code{"isolate"}.}
 }
 \value{
 Data frame with \code{Folder}, \code{Mode}, \code{Written_by}, \code{Files} (file names, with

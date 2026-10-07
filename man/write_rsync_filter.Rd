@@ -10,9 +10,9 @@ write_rsync_filter(
 )
 }
 \arguments{
-\item{path}{Filter file to write.}
+\item{path}{Filter file to write (default \code{"gmaio_filter.txt"} in the working directory).}
 
-\item{mode}{\code{"all"}, \code{"metagenome"} or \code{"isolate"}.}
+\item{mode}{\code{"all"} (default, both modes), \code{"metagenome"} or \code{"isolate"}.}
 }
 \value{
 \code{path}, invisibly.

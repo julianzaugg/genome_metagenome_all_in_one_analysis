@@ -6,7 +6,7 @@
 #' @param nonpareil.l Nonpareil tables from [add_nonpareil()] (`project.l$tables$nonpareil`).
 #' @param metadata.df Metadata; only its samples are plotted.
 #' @param colour_by Metadata column for colour (default `"Sample_label"`).
-#' @param colours.v Named colours for `colour_by`.
+#' @param colours.v Named colours for `colour_by`; generated when `NULL` (default).
 #' @param facet_by Optional metadata column for panels.
 #' @param min_effort_gbp Left limit of the x axis (Gbp).
 #' @return A ggplot.
@@ -54,7 +54,7 @@ plot_nonpareil_curves <- function(nonpareil.l, metadata.df, colour_by = "Sample_
 #' @param summary.df `project.l$tables$nonpareil$summary`.
 #' @param metadata.df Metadata.
 #' @param group Metadata column.
-#' @param colours.v Named colours for `group`.
+#' @param colours.v Named colours for `group`; generated when `NULL` (default).
 #' @param ... Figure and test options passed to [plot_group_boxplots()].
 #' @return List with `plot`, `tests` and `pairwise` (more than two groups).
 #' @export
