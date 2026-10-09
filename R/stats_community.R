@@ -133,11 +133,12 @@ run_pairwise_permanova <- function(distance.d, metadata.df, group, permutations 
 #' @export
 permanova_caption <- function(permanova.df, permdisp.l = NULL){
   terms.df <- permanova.df[!permanova.df$Term %in% c("Residual", "Total"), , drop = FALSE]
-  caption.v <- sprintf("PERMANOVA %s: R\u00b2 = %.3f, p = %s", terms.df$Term, terms.df$R2, format_p(terms.df$P_value))
-  if (!is.null(permdisp.l)) caption.v <- c(caption.v, sprintf("PERMDISP: p = %s", format_p(permdisp.l$overall$P_value[1])))
+  caption.v <- sprintf("PERMANOVA %s: R\u00b2 = %.3f, %s", terms.df$Term, terms.df$R2, p_label(terms.df$P_value))
+  if (!is.null(permdisp.l)) caption.v <- c(caption.v, paste("PERMDISP:", p_label(permdisp.l$overall$P_value[1])))
   paste(caption.v, collapse = "; ")
 }
 
-format_p <- function(p.v){
-  ifelse(is.na(p.v), "NA", ifelse(p.v < 0.001, "<0.001", formatC(p.v, format = "f", digits = 3)))
+# "p = 0.012", or "p < 0.001" below 0.001
+p_label <- function(p.v){
+  ifelse(is.na(p.v), "p = NA", ifelse(p.v < 0.001, "p < 0.001", paste("p =", formatC(p.v, format = "f", digits = 3))))
 }

@@ -142,7 +142,11 @@ show_plot(diversity.l$plot)
 ```
 
 Richness depends on sequencing depth.
-Comparison samples are often sequenced to a different depth than the study's, so compare richness between datasets only when depths are similar; `project.l$comparison$tables$read_stats` has the comparison samples' raw read counts.
+Comparison samples are often sequenced to a different depth than the study's, so compare richness between datasets only when depths are similar, or use the depth-adjusted datasets.
+`code/comparison.R` computes alpha diversity for the datasets of `code/diversity.R` that the comparison samples have, including SingleM marker gene reads rarefied, SingleM marker gene sequences (OTUs) rarefied and sylph approximated at a common depth, plus the MAG read counts rarefied (`mags_rarefied`), and plots each measure against depth, coloured by dataset.
+It writes them to `Study_vs_comparison_alpha_diversity.xlsx` and the `alpha_diversity__<dataset>` and `alpha_diversity__<dataset>__vs_depth` figures.
+`prokaryotic_depth(project.l, include_comparison = TRUE)` gives the depth of both datasets; `vignette("diversity", package = "gmaio")` explains the depth-adjusted measures and `exclude_unresolved`.
+The comparison reads were mapped to the study's dereplicated bins only, so MAG measures count only the genomes the study recovered and are lower in the comparison samples by design.
 
 ## Detecting the study's MAGs
 

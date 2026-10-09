@@ -293,8 +293,8 @@ plot_pairs_by_group <- function(comparison.l, colours.v = NULL, y_label = NULL, 
   fill.v <- c(colours.v[setdiff(levels.v, "Between groups")], `Between groups` = special_colours()[["Other"]])
   fill.v[is.na(fill.v)] <- assign_colours(names(fill.v)[is.na(fill.v)])
   caption.s <- if (!is.null(comparison.l$test)){
-    sprintf("Within minus between groups: %s; permutation p = %s (%d permutations)",
-            format(signif(comparison.l$test$Observed, 3)), format_p(comparison.l$test$P_value), comparison.l$test$Permutations)
+    sprintf("Within minus between groups: %s; permutation %s (%d permutations)",
+            format(signif(comparison.l$test$Observed, 3)), p_label(comparison.l$test$P_value), comparison.l$test$Permutations)
   }
   if (is.logical(pairs.df[[value.s]])){
     plot.df <- stats::aggregate(pairs.df[[value.s]], list(Category = pairs.df$Category), function(x) c(mean(x) * 100, length(x)))

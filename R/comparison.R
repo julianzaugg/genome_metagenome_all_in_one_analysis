@@ -83,10 +83,14 @@ add_comparison <- function(project.l, min_annotated_fraction = 0.9){
   coverm.df <- read.f("comparison_reads_coverm_bins", read_coverm_abundances)
   genes.p <- read.f("comparison_reads_rpkm_normalised", read_rpkm)
   read_stats.df <- read.f("comparison_reads_stats", read_seqkit_raw_stats)
+  otus.df <- read.f("comparison_reads_singlem_otu", read_singlem_otu_table)
+  sylph.df <- read.f("comparison_reads_sylph_profile", read_sylph_profile)
+  if (!is.null(sylph.df)) sylph.df$Sample <- clean_read_file_name(sylph.df$Sample_file)
 
   # Link every name the outputs use to the comparison metadata, then keep just the samples present
   observed.v <- unique(c(unlist(lapply(profiles.l, profile_samples)), fraction.df$sample, coverm.df$Sample,
-                         if (!is.null(genes.p)) profile_samples(genes.p), read_stats.df$Sample))
+                         if (!is.null(genes.p)) profile_samples(genes.p), read_stats.df$Sample, otus.df$Sample,
+                         sylph.df$Sample))
   resolved.v <- resolve_sample_ids(observed.v, metadata.df$Sample_ID)
   unmatched.v <- observed.v[is.na(resolved.v)]
   if (length(unmatched.v) > 0){
@@ -135,6 +139,16 @@ add_comparison <- function(project.l, min_annotated_fraction = 0.9){
   if (!is.null(read_stats.df)){
     comparison.l$tables$read_stats <- link_table_samples(read_stats.df, "Sample", metadata.df, "Comparison read statistics")
   }
+  if (!is.null(otus.df)){
+    counts.p <- link_profile_samples(singlem_read_count_profile(otus.df), metadata.df)
+    counts.p$source <- "singlem_read_count"
+    comparison.l$profiles$singlem_read_count <- counts.p
+    otus.df <- link_table_samples(otus.df, "Sample", metadata.df, "Comparison SingleM OTU table")
+    otus.df$Sample <- NULL
+    comparison.l$tables$singlem_otus <- otus.df
+  }
+  if (!is.null(sylph.df)) comparison.l$tables$sylph_profile <- link_table_samples(sylph.df, "Sample", metadata.df,
+                                                                                  "Comparison sylph profile")
 
   if (!is.null(coverm.df)){
     coverm.df <- link_table_samples(coverm.df, "Sample", metadata.df, "Comparison CoverM")

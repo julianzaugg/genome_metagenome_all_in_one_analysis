@@ -25,7 +25,9 @@ add_sylph <- function(project.l){
     project.l$profiles[[profile$source]] <- link_profile_samples(profile, project.l$metadata)
   }
   if (has_output(config.l, "sylph_profile")){
-    project.l$tables$sylph_profile <- read_sylph_profile(locate_output(config.l, "sylph_profile"))
+    sylph.df <- read_sylph_profile(locate_output(config.l, "sylph_profile"))
+    sylph.df$Sample <- clean_read_file_name(sylph.df$Sample_file)
+    project.l$tables$sylph_profile <- link_table_samples(sylph.df, "Sample", project.l$metadata, "sylph profile")
   }
   project.l
 }
@@ -34,7 +36,9 @@ add_sylph <- function(project.l){
 #'
 #' Adds `singlem_coverage`, `singlem_relative` and, when the prokaryotic fraction is
 #' available, `singlem_scaled` (relative abundance x read fraction / 100, i.e. percent of
-#' all reads).
+#' all reads). With the OTU table, also `singlem_read_count` (marker gene reads per lineage, see
+#' [singlem_read_count_profile()]) and `project.l$tables$singlem_otus` (see
+#' [singlem_otu_diversity()]).
 #'
 #' @param project.l A `gm_project`.
 #' @return Updated `gm_project`.
@@ -57,6 +61,15 @@ add_singlem <- function(project.l){
     scaled.p <- scale_profile(relative.p, factors.v)
     scaled.p$source <- "singlem_scaled"
     project.l$profiles$singlem_scaled <- scaled.p
+  }
+  if (has_output(config.l, "singlem_otu")){
+    otus.df <- read_singlem_otu_table(locate_output(config.l, "singlem_otu"))
+    counts.p <- link_profile_samples(singlem_read_count_profile(otus.df), project.l$metadata)
+    counts.p$source <- "singlem_read_count"
+    project.l$profiles$singlem_read_count <- counts.p
+    otus.df <- link_table_samples(otus.df, "Sample", project.l$metadata, "SingleM OTU table")
+    otus.df$Sample <- NULL
+    project.l$tables$singlem_otus <- otus.df
   }
   project.l
 }

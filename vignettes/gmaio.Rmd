@@ -158,7 +158,7 @@ gmaio::write_xlsx_tables(list(PERMANOVA = permanova.df), gmaio::output_path(proj
 | `barcharts.R` | `plot_stacked_barchart()` |
 | `heatmaps.R` | `plot_heatmap()` |
 | `ordination.R` | `run_ordination()`, `plot_ordination()`, `run_permanova()`, `run_pairwise_permanova()`, `run_permdisp()`, `plot_loadings()` |
-| `diversity.R` | `alpha_diversity()`, `plot_alpha_diversity()` (built on `plot_group_boxplots()`) |
+| `diversity.R` | `alpha_diversity()`, `plot_alpha_diversity()` (built on `plot_group_boxplots()`), `prokaryotic_depth()`, `plot_diversity_vs_depth()`, `singlem_otu_diversity()`, `sylph_profile_at_depth()` |
 | `differential_abundance.R` | `run_differential_abundance()`, `da_consensus()`, `plot_da_consensus()`, `plot_da_heatmap()`, `plot_feature_boxplots()` |
 | `functional_profiles.R` | `plot_heatmap()`, `plot_stacked_barchart()` |
 | `mag_summary.R` | `plot_mag_quality()`, `plot_mag_counts()`, `plot_mag_taxonomy()`, `within_sample_mag_summary()`, `plot_mag_mapping()`, `plot_marker_tree()` |

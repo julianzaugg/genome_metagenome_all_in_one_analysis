@@ -7,15 +7,23 @@
 #' (Shannon / log(Richness)) is only added on request: it inherits the depth dependence of
 #' richness and adds little to Shannon and Simpson.
 #'
+#' A profile aggregated to a rank keeps the reads or genomes that could not be classified to that
+#' rank as one feature per resolved parent (e.g. all Lachnospiraceae without a genus), so each
+#' counts as one taxon. `exclude_unresolved = TRUE` leaves these features out, after rarefying, so
+#' the measures describe the taxa resolved at the rank only.
+#' See `vignette("diversity", package = "gmaio")` for how each profile's features are defined.
+#'
 #' @param profile A `gm_profile`.
 #' @param rarefy_depth Optional depth to rarefy integer read counts to (samples below it are dropped);
 #'   `NULL` (default) does not rarefy.
 #' @param seed Random seed for rarefying.
 #' @param evenness Also report Pielou evenness (default `FALSE`).
+#' @param exclude_unresolved Leave out features not resolved at the profile's rank (default
+#'   `FALSE`); has no effect on profiles not aggregated to a taxonomic rank (genomes, MAGs).
 #' @return Data frame with `Sample_ID`, `Richness`, `Shannon`, `Simpson`, `Pielou` (with
 #'   `evenness = TRUE`) and, for counts, `Chao1`.
 #' @export
-alpha_diversity <- function(profile, rarefy_depth = NULL, seed = 1234, evenness = FALSE){
+alpha_diversity <- function(profile, rarefy_depth = NULL, seed = 1234, evenness = FALSE, exclude_unresolved = FALSE){
   check_profile(profile)
   samples.m <- t(profile$values)
   is_count.b <- profile$value_type == "read_count" && all(samples.m == round(samples.m))
@@ -31,6 +39,7 @@ alpha_diversity <- function(profile, rarefy_depth = NULL, seed = 1234, evenness 
       if (grepl("smallest count", conditionMessage(w))) invokeRestart("muffleWarning")
     })
   }
+  if (exclude_unresolved) samples.m <- samples.m[, !unresolved_features(profile)[colnames(samples.m)], drop = FALSE]
   richness.v <- rowSums(samples.m > 0)
   shannon.v <- vegan::diversity(samples.m, index = "shannon")
   diversity.df <- data.frame(Sample_ID = rownames(samples.m), Richness = richness.v, Shannon = shannon.v,
@@ -38,6 +47,24 @@ alpha_diversity <- function(profile, rarefy_depth = NULL, seed = 1234, evenness 
   if (evenness) diversity.df$Pielou <- ifelse(richness.v > 1, shannon.v / log(richness.v), NA_real_)
   if (is_count.b) diversity.df$Chao1 <- vegan::estimateR(samples.m)["S.chao1", ]
   diversity.df
+}
+
+#' Features not resolved at a profile's rank
+#'
+#' @param profile A `gm_profile`, typically from [aggregate_profile()] with a `rank`.
+#' @return Logical vector named by feature: `TRUE` for features with no name at the profile's
+#'   rank (`Unassigned` under a resolved parent). All `FALSE` for profiles whose features are not a
+#'   taxonomic rank (genomes, MAGs, functions).
+#' @export
+unresolved_features <- function(profile){
+  check_profile(profile)
+  features.v <- rownames(profile$values)
+  rank.s <- profile$feature_level
+  if (!isTRUE(rank.s %in% names(taxonomy_ranks())) || !rank_column(rank.s) %in% names(profile$features)){
+    return(stats::setNames(rep(FALSE, length(features.v)), features.v))
+  }
+  names.v <- profile$features[[rank_column(rank.s)]][match(features.v, profile$features$Feature_ID)]
+  stats::setNames(is.na(names.v) | names.v %in% c("", "Unassigned"), features.v)
 }
 
 #' Plot alpha diversity by group

@@ -90,8 +90,7 @@ for (i in which(datasets.df$ordinate)){
   }
 }
 
-# Composition and alpha diversity of the taxonomic datasets. Richness depends on sequencing depth: compare it between
-# datasets only when they were sequenced to similar depths (see the Comparison read statistics in the processed project)
+# Composition of the taxonomic datasets
 top_n.v <- c(phylum = 10, genus = 15)
 for (i in which(!is.na(datasets.df$rank))){
   name.s <- datasets.df$name[i]
@@ -109,23 +108,93 @@ for (i in which(!is.na(datasets.df$rank))){
                                     column_split = "Dataset", column_annotations = "Comparison_group",
                                     row_annotation = "Phylum", show_column_names = FALSE)
   gmaio::save_plot(heatmap.ht, gmaio::figure_path(config.l, "comparison", paste0("heatmap__", name.s)))
-  if (datasets.df$rank[i] == "genus"){
-    diversity.df <- gmaio::alpha_diversity(profiles.l[[name.s]])
-    diversity.l <- gmaio::plot_alpha_diversity(diversity.df, metadata.df, "Comparison_group", group_colours.v,
-                                               show_test = show_statistics.b, brackets = show_statistics.b)
-    gmaio::save_plot(diversity.l$plot, gmaio::figure_path(config.l, "comparison", paste0("alpha_diversity__", name.s)))
-    statistics.l[[paste0(name.s, "_alpha_tests")]] <- diversity.l$tests
-    if (!is.null(diversity.l$pairwise)) statistics.l[[paste0(name.s, "_alpha_pairwise")]] <- diversity.l$pairwise
-  }
 }
 statistics_file.s <- gmaio::output_path(config.l, "tables", "Study_vs_comparison_statistics.xlsx")
 gmaio::write_xlsx_tables(statistics.l, statistics_file.s)
+
+# Alpha diversity by group, for the datasets of diversity.R that the comparison samples have, and against depth.
+# Richness depends on sequencing depth, and the datasets were often sequenced to different depths: compare Shannon and
+# Simpson, or the depth-adjusted datasets (method other than "profile"). The comparison reads were mapped to this
+# study's dereplicated bins only, so MAG measures count only the genomes this study recovered, which lowers them in the
+# comparison samples by design; sylph and SingleM use reference databases (SingleM OTUs need none).
+# How each is calculated: vignette("diversity", package = "gmaio")
+# Leave out taxa not resolved at the rank (see diversity.R)
+exclude_unresolved.b <- FALSE
+# SingleM marker gene reads and MAG reads are rarefied to the smallest sample with at least this many; sylph is scaled
+# to the smallest prokaryotic depth (SingleM estimate, bases) of at least min_prokaryotic_bases.n
+min_singlem_reads.n <- 1000
+min_mag_reads.n <- 5e5
+min_prokaryotic_bases.n <- 1e8
+diversity_datasets.df <- data.frame(
+  profile = c("sylph_taxonomic", "sylph_taxonomic", "singlem_relative", "singlem_relative",
+              "mags_derep_bins_relative_abundance", "mags_derep_bins_read_count", "singlem_read_count",
+              "singlem_read_count", "singlem_otus", "sylph_taxonomic"),
+  rank = c("genus", "species", "genus", "species", NA, NA, "genus", "species", NA, "species"),
+  method = c(rep("profile", 5), rep("rarefied", 3), "singlem_otus", "sylph_at_depth"),
+  name = c("sylph_genus", "sylph_species", "singlem_genus", "singlem_species", "mags", "mags_rarefied",
+           "singlem_rar_genus", "singlem_rar_species", "singlem_otus", "sylph_depth_species")
+)
+singlem_otus.df <- dplyr::bind_rows(project.l$tables$singlem_otus, project.l$comparison$tables$singlem_otus)
+sylph.df <- dplyr::bind_rows(project.l$tables$sylph_profile, project.l$comparison$tables$sylph_profile)
+available.v <- c(gmaio::combined_profile_names(project.l), if (nrow(singlem_otus.df) > 0 &&
+                   !is.null(project.l$comparison$tables$singlem_otus)) "singlem_otus")
+diversity_datasets.df <- diversity_datasets.df[diversity_datasets.df$profile %in% available.v, , drop = FALSE]
+depth.v <- NULL
+if (!is.null(project.l$tables$singlem_fraction) && !is.null(project.l$comparison$tables$singlem_fraction)){
+  depth.v <- gmaio::prokaryotic_depth(project.l, include_comparison = TRUE)
+}
+if (is.null(depth.v) || is.null(project.l$comparison$tables$sylph_profile) || is.null(project.l$tables$sylph_profile)){
+  diversity_datasets.df <- diversity_datasets.df[diversity_datasets.df$method != "sylph_at_depth", , drop = FALSE]
+}
+depth_at_least <- function(depths.v, floor.n) min(depths.v[depths.v >= floor.n])
+dataset_colours.v <- project.l$palettes$Dataset
+diversity_tables.l <- list()
+for (i in seq_len(nrow(diversity_datasets.df))){
+  name.s <- diversity_datasets.df$name[i]
+  method.s <- diversity_datasets.df$method[i]
+  if (method.s == "singlem_otus"){
+    otus.df <- singlem_otus.df[singlem_otus.df$Sample_ID %in% metadata.df$Sample_ID, , drop = FALSE]
+    reads.v <- tapply(otus.df$Reads, otus.df$Sample_ID, sum)
+    diversity.df <- gmaio::singlem_otu_diversity(otus.df, rarefy_depth = depth_at_least(reads.v, min_singlem_reads.n),
+                                                 seed = analysis.l$seed)
+  } else {
+    profile <- gmaio::combined_profile(project.l, diversity_datasets.df$profile[i])
+    if (method.s == "sylph_at_depth"){
+      sylph_samples.df <- sylph.df[sylph.df$Sample_ID %in% metadata.df$Sample_ID, , drop = FALSE]
+      target_depth.n <- depth_at_least(depth.v[intersect(names(depth.v), sylph_samples.df$Sample_ID)], min_prokaryotic_bases.n)
+      profile <- gmaio::sylph_profile_at_depth(sylph_samples.df, depth.v, profile$features, target_depth = target_depth.n)
+    }
+    if (!is.na(diversity_datasets.df$rank[i])) profile <- gmaio::aggregate_profile(profile, rank = diversity_datasets.df$rank[i])
+    rarefy_depth.n <- if (method.s == "rarefied"){
+      depth_at_least(colSums(profile$values), if (grepl("^mags", name.s)) min_mag_reads.n else min_singlem_reads.n)
+    }
+    diversity.df <- gmaio::alpha_diversity(profile, rarefy_depth = rarefy_depth.n, seed = analysis.l$seed,
+                                           exclude_unresolved = exclude_unresolved.b)
+  }
+  diversity.l <- gmaio::plot_alpha_diversity(diversity.df, metadata.df, "Comparison_group", group_colours.v,
+                                             show_test = show_statistics.b, brackets = show_statistics.b)
+  gmaio::save_plot(diversity.l$plot, gmaio::figure_path(config.l, "comparison", paste0("alpha_diversity__", name.s)))
+  diversity_tables.l[[paste0(name.s, "_values")]] <- merge(metadata.df[, c("Sample_ID", "Sample_label", "Dataset",
+                                                                          "Comparison_group")],
+                                                           diversity.df, by = "Sample_ID")
+  diversity_tables.l[[paste0(name.s, "_tests")]] <- diversity.l$tests
+  if (!is.null(diversity.l$pairwise)) diversity_tables.l[[paste0(name.s, "_pairwise")]] <- diversity.l$pairwise
+  if (!is.null(depth.v)){
+    depth.l <- gmaio::plot_diversity_vs_depth(diversity.df, depth.v, metadata.df, "Dataset", dataset_colours.v)
+    gmaio::save_plot(depth.l$plot, gmaio::figure_path(config.l, "comparison", paste0("alpha_diversity__", name.s, "__vs_depth")))
+    diversity_tables.l$Depth_correlation <- rbind(diversity_tables.l$Depth_correlation,
+                                                  data.frame(Profile = name.s, depth.l$correlation))
+  }
+}
+diversity_file.s <- gmaio::output_path(config.l, "tables", "Study_vs_comparison_alpha_diversity.xlsx")
+if (length(diversity_tables.l) > 0) gmaio::write_xlsx_tables(diversity_tables.l, diversity_file.s)
+
 # Summary report (only when outputs: report: true)
 permanova.df <- gmaio::summary_permanova(statistics.l$PERMANOVA, statistics.l$PERMDISP, permdisp_term = "Comparison_group")
-alpha_tests.df <- gmaio::stack_tables(statistics.l[grepl("_alpha_tests$", names(statistics.l))], strip = "_alpha_tests$")
+alpha_tests.df <- gmaio::stack_tables(diversity_tables.l[grepl("_tests$", names(diversity_tables.l))], strip = "_tests$")
 gmaio::record_summary(config.l, "comparison", "Comparison samples",
                       tables = list(`PERMANOVA and PERMDISP` = permanova.df, `Alpha diversity tests` = alpha_tests.df),
-                      figures = summary_figures.l, files = statistics_file.s)
+                      figures = summary_figures.l, files = c(statistics_file.s, diversity_file.s))
 
 # This study's MAGs in the comparison samples
 if ("mags_derep_bins_covered_fraction" %in% gmaio::combined_profile_names(project.l)){

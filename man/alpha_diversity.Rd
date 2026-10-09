@@ -4,7 +4,13 @@
 \alias{alpha_diversity}
 \title{Alpha diversity per sample}
 \usage{
-alpha_diversity(profile, rarefy_depth = NULL, seed = 1234, evenness = FALSE)
+alpha_diversity(
+  profile,
+  rarefy_depth = NULL,
+  seed = 1234,
+  evenness = FALSE,
+  exclude_unresolved = FALSE
+)
 }
 \arguments{
 \item{profile}{A \code{gm_profile}.}
@@ -15,6 +21,9 @@ alpha_diversity(profile, rarefy_depth = NULL, seed = 1234, evenness = FALSE)
 \item{seed}{Random seed for rarefying.}
 
 \item{evenness}{Also report Pielou evenness (default \code{FALSE}).}
+
+\item{exclude_unresolved}{Leave out features not resolved at the profile's rank (default
+\code{FALSE}); has no effect on profiles not aggregated to a taxonomic rank (genomes, MAGs).}
 }
 \value{
 Data frame with \code{Sample_ID}, \code{Richness}, \code{Shannon}, \code{Simpson}, \code{Pielou} (with
@@ -27,4 +36,11 @@ it depends on sequencing depth, so for read counts it can be computed after rare
 (\code{rarefy_depth}). Chao1 is only reported for integer counts. Pielou evenness
 (Shannon / log(Richness)) is only added on request: it inherits the depth dependence of
 richness and adds little to Shannon and Simpson.
+}
+\details{
+A profile aggregated to a rank keeps the reads or genomes that could not be classified to that
+rank as one feature per resolved parent (e.g. all Lachnospiraceae without a genus), so each
+counts as one taxon. \code{exclude_unresolved = TRUE} leaves these features out, after rarefying, so
+the measures describe the taxa resolved at the rank only.
+See \code{vignette("diversity", package = "gmaio")} for how each profile's features are defined.
 }

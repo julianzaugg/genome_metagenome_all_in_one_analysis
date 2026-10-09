@@ -484,3 +484,60 @@ tracs_path.s <- file.path(results.s, "28_tracs", "transmission_distances.csv")
 tracs.df <- utils::read.csv(tracs_path.s, check.names = FALSE, stringsAsFactors = FALSE)
 utils::write.csv(rbind(tracs.df, new_tracs.df), tracs_path.s, row.names = FALSE, na = "NA")
 cat("Comparison samples added to the strain examples in", root.s, "\n")
+
+# ---- Metagenome example: sequencing depth, SingleM OTU tables and sylph per-genome profiles ------------------------
+# Samples now differ in depth (prokaryotic bases, 0.3 to 2 Gbp; read_fraction is unchanged). SingleM marker reads and
+# sylph coverage follow that depth, so rare taxa are detected more often in deeper samples, as in real data. A
+# separate seed keeps the data above unchanged.
+set.seed(2030)
+fraction.df <- utils::read.delim(file.path(results.s, "05_singlem", "metagenome.prokaryotic_fraction.tsv"), check.names = FALSE,
+                                 stringsAsFactors = FALSE)
+fraction.df$bacterial_archaeal_bases <- round(exp(stats::runif(nrow(fraction.df), log(3e8), log(2e9))), -6)
+fraction.df$metagenome_size <- round(fraction.df$bacterial_archaeal_bases / (fraction.df$read_fraction / 100), -6)
+write_tsv(fraction.df, "05_singlem", "metagenome.prokaryotic_fraction.tsv")
+depth.v <- stats::setNames(fraction.df$bacterial_archaeal_bases, sub("_R1$", "", fraction.df$sample))
+merged.df <- utils::read.delim(file.path(results.s, "04_sylph", "merged_relative_abundance.tsv"), check.names = FALSE,
+                               stringsAsFactors = FALSE)
+genomes.df <- merged.df[grepl("\\|t__", merged.df$clade_name), , drop = FALSE]
+names(genomes.df)[-1] <- sub("\\.clean_1\\.fastq\\.gz$", "", basename(names(genomes.df)[-1]))
+genome_ids.v <- sub(".*\\|t__", "", genomes.df$clade_name)
+taxonomy.v <- paste0("Root; ", gsub("|", "; ", sub("\\|t__.*$", "", genomes.df$clade_name), fixed = TRUE))
+# Some reads stop at family level, as SingleM's often do
+family.v <- sub("; g__.*$", "", taxonomy.v)
+markers.v <- paste0("S3.", 1:8, ".marker_", 1:8)
+sequence.m <- matrix(vapply(seq_len(length(genome_ids.v) * length(markers.v)), function(i){
+  paste(sample(c("A", "C", "G", "T"), 60, TRUE), collapse = "")
+}, character(1)), nrow = length(genome_ids.v))
+otus.l <- list()
+sylph.l <- list()
+for (sample.s in names(depth.v)){
+  abundance.v <- genomes.df[[sample.s]] / 100
+  # About 2,000 marker reads per Gbp of prokaryotic DNA
+  reads.n <- round(depth.v[[sample.s]] / 1e9 * 2000)
+  for (j in seq_along(markers.v)){
+    hits.v <- as.vector(stats::rmultinom(1, round(reads.n / length(markers.v)), abundance.v))
+    kept.v <- which(hits.v > 0)
+    unresolved.v <- stats::runif(length(kept.v)) < 0.25
+    otus.l[[length(otus.l) + 1]] <- data.frame(gene = markers.v[j], sample = paste0(sample.s, "_R1"),
+                                               sequence = sequence.m[kept.v, j], num_hits = hits.v[kept.v],
+                                               coverage = round(hits.v[kept.v] * 1.5, 2),
+                                               taxonomy = ifelse(unresolved.v, family.v[kept.v], taxonomy.v[kept.v]))
+  }
+  # sylph: coverage from abundance and depth; a genome needs 50 matched k-mers of its 10,000 to be reported
+  coverage.v <- abundance.v * depth.v[[sample.s]] / 3e6
+  kmers.v <- round(10000 * (1 - exp(-coverage.v)))
+  seen.v <- which(kmers.v >= 50)
+  sylph.l[[sample.s]] <- data.frame(Sample_file = paste0("/work/reads/", sample.s, ".clean_1.fastq.gz"),
+                                    Genome_file = paste0("db/", genome_ids.v[seen.v], "_genomic.fna.gz"),
+                                    Taxonomic_abundance = round(100 * abundance.v[seen.v] / sum(abundance.v[seen.v]), 4),
+                                    Sequence_abundance = round(100 * abundance.v[seen.v] / sum(abundance.v[seen.v]), 4),
+                                    Adjusted_ANI = 99, Eff_cov = round(coverage.v[seen.v], 3), `ANI_5-95_percentile` = "NA-NA",
+                                    Eff_lambda = ifelse(coverage.v[seen.v] > 20, "HIGH", as.character(round(coverage.v[seen.v], 3))),
+                                    `Lambda_5-95_percentile` = "NA-NA", Median_cov = round(coverage.v[seen.v]),
+                                    Mean_cov_geq1 = round(coverage.v[seen.v], 3), Containment_ind = paste0(kmers.v[seen.v], "/10000"),
+                                    Naive_ANI = 99, kmers_reassigned = 0, Contig_name = paste(genome_ids.v[seen.v], "contig_1"),
+                                    check.names = FALSE)
+}
+write_tsv(do.call(rbind, otus.l), "05_singlem", "metagenome.otu_table.tsv")
+write_tsv(do.call(rbind, sylph.l), "04_sylph", "sylph_profile.tsv")
+cat("Depth, SingleM OTU tables and sylph profiles added to", root.s, "\n")

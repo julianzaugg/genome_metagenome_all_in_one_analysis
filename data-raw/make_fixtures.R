@@ -494,3 +494,51 @@ utils::write.csv(rbind(tracs.df, new_tracs.df), file.path(results.s, "28_tracs",
 utils::write.csv(data.frame(sample = strain_samples.v, cluster = c(0, 0, 1, 2, 2, 3, 0, 4)),
                  file.path(results.s, "28_tracs", "strain_clusters.csv"), row.names = FALSE)
 cat("Strain comparison with a reference genome and comparison reads written to", root.s, "\n")
+
+# ---- Metagenome: SingleM OTU tables and sylph per-genome profiles, for depth-adjusted diversity ---------------
+# Four marker genes; each taxon has one OTU per marker, and some reads stop at family level (unresolved at genus).
+# S3 and C4 are the shallowest samples. sylph rows follow each dataset's merged profile; one genome per sample has
+# few matched k-mers at low coverage, so it drops out when the sample is scaled to a lower depth. A separate seed
+# keeps the fixtures above unchanged.
+set.seed(13)
+markers.v <- paste0("S3.", 1:4, ".ribosomal_protein_", c("L2_rplB", "L3_rplC", "S2_rpsB", "S3_rpsC"))
+otu_table.f <- function(samples.v, lineages.v, depth.v){
+  taxonomy.v <- c(paste0("Root; ", gsub("|", "; ", sub("\\|t__.*$", "", lineages.v), fixed = TRUE)),
+                  "Root; d__Bacteria; p__Bacillota_A; c__Clostridia; o__Lachnospirales; f__Lachnospiraceae", "Root")
+  do.call(rbind, lapply(seq_along(samples.v), function(j){
+    rows.df <- expand.grid(taxon = seq_along(taxonomy.v), gene = markers.v, stringsAsFactors = FALSE)
+    rows.df$num_hits <- rpois(nrow(rows.df), depth.v[j] / nrow(rows.df))
+    rows.df <- rows.df[rows.df$num_hits > 0, , drop = FALSE]
+    data.frame(gene = rows.df$gene, sample = paste0(samples.v[j], "_R1"),
+               sequence = vapply(paste(rows.df$taxon, rows.df$gene), function(x) paste(sample(c("A", "C", "G", "T"), 60, TRUE),
+                                                                                      collapse = ""), character(1)),
+               num_hits = rows.df$num_hits, coverage = round(rows.df$num_hits * 1.6, 2), taxonomy = taxonomy.v[rows.df$taxon])
+  }))
+}
+sylph_table.f <- function(merged_path.s){
+  merged.df <- utils::read.delim(merged_path.s, check.names = FALSE, stringsAsFactors = FALSE)
+  genomes.df <- merged.df[grepl("\\|t__", merged.df$clade_name), , drop = FALSE]
+  do.call(rbind, lapply(names(genomes.df)[-1], function(sample.s){
+    present.v <- genomes.df[[sample.s]] > 0
+    genome.v <- sub(".*\\|t__", "", genomes.df$clade_name[present.v])
+    cov.v <- round(genomes.df[[sample.s]][present.v] / 2 + 0.5, 3)
+    kmers.v <- round(pmin(1, 1 - exp(-cov.v)) * 15000)
+    kmers.v[which.min(cov.v)] <- 70
+    data.frame(Sample_file = basename(sample.s), Genome_file = paste0("db/", genome.v, "_genomic.fna.gz"),
+               Taxonomic_abundance = genomes.df[[sample.s]][present.v], Sequence_abundance = genomes.df[[sample.s]][present.v],
+               Adjusted_ANI = 98.5, Eff_cov = cov.v, `ANI_5-95_percentile` = "NA-NA",
+               Eff_lambda = ifelse(cov.v > 15, "HIGH", as.character(round(cov.v * 0.9, 3))), `Lambda_5-95_percentile` = "NA-NA",
+               Median_cov = round(cov.v), Mean_cov_geq1 = cov.v, Containment_ind = paste0(kmers.v, "/15000"), Naive_ANI = 98.5,
+               kmers_reassigned = 0, Contig_name = paste(genome.v, "contig_1"), check.names = FALSE)
+  }))
+}
+sylph_lineages.v <- utils::read.delim(file.path(results.s, "02_sylph", "merged_relative_abundance.tsv"), check.names = FALSE,
+                                      stringsAsFactors = FALSE)$clade_name
+sylph_lineages.v <- sylph_lineages.v[grepl("\\|t__", sylph_lineages.v)]
+write_tsv(otu_table.f(samples.v, sylph_lineages.v, c(900, 1100, 300, 1000, 1200, 950)), "03_singlem", "metagenome.otu_table.tsv")
+write_tsv(sylph_table.f(file.path(results.s, "02_sylph", "merged_relative_abundance.tsv")), "02_sylph", "sylph_profile.tsv")
+write_tsv(otu_table.f(comparison.v, sylph_lineages.v, c(1500, 1300, 1400, 600)), "29_comparison_reads", "singlem",
+          "metagenome.otu_table.tsv")
+write_tsv(sylph_table.f(file.path(results.s, "29_comparison_reads", "sylph", "merged_relative_abundance.tsv")),
+          "29_comparison_reads", "sylph", "sylph_profile.tsv")
+cat("SingleM OTU tables and sylph profiles written to", root.s, "\n")

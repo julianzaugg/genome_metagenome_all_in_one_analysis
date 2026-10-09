@@ -27,7 +27,7 @@ group_tests <- function(long.df, by, group){
   names(tests.df)[1] <- by
   tests.df[[by]] <- factor(tests.df[[by]], levels = levels(as.factor(long.df[[by]])))
   tests.df$P_adjusted <- stats::p.adjust(tests.df$P_value, method = "BH")
-  tests.df$Test_label <- sprintf("%s p = %s", tests.df$Test, format_p(tests.df$P_value))
+  tests.df$Test_label <- paste(tests.df$Test, p_label(tests.df$P_value))
   tests.df
 }
 
@@ -194,16 +194,39 @@ plot_group_boxplots <- function(long.df, by, group, colours.v = NULL, pairwise_t
   boxplot.gg <- boxplot.gg + ggplot2::theme(plot.margin = ggplot2::margin(5.5, 5.5, 5.5, max(5.5, first_label.n - 20)))
   n_panels.n <- nlevels(long.df[[by]])
   n_columns.n <- ncol %||% min(n_panels.n, 4)
-  # Invisible points at the annotation tops so every panel's y range includes them
+  # Invisible points at the annotation tops so every panel's y range includes them; axis breaks stop at each panel's
+  # data, so the space for brackets and the test label has no ticks (a Simpson axis does not run past 1)
   boxplot.gg <- boxplot.gg +
     ggplot2::geom_blank(data = annotations.l$limits, ggplot2::aes(y = .data$y), inherit.aes = FALSE) +
-    ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0.05, 0.04))) +
+    ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0.05, 0.04)),
+                                breaks = data_breaks(long.df, by, annotations.l$limits, free_y)) +
     ggplot2::facet_wrap(stats::as.formula(paste("~", by)), scales = if (free_y) "free_y" else "fixed", ncol = n_columns.n,
                         labeller = ggplot2::as_labeller(function(x) ifelse(x %in% names(panel_labels),
                                                                            panel_labels[x], x)))
   width.n <- n_columns.n * max(4, 1.2 * nlevels(long.df[[group]]) + 1.5) + if (is.null(shape_by)) 1 else 3
   list(plot = with_size(boxplot.gg, width.n, 8 * ceiling(n_panels.n / n_columns.n) + 1),
        tests = tests.df, pairwise = pairwise.df)
+}
+
+# A breaks function for panels whose range runs above the data (annotation space): it finds the panel from the
+# limits ggplot2 passes (data minimum to annotation top) and returns breaks over that panel's data only
+data_breaks <- function(long.df, by, limits.df, free_y){
+  panels.v <- if (free_y) levels(long.df[[by]]) else "all"
+  ranges.df <- do.call(rbind, lapply(panels.v, function(panel.s){
+    rows.v <- if (free_y) long.df[[by]] == panel.s else rep(TRUE, nrow(long.df))
+    values.v <- long.df$Value[rows.v & !is.na(long.df$Value)]
+    tops.v <- as.numeric(limits.df$y[if (free_y) limits.df[[by]] == panel.s else TRUE])
+    if (length(values.v) == 0) return(NULL)
+    data.frame(Low = min(values.v), High = max(values.v), Top = max(c(values.v, tops.v)))
+  }))
+  function(limits){
+    if (is.null(ranges.df) || any(!is.finite(limits))) return(scales::extended_breaks()(limits))
+    row.n <- which.min(abs(ranges.df$Low - limits[1]) + abs(ranges.df$Top - limits[2]))
+    high.n <- ranges.df$High[row.n]
+    if (high.n <= limits[1]) return(scales::extended_breaks()(limits))
+    breaks.v <- scales::extended_breaks()(c(limits[1], high.n))
+    breaks.v[breaks.v <= high.n + 0.25 * diff(range(breaks.v)) / max(length(breaks.v) - 1, 1)]
+  }
 }
 
 group_boxplot_annotations <- function(long.df, by, group, tests.df, pairwise.df, alpha, label_type){
@@ -233,7 +256,7 @@ group_boxplot_annotations <- function(long.df, by, group, tests.df, pairwise.df,
         brackets.l[[length(brackets.l) + 1]] <- data.frame(
           Panel = panel.s, x = c(x.n, x.n, xend.n), xend = c(xend.n, x.n, xend.n),
           y = c(y.n, y.n - tick.n, y.n - tick.n), yend = c(y.n, y.n, y.n))
-        label.s <- if (label_type == "stars") shown.df$Significance[i] else paste("p =", format_p(shown.df$P_adjusted[i]))
+        label.s <- if (label_type == "stars") shown.df$Significance[i] else p_label(shown.df$P_adjusted[i])
         labels.l[[length(labels.l) + 1]] <- data.frame(Panel = panel.s, x = (x.n + xend.n) / 2, y = y.n + step.n * 0.05,
                                                        label = label.s)
       }

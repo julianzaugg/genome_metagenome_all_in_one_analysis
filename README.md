@@ -118,7 +118,7 @@ Metagenome projects (`mode: metagenome`):
 | `barcharts.R` | Stacked barcharts of the top taxa per sample for each profile and rank |
 | `heatmaps.R` | Abundance heatmaps (log10 relative abundance) with phylum annotation |
 | `ordination.R` | rclr PCA and Jaccard PCoA of taxonomic, MAG and functional profiles, PERMANOVA, PERMDISP, loadings |
-| `diversity.R` | Alpha diversity (richness, Shannon, Simpson) with group tests |
+| `diversity.R` | Alpha diversity (richness, Shannon, Simpson) with group tests, depth-adjusted SingleM and sylph diversity, and diversity against sequencing depth |
 | `differential_abundance.R` | MaAsLin3, LinDA and sPLS-DA with a consensus table, effect plots and boxplots |
 | `nonpareil.R` | Nonpareil coverage curves and metrics by group |
 | `genomespot.R` | GenomeSPOT trait predictions for HQ MAGs and abundance-weighted community traits |
@@ -154,7 +154,7 @@ The vignettes are worked examples on synthetic example projects (`gmaio::example
 | `vignette("heatmaps", package = "gmaio")` | `plot_heatmap()`: choosing the data, annotations and splits, transforms, colours and legend breaks, ordering, cell values, sizes and fonts |
 | `vignette("ordination", package = "gmaio")` | `run_ordination()`, PERMANOVA (overall and pairwise) and PERMDISP, and `plot_ordination()`: shapes, ellipses, hulls, spiders, loadings, envfit, combining panels |
 | `vignette("barcharts", package = "gmaio")` | `plot_stacked_barchart()`: which taxa are shown, annotation strips, legend and bar options; where colours come from and how to change them |
-| `vignette("diversity", package = "gmaio")` | `alpha_diversity()` and `plot_alpha_diversity()`: measures, rarefying, group and Dunn pairwise tests with brackets, figure options |
+| `vignette("diversity", package = "gmaio")` | `alpha_diversity()` and `plot_alpha_diversity()`: what each profile's features are, unresolved lineages, sequencing depth (rarefied SingleM, sylph at a common depth, diversity against depth), group and Dunn pairwise tests with brackets, figure options |
 | `vignette("differential_abundance", package = "gmaio")` | MaAsLin3, LinDA and sPLS-DA, the consensus, effect, heatmap and boxplot figures, covariates and random effects |
 | `vignette("comparison", package = "gmaio")` | Comparison samples: their metadata, combined profiles and metadata, ordinations, distances to each group and MAG detection |
 | `vignette("strains", package = "gmaio")` | Strain sharing (inStrain), within versus between group tests, TRACS distances, strain diversity and strains shared with comparison samples |

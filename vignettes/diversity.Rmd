@@ -54,11 +54,118 @@ counts.p <- gmaio::get_profile(project.l, "mags_hq_derep_bins_read_count")
 diversity.df <- gmaio::alpha_diversity(counts.p, rarefy_depth = 100000, seed = 1234)
 ```
 
-Relative abundance profiles from sylph or SingleM cannot be rarefied, since they have no read counts; their richness reflects each tool's detection threshold, which is applied the same way to every sample.
+Relative abundance profiles from sylph or SingleM cannot be rarefied, since they have no read counts; see [Sequencing depth](#sequencing-depth) for the ways round that.
+
+## What a feature is in each profile
+
+Every measure counts or weighs features, so what a feature is decides what the diversity means:
+
+| Profile | A feature is | Values |
+|---|---|---|
+| `sylph_taxonomic` | A genome in sylph's database (GTDB) whose k-mers the sample's reads contain closely enough; summed to a rank with `aggregate_profile()` | Taxonomic abundance: the estimated share of cells |
+| `singlem_relative` | A lineage from SingleM's single-copy marker genes, at the deepest rank SingleM could assign | Marker gene coverage, as percent |
+| `singlem_read_count` | The same lineages, from the reads of each marker gene sequence (OTU) | Marker gene reads |
+| `mags_<set>_relative_abundance` | A bin of the study | CoverM relative abundance of the reads mapped to the set |
+| `mags_<set>_read_count` | A bin of the study | Reads mapped (CoverM) |
+
+sylph only sees species in its database, so a species absent from GTDB (common in less studied hosts) is missing from sylph however abundant it is.
+SingleM classifies the marker gene reads themselves, so it sees such species, but often only to family or genus.
+MAG profiles count only the genomes the study recovered.
+
+### Unresolved lineages
+
+When a profile is aggregated to a rank, reads or genomes that could not be classified to that rank are not dropped: they are summed under their deepest resolved parent, and that sum is one feature (`Unclassified (p__Bacillota_A) f__Lachnospiraceae` at genus level).
+Each therefore counts as one taxon in richness and enters Shannon and Simpson as one, however many taxa it stands for.
+This is minor for sylph, whose features are database genomes with a full taxonomy, but SingleM reads often stop above genus or species.
+`unresolved_features()` shows which features they are, and `exclude_unresolved = TRUE` leaves them out, so the measures describe the taxa resolved at the rank:
+
+```{r unresolved}
+singlem_genus.p <- gmaio::get_profile(project.l, "singlem_read_count") |>
+  gmaio::aggregate_profile(rank = "genus")
+table(gmaio::unresolved_features(singlem_genus.p))
+resolved.df <- gmaio::alpha_diversity(singlem_genus.p, exclude_unresolved = TRUE)
+summary(resolved.df$Richness)
+```
+
+`code/diversity.R` and `code/comparison.R` have `exclude_unresolved.b` at the top (`FALSE` by default).
+With rarefied counts, samples are rarefied first, with all their reads, and the unresolved features are left out after.
+
+## Sequencing depth
+
+Deeper sequencing detects more rare taxa, so richness rises with depth, and Shannon somewhat with it; Simpson, driven by the dominant taxa, hardly moves.
+When groups or datasets were sequenced to different depths, part of a richness difference can be depth.
+
+### Depth per sample
+
+`prokaryotic_depth()` gives SingleM's estimate of the bacterial and archaeal bases in each sample, after read QC and host removal.
+Profilers can only detect a prokaryote from prokaryotic reads, so this is the depth that limits detection: a sample with many host or plant reads has less of it than its read count suggests.
+
+```{r depth}
+depth.v <- gmaio::prokaryotic_depth(project.l)
+summary(depth.v)
+```
+
+### How much a measure follows depth
+
+`plot_diversity_vs_depth()` plots each measure against depth, with the Spearman correlation per panel; `code/diversity.R` writes one such figure per dataset (`<dataset>__vs_depth`) and the correlations to the `Depth_correlation` sheet.
+
+```{r depth-plot}
+singlem_genus.df <- gmaio::alpha_diversity(singlem_genus.p)
+depth.l <- gmaio::plot_diversity_vs_depth(singlem_genus.df, depth.v, metadata.df, "Treatment",
+                                          project.l$palettes$Treatment)
+depth.l$correlation
+```
+
+```{r depth-plot-show, echo = FALSE}
+show_plot(depth.l$plot)
+```
+
+### SingleM: rarefied marker gene reads
+
+The pipeline's SingleM OTU table counts the reads on each marker gene sequence in each sample.
+gmaio sums them by lineage into `singlem_read_count`, which `alpha_diversity()` rarefies like any read count profile.
+Subsampling the pooled marker gene reads is equivalent to subsampling the sequencing reads, so the rarefied measures compare samples at the same depth.
+Unlike the condensed profile, which SingleM builds by combining the marker genes, each read keeps the taxonomy of its own marker gene sequence, so the two profiles differ a little.
+
+```{r singlem-rarefied}
+rarefied.df <- gmaio::alpha_diversity(singlem_genus.p, rarefy_depth = 700,
+                                      exclude_unresolved = TRUE)
+head(rarefied.df)
+```
+
+`singlem_otu_diversity()` measures the marker gene sequences themselves (OTUs), rarefied the same way, with no reference database: taxa missing from GTDB count too.
+Each organism has one sequence per marker gene, so richness is given per marker gene (averaged over them), which approximates the number of distinct populations.
+
+```{r singlem-otus}
+otus.df <- gmaio::singlem_otu_diversity(project.l$tables$singlem_otus, rarefy_depth = 700)
+head(otus.df)
+```
+
+### sylph: an approximation at a common depth
+
+sylph reports abundances and coverages, not reads, so its profiles cannot be rarefied.
+Profiling reads subsampled to the same number is the exact answer, and needs the pipeline to run sylph again.
+`sylph_profile_at_depth()` approximates it from the pipeline's `sylph_profile.tsv`: each genome's k-mer coverage is scaled by the sample's depth ratio, its matched k-mers by the share still expected at that coverage (1 - exp(-coverage)), and genomes left with fewer than sylph's minimum of 50 matched k-mers are dropped.
+It ignores sylph's ANI threshold, which can drop a few more genomes at low coverage, so it slightly overestimates richness at the target depth: use it as a sensitivity check.
+
+```{r sylph-depth}
+sylph_depth.p <- gmaio::sylph_profile_at_depth(project.l$tables$sylph_profile, depth.v,
+                                               project.l$profiles$sylph_taxonomic$features)
+attr(sylph_depth.p, "target_depth")
+sylph_depth.df <- gmaio::alpha_diversity(gmaio::aggregate_profile(sylph_depth.p, rank = "species"))
+summary(sylph_depth.df$Richness)
+```
+
+### In the template scripts
+
+`code/diversity.R` runs these next to the plain profiles: `singlem_rarefied__genus` and `__species` (SingleM marker gene reads rarefied), `singlem_otus_rarefied` and `sylph_at_depth__species`.
+Samples are rarefied to the smallest sample with at least `min_singlem_reads.n` marker gene reads, and sylph is scaled to the smallest prokaryotic depth of at least `min_prokaryotic_bases.n`; shallower samples are left out of those datasets.
+`code/comparison.R` does the same for the study and comparison samples together, and also rarefies the MAG read counts (`mags_rarefied`).
+Shannon and Simpson of the plain profiles, and the depth-adjusted datasets, are the ones to compare between datasets sequenced to different depths.
 
 ## The template figure
 
-`code/diversity.R` does this for sylph and SingleM species, SingleM genera and the HQ MAGs, comparing the primary group:
+`code/diversity.R` does this for sylph and SingleM species, SingleM genera, the HQ MAGs and the depth-adjusted datasets above, comparing the primary group:
 
 ```{r template}
 diversity.l <- gmaio::plot_alpha_diversity(diversity.df, metadata.df, "Treatment", project.l$palettes$Treatment)

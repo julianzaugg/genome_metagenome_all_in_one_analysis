@@ -31,7 +31,7 @@ Imports:
     permute,
     readxl,
     rlang,
-    scales,
+    scales (>= 1.2.0),
     stats,
     tibble,
     utils,

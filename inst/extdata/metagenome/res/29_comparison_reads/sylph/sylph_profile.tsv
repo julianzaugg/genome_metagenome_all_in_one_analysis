@@ -1,0 +1,25 @@
+Sample_file	Genome_file	Taxonomic_abundance	Sequence_abundance	Adjusted_ANI	Eff_cov	ANI_5-95_percentile	Eff_lambda	Lambda_5-95_percentile	Median_cov	Mean_cov_geq1	Containment_ind	Naive_ANI	kmers_reassigned	Contig_name
+C1.clean_1.fastq.gz	db/GCF_000001.1_genomic.fna.gz	9.9286	9.9286	98.5	5.464	NA-NA	4.918	NA-NA	5	5.464	14936/15000	98.5	0	GCF_000001.1 contig_1
+C1.clean_1.fastq.gz	db/GCF_000002.1_genomic.fna.gz	3.3297	3.3297	98.5	2.165	NA-NA	1.949	NA-NA	2	2.165	70/15000	98.5	0	GCF_000002.1 contig_1
+C1.clean_1.fastq.gz	db/GCF_000003.1_genomic.fna.gz	60.6556	60.6556	98.5	30.828	NA-NA	HIGH	NA-NA	31	30.828	15000/15000	98.5	0	GCF_000003.1 contig_1
+C1.clean_1.fastq.gz	db/GCF_000004.1_genomic.fna.gz	10.7472	10.7472	98.5	5.874	NA-NA	5.287	NA-NA	6	5.874	14958/15000	98.5	0	GCF_000004.1 contig_1
+C1.clean_1.fastq.gz	db/GCF_000005.1_genomic.fna.gz	10.0791	10.0791	98.5	5.54	NA-NA	4.986	NA-NA	6	5.54	14941/15000	98.5	0	GCF_000005.1 contig_1
+C1.clean_1.fastq.gz	db/GCF_000007.1_genomic.fna.gz	5.2597	5.2597	98.5	3.13	NA-NA	2.817	NA-NA	3	3.13	14344/15000	98.5	0	GCF_000007.1 contig_1
+C2.clean_1.fastq.gz	db/GCF_000001.1_genomic.fna.gz	8.3365	8.3365	98.5	4.668	NA-NA	4.201	NA-NA	5	4.668	14859/15000	98.5	0	GCF_000001.1 contig_1
+C2.clean_1.fastq.gz	db/GCF_000002.1_genomic.fna.gz	13.5682	13.5682	98.5	7.284	NA-NA	6.556	NA-NA	7	7.284	14990/15000	98.5	0	GCF_000002.1 contig_1
+C2.clean_1.fastq.gz	db/GCF_000003.1_genomic.fna.gz	41.7125	41.7125	98.5	21.356	NA-NA	HIGH	NA-NA	21	21.356	15000/15000	98.5	0	GCF_000003.1 contig_1
+C2.clean_1.fastq.gz	db/GCF_000004.1_genomic.fna.gz	7.7316	7.7316	98.5	4.366	NA-NA	3.929	NA-NA	4	4.366	70/15000	98.5	0	GCF_000004.1 contig_1
+C2.clean_1.fastq.gz	db/GCF_000005.1_genomic.fna.gz	18.8626	18.8626	98.5	9.931	NA-NA	8.938	NA-NA	10	9.931	14999/15000	98.5	0	GCF_000005.1 contig_1
+C2.clean_1.fastq.gz	db/GCF_000007.1_genomic.fna.gz	9.7886	9.7886	98.5	5.394	NA-NA	4.855	NA-NA	5	5.394	14932/15000	98.5	0	GCF_000007.1 contig_1
+C3.clean_1.fastq.gz	db/GCF_000001.1_genomic.fna.gz	17.9413	17.9413	98.5	9.471	NA-NA	8.524	NA-NA	9	9.471	14999/15000	98.5	0	GCF_000001.1 contig_1
+C3.clean_1.fastq.gz	db/GCF_000002.1_genomic.fna.gz	46.0482	46.0482	98.5	23.524	NA-NA	HIGH	NA-NA	24	23.524	15000/15000	98.5	0	GCF_000002.1 contig_1
+C3.clean_1.fastq.gz	db/GCF_000003.1_genomic.fna.gz	9.8596	9.8596	98.5	5.43	NA-NA	4.887	NA-NA	5	5.43	14934/15000	98.5	0	GCF_000003.1 contig_1
+C3.clean_1.fastq.gz	db/GCF_000004.1_genomic.fna.gz	4.8968	4.8968	98.5	2.948	NA-NA	2.653	NA-NA	3	2.948	70/15000	98.5	0	GCF_000004.1 contig_1
+C3.clean_1.fastq.gz	db/GCF_000005.1_genomic.fna.gz	8.5281	8.5281	98.5	4.764	NA-NA	4.288	NA-NA	5	4.764	14872/15000	98.5	0	GCF_000005.1 contig_1
+C3.clean_1.fastq.gz	db/GCF_000007.1_genomic.fna.gz	12.7259	12.7259	98.5	6.863	NA-NA	6.177	NA-NA	7	6.863	14984/15000	98.5	0	GCF_000007.1 contig_1
+C4.clean_1.fastq.gz	db/GCF_000001.1_genomic.fna.gz	8.4943	8.4943	98.5	4.747	NA-NA	4.272	NA-NA	5	4.747	14870/15000	98.5	0	GCF_000001.1 contig_1
+C4.clean_1.fastq.gz	db/GCF_000002.1_genomic.fna.gz	4.453	4.453	98.5	2.727	NA-NA	2.454	NA-NA	3	2.727	14019/15000	98.5	0	GCF_000002.1 contig_1
+C4.clean_1.fastq.gz	db/GCF_000003.1_genomic.fna.gz	15.9106	15.9106	98.5	8.455	NA-NA	7.61	NA-NA	8	8.455	14997/15000	98.5	0	GCF_000003.1 contig_1
+C4.clean_1.fastq.gz	db/GCF_000004.1_genomic.fna.gz	51.0406	51.0406	98.5	26.02	NA-NA	HIGH	NA-NA	26	26.02	15000/15000	98.5	0	GCF_000004.1 contig_1
+C4.clean_1.fastq.gz	db/GCF_000005.1_genomic.fna.gz	19.4559	19.4559	98.5	10.228	NA-NA	9.205	NA-NA	10	10.228	14999/15000	98.5	0	GCF_000005.1 contig_1
+C4.clean_1.fastq.gz	db/GCF_000007.1_genomic.fna.gz	0.6457	0.6457	98.5	0.823	NA-NA	0.741	NA-NA	1	0.823	70/15000	98.5	0	GCF_000007.1 contig_1

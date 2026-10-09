@@ -57,7 +57,7 @@ plot_richness_vs_depth <- function(richness.df, read_stats.df, metadata.df, colo
     ggplot2::scale_fill_manual(values = colours.v, breaks = ordered_levels(joined.df[[colour_by]], colours.v),
                                name = variable_label(colour_by)) +
     ggplot2::labs(x = depth_column, y = "Clusters detected",
-                  caption = sprintf("Spearman rho = %.2f, p = %s", test$estimate, format_p(test$p.value))) +
+                  caption = sprintf("Spearman rho = %.2f, %s", test$estimate, p_label(test$p.value))) +
     theme_gmaio()
   list(plot = with_size(depth.gg, 15, 11),
        correlation = data.frame(Depth_column = depth_column, Rho = unname(test$estimate), P_value = test$p.value))

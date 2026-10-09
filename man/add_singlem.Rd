@@ -15,5 +15,7 @@ Updated \code{gm_project}.
 \description{
 Adds \code{singlem_coverage}, \code{singlem_relative} and, when the prokaryotic fraction is
 available, \code{singlem_scaled} (relative abundance x read fraction / 100, i.e. percent of
-all reads).
+all reads). With the OTU table, also \code{singlem_read_count} (marker gene reads per lineage, see
+\code{\link[=singlem_read_count_profile]{singlem_read_count_profile()}}) and \code{project.l$tables$singlem_otus} (see
+\code{\link[=singlem_otu_diversity]{singlem_otu_diversity()}}).
 }
