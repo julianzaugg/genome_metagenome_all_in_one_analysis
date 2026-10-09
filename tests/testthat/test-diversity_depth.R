@@ -88,3 +88,23 @@ test_that("boxplot axes stop at the data and p values read as text", {
   expect_true(max(simpson_breaks.v, na.rm = TRUE) <= 1)
   expect_equal(p_label(c(0.0004, 0.0123, NA)), c("p < 0.001", "p = 0.012", "p = NA"))
 })
+
+test_that("boxplot axes keep few breaks when the data fill a small part of the panel", {
+  long.df <- data.frame(Measure = "Share", Group = rep(c("a", "b", "c", "d"), each = 5),
+                        Value = c(99.9, 99.95, 100, 99.92, 99.97, 99.7, 99.8, 99.75, 99.85, 99.78, 99.99, 100, 99.98, 100, 99.96,
+                                  99.5, 99.6, 99.55, 99.65, 99.58))
+  boxplot.l <- plot_group_boxplots(long.df, "Measure", "Group")
+  breaks.v <- ggplot2::ggplot_build(boxplot.l$plot)$layout$panel_params[[1]]$y$breaks
+  expect_lte(sum(!is.na(breaks.v)), 4)
+  expect_true(max(breaks.v, na.rm = TRUE) <= 100.05)
+})
+
+test_that("long panel titles wrap to the panel width", {
+  long.df <- data.frame(Panel = rep(c("Urea carboxylase pathway", "Urease"), each = 10), Group = rep(c("a", "b"), 10),
+                        Value = seq_len(20))
+  boxplot.l <- plot_group_boxplots(long.df, "Panel", "Group")
+  strips.v <- ggplot2::ggplot_build(boxplot.l$plot)$layout$facet$params$labeller(data.frame(Panel = c("Urea carboxylase pathway",
+                                                                                                    "Urease")))[[1]]
+  expect_true(grepl("\n", strips.v[1]))
+  expect_equal(unname(strips.v[2]), "Urease")
+})
