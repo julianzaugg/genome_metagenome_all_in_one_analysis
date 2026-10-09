@@ -147,7 +147,7 @@ Comparison samples are often sequenced to a different depth than the study's, so
 ## Detecting the study's MAGs
 
 The pipeline maps comparison reads with CoverM to the study's dereplicated bins: the representatives of all bins of any quality after dereplication at 95% ANI (`<n>_dereplicated_bins`, the `derep_bins` set), the same genomes the study samples are mapped to in `<n>_coverm_bins`.
-Reference genomes (`--reference_genomes`) are not part of this mapping, whatever the settings; they reach the comparison samples only through the gene catalogue, when the run has `--reference_genomes_in_catalogue`.
+Reference genomes (`--reference_genomes`) are not part of this mapping, whatever the settings; they reach the comparison samples through the gene catalogue, when the run has `--reference_genomes_in_catalogue`, and through strain comparison, when the strain set includes them and the run has `--strain_include_comparison_reads` (see the strains vignette).
 `mag_detection()` counts, for each genome, the samples of each group in which reads cover at least `min_covered_fraction` of it; requiring breadth guards against reads from relatives that hit only conserved regions.
 The table goes to `Study_vs_comparison_MAG_detection.xlsx`, and the script draws the covered fraction of the HQ bins as a heatmap.
 

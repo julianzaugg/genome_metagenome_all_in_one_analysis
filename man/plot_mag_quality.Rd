@@ -19,7 +19,9 @@ plot_mag_quality(
 
 \item{source}{\code{"CheckM2"} (default) or \code{"CheckM1"} estimates.}
 
-\item{quality_weight, quality_threshold}{HQ rule (completeness - \code{quality_weight} x contamination= quality_threshold; defaults 3 and 50), drawn as a dashed line. Point shapes show theHigh_quality column of the bin summary, which was set by build_bin_summary().}
+\item{quality_weight, quality_threshold}{HQ rule (completeness - \code{quality_weight} x
+contamination >= \code{quality_threshold}; defaults 3 and 50), drawn as a dashed line. Point shapes show the
+\code{High_quality} column of the bin summary, which was set by \code{\link[=build_bin_summary]{build_bin_summary()}}.}
 }
 \value{
 A ggplot.

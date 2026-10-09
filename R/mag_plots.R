@@ -6,8 +6,8 @@
 #' @param bin_summary.df Bin summary from [add_mags()].
 #' @param colours.v Named phylum colours (the project taxa palette); generated when `NULL` (default).
 #' @param source `"CheckM2"` (default) or `"CheckM1"` estimates.
-#' @param quality_weight,quality_threshold HQ rule (completeness - `quality_weight` x contamination
-#'   >= `quality_threshold`; defaults 3 and 50), drawn as a dashed line. Point shapes show the
+#' @param quality_weight,quality_threshold HQ rule (completeness - `quality_weight` x
+#'   contamination >= `quality_threshold`; defaults 3 and 50), drawn as a dashed line. Point shapes show the
 #'   `High_quality` column of the bin summary, which was set by [build_bin_summary()].
 #' @return A ggplot.
 #' @export

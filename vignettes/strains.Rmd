@@ -31,7 +31,8 @@ names(strains.l)
 ```
 
 `main.R` loads the results with `add_strains()`.
-inStrain names samples by their BAM files (`S01.bam`); gmaio links them to the metadata like any other output, and adds each genome's short ID and label from the bin summary.
+inStrain names samples by their BAM files (`S01.bam`); gmaio links them to the metadata like any other output, and adds each genome's short ID and label from the bin summary, or from the reference genomes when the strain set includes them (`--strain_genome_source hq_ref_representatives` or `references`).
+`strain_genomes` lists every genome the pipeline considered, whether it was kept and its `origin` (`mag` or `reference`).
 
 ```{r sharing}
 head(strains.l$instrain_sharing[, c("Short_ID", "Sample_ID_a", "Sample_ID_b", "popANI", "Same_strain")])
@@ -111,3 +112,67 @@ diversity.l <- gmaio::plot_instrain_diversity(diversity.df, metadata.df, "Treatm
 ```{r diversity-show, echo = FALSE}
 show_plot(diversity.l$plot)
 ```
+
+## Comparison samples
+
+With `--strain_include_comparison_reads true`, the pipeline also profiles the comparison samples (`--comparison_reads`) against the same genomes and compares them with the study's samples, so the tables answer whether a study sample carries the same strain as a sample from another study.
+`add_strains()` links them to the comparison metadata, so `main.R` runs `add_comparison()` first; without comparison metadata they are left out, with a message.
+Every table says which dataset each sample belongs to (`Dataset_a` and `Dataset_b` for pairs, `Dataset` otherwise; the labels are `comparison: dataset_labels` in `config.yml`), and `samples` lists the samples of each dataset.
+The analyses above use the study's samples only.
+
+```{r comparison-samples}
+table(strains.l$samples$Dataset)
+```
+
+`combined_metadata()` puts the two datasets' samples together, with the study's primary group and the comparison group variable in one `Comparison_group` column.
+`cross_dataset_pairs()` keeps the pairs between a study sample and a comparison sample, study sample first, with both samples' labels and groups: here, the study mice that share a strain with a mouse from another facility.
+
+```{r cross-dataset}
+combined.df <- gmaio::combined_metadata(project.l)
+shared.df <- strains.l$instrain_sharing[strains.l$instrain_sharing$Same_strain, ]
+cross.df <- gmaio::cross_dataset_pairs(shared.df, combined.df)
+head(cross.df[, c("Short_ID", "Sample_label_a", "Group_a", "Sample_label_b", "Group_b", "popANI")])
+```
+
+`strain_sharing_by_genome()` counts, for each genome, the pairs compared and those with the same strain within the study, between the datasets and within the comparison samples.
+
+```{r by-genome}
+genomes.df <- gmaio::strain_sharing_by_genome(strains.l$instrain_sharing, strains.l$strain_genomes,
+                                              levels(combined.df$Dataset), combined.df$Sample_ID)
+head(genomes.df[, -(1:4)], 3)
+```
+
+`compare_pairs_by_group()` summarises pairs for every pair of groups across both datasets.
+Groups from different datasets also differ in how the samples were collected and sequenced, so `test = FALSE` leaves out the within versus between groups test, which would pool both kinds of difference.
+`plot_group_pair_matrix()` shows the percent of pairs sharing a strain for every pair of groups, with the number of pairs compared, split into blocks by dataset.
+Here mice of one cage group or facility often share strains, and study mice share strains with Facility_A more than with Facility_B.
+
+```{r group-pairs}
+by_group.l <- gmaio::compare_pairs_by_group(strains.l$instrain_sharing, "Same_strain", combined.df, "Comparison_group",
+                                            test = FALSE)
+group_datasets.v <- stats::setNames(as.character(combined.df$Dataset), combined.df$Comparison_group)
+group_datasets.v <- group_datasets.v[!duplicated(names(group_datasets.v))]
+groups.gg <- gmaio::plot_group_pair_matrix(by_group.l, datasets.v = group_datasets.v)
+```
+
+```{r group-pairs-show, echo = FALSE}
+show_plot(groups.gg)
+```
+
+The same works for TRACS SNP distances (the median for each pair of groups) and for the sample by sample matrix of shared strains (`plot_strain_sharing_matrix()` with `combined.df` and `group = "Comparison_group"`).
+`code/strains.R` writes these to `Strain_sharing.xlsx` (`Shared_with_comparison`, `Sharing_by_dataset_pair`, `Comparison_sharing_by_groups`, `Comparison_TRACS_by_groups`, `Comparison_diversity_tests`) and the `*_with_comparison` figures.
+
+## Samples and genomes behind each output
+
+Every output uses the genomes the pipeline compared strains on, set by `--strain_genome_source`: HQ MAGs only (`hq_representatives`, the default), HQ MAGs and reference genomes dereplicated together (`hq_ref_representatives`), or the reference genomes only (`references`).
+`Strain_genomes` lists them with their `origin`, and `Genome_sharing` gives the counts per genome.
+The outputs differ only in their samples:
+
+| Output | Samples |
+|---|---|
+| `shared_strains_per_sample_pair`, `popani__<Short_ID>`, `strain_sharing_within_between_groups`, `tracs_snp_distance_within_between_groups`, `strain_diversity_by_group`; sheets `Sharing_by_*`, `Sharing_test`, `TRACS_by_*`, `TRACS_test`, `Sample_diversity_tests`, `Sample_diversity_pairwise` | The study's analysis samples |
+| `shared_strains_per_sample_pair_with_comparison`, `strain_sharing_group_pairs_with_comparison`, `tracs_snp_distance_group_pairs_with_comparison`, `strain_diversity_by_group_with_comparison`; sheets `Shared_with_comparison`, `Sharing_by_dataset_pair`, `Comparison_*` | The study's and the comparison samples (`--strain_include_comparison_reads`) |
+| Sheets `inStrain_*`, `TRACS_distances`, `TRACS_clusters`, `Sample_diversity` | Every sample in the pipeline results, with its `Dataset` |
+| Sheet `Genome_sharing` | The study's and the comparison samples, without excluded samples |
+
+inStrain and TRACS compare samples two at a time, so including the comparison reads does not change the results for pairs of study samples.

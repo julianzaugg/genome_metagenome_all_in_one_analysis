@@ -11,7 +11,9 @@ plot_strain_sharing_matrix(
   group = NULL,
   type = c("count", "popani"),
   title = NULL,
-  show_values = type == "count"
+  show_values = type == "count" && nrow(values.m) <= 50,
+  annotations = group,
+  cell_size = min(0.45, 28/nrow(values.m))
 )
 }
 \arguments{
@@ -28,7 +30,13 @@ plot_strain_sharing_matrix(
 
 \item{title}{Optional title above the matrix (e.g. the genome label).}
 
-\item{show_values}{Print values in the cells; by default for \code{"count"} only.}
+\item{show_values}{Print values in the cells; by default for \code{"count"} with up to 50 samples.}
+
+\item{annotations}{Metadata columns annotating the samples; defaults to \code{group} (e.g.
+\code{c("Dataset", "Comparison_group")} with \code{\link[=combined_metadata]{combined_metadata()}}).}
+
+\item{cell_size}{Cell size in centimetres; by default 0.45, smaller for more than 60 samples so
+the matrix stays within about 28 cm (blocks are then named by the annotation legend only).}
 }
 \value{
 A ComplexHeatmap \code{Heatmap}.

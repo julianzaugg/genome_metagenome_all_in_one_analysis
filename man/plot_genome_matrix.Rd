@@ -26,7 +26,8 @@ plot_genome_matrix(
   column_title = NULL,
   annotation_names = TRUE,
   hide_zero_values = FALSE,
-  legend_param = list()
+  legend_param = list(),
+  block_titles = TRUE
 )
 }
 \arguments{
@@ -76,6 +77,9 @@ genomes are then clustered within blocks.}
 
 \item{legend_param}{Settings for the value legend, passed to \code{heatmap_legend_param} of
 \code{\link[ComplexHeatmap:Heatmap]{ComplexHeatmap::Heatmap()}} (e.g. \code{list(at = ..., labels = ..., color_bar = "discrete")}).}
+
+\item{block_titles}{Label the blocks of \code{split_by} (default \code{TRUE}); \code{FALSE} leaves them to the
+annotation legend, e.g. when blocks are too narrow for their names.}
 }
 \value{
 A ComplexHeatmap \code{Heatmap}.

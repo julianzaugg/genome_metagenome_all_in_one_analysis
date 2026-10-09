@@ -13,8 +13,9 @@ instrain_sample_summary(genomes.df, min_breadth = 0.5)
 coverage) for a genome to count in a sample.}
 }
 \value{
-Data frame with \code{Sample_ID}, \code{Genomes_profiled}, \code{Median_nucleotide_diversity},
-\code{Median_SNVs_per_Mb} (SNVs within the sample's population per Mb of genome) and \code{Median_coverage}.
+Data frame with \code{Sample_ID}, \code{Dataset} (when \code{genomes.df} has it), \code{Genomes_profiled},
+\code{Median_nucleotide_diversity}, \code{Median_SNVs_per_Mb} (SNVs within the sample's population per Mb
+of genome) and \code{Median_coverage}.
 }
 \description{
 inStrain reports nucleotide diversity per genome and sample; comparing groups genome by genome

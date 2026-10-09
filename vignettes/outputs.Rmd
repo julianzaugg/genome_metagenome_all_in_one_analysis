@@ -170,7 +170,7 @@ To change a figure, edit the plot function call in the script that writes it; th
 It is written by `code/summary_report.R` when `outputs: report: true` is set in `config.yml`.
 
 - The overview, sample and read numbers and bin counts come from the processed project (`main.R`).
-- Each analysis script adds a section with its headline results: `mag_summary.R` (key figures), `diversity.R` (group tests), `ordination.R` (PERMANOVA and PERMDISP), `differential_abundance.R` (calls per dataset and the features most methods agree on), `strains.R` (within versus between group tests) and `comparison.R` (PERMANOVA and alpha diversity against the comparison samples).
+- Each analysis script adds a section with its headline results: `mag_summary.R` (key figures), `diversity.R` (group tests), `ordination.R` (PERMANOVA and PERMDISP), `differential_abundance.R` (calls per dataset and the features most methods agree on), `strains.R` (within versus between group tests, and strain sharing by pair of datasets with comparison samples) and `comparison.R` (PERMANOVA and alpha diversity against the comparison samples).
 - The scripts save these as small records in `Result_other/summary/`, with png thumbnails of the key figures; the report embeds the thumbnails and links each to the full figure and table files, by paths relative to `Result_other/`, so the links keep working when the project folder is moved or shared whole.
 - A section recorded before the latest `main.R` run is marked as possibly out of date, and the report lists the scripts that have recorded nothing yet.
 

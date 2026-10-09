@@ -125,7 +125,7 @@ Metagenome projects (`mode: metagenome`):
 | `mag_summary.R` | MAG quality, yield per sample, representative taxonomy, how much of each sample its own MAGs and the pooled catalogue explain, DRAM module heatmaps, marker gene trees |
 | `functional_profiles.R` | KEGG, CAZy and peptidase heatmaps, CAZy substrate barcharts, for the study's gene catalogue or the expanded one |
 | `comparison.R` | The study's samples next to external comparison samples: combined profiles, ordinations with PERMANOVA and PERMDISP, distances from each study sample to each group, composition, alpha diversity and detection of the study's MAGs |
-| `strains.R` | Strains shared between samples (inStrain popANI), sharing within versus between groups, TRACS SNP distances and per-sample strain diversity |
+| `strains.R` | Strains shared between samples (inStrain popANI), sharing within versus between groups, TRACS SNP distances and per-sample strain diversity; with `--strain_include_comparison_reads`, the strains shared with comparison samples |
 | `mobile_elements.R` | Viral and plasmid cluster prevalence, richness, richness against depth, Jaccard PCoA, virus taxonomy |
 
 Isolate projects (`mode: isolate`):
@@ -157,7 +157,7 @@ The vignettes are worked examples on synthetic example projects (`gmaio::example
 | `vignette("diversity", package = "gmaio")` | `alpha_diversity()` and `plot_alpha_diversity()`: measures, rarefying, group and Dunn pairwise tests with brackets, figure options |
 | `vignette("differential_abundance", package = "gmaio")` | MaAsLin3, LinDA and sPLS-DA, the consensus, effect, heatmap and boxplot figures, covariates and random effects |
 | `vignette("comparison", package = "gmaio")` | Comparison samples: their metadata, combined profiles and metadata, ordinations, distances to each group and MAG detection |
-| `vignette("strains", package = "gmaio")` | Strain sharing (inStrain), within versus between group tests, TRACS distances and strain diversity |
+| `vignette("strains", package = "gmaio")` | Strain sharing (inStrain), within versus between group tests, TRACS distances, strain diversity and strains shared with comparison samples |
 | `vignette("isolates", package = "gmaio")` | Isolate mode: genome summary, AMR genes and insertion sequences, ANI, cgMLST, pangenome and trees |
 
 Each workbook gmaio writes also has an `About` sheet describing its sheets and columns, and `Result_tables/README.md` and `Result_figures/README.md` list the files present.

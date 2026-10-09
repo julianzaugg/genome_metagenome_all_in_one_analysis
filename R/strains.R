@@ -52,21 +52,57 @@ read_tracs_distances <- function(path){
 #' Reads the pipeline's strain comparison outputs (`--run_instrain`, `--run_tracs`): inStrain
 #' strain sharing between samples (popANI; the same strain at >= 99.999%), inStrain per-sample
 #' genome profiles (coverage, breadth, nucleotide diversity) and TRACS SNP distances between
-#' samples. Sample names are linked to the metadata and genomes to the bin summary.
-#' Run after [add_mags()].
+#' samples. Sample names are linked to the metadata and genomes to the bin summary and reference
+#' genomes (`--strain_genome_source hq_ref_representatives` or `references`).
+#'
+#' With `--strain_include_comparison_reads`, comparison samples are in the same tables; they are
+#' linked to the comparison metadata, so run [add_comparison()] first. Without comparison
+#' metadata they are left out, with a message. Every table gets the `Dataset` of each sample (the
+#' `comparison$dataset_labels`).
+#' Run after [add_mags()] and [add_comparison()].
 #'
 #' @param project.l A `gm_project`.
-#' @return Updated `gm_project` with a `project.l$tables$strains` list: `instrain_sharing`,
-#'   `instrain_counts`, `instrain_genomes`, `instrain_excluded`, `tracs_distances`,
-#'   `tracs_clusters` and `strain_genomes` (whichever are available).
+#' @return Updated `gm_project` with a `project.l$tables$strains` list: `samples` (`Sample_ID` and
+#'   `Dataset` of every sample in the results), `instrain_sharing`, `instrain_counts`,
+#'   `instrain_genomes`, `instrain_excluded`, `tracs_distances`, `tracs_clusters` and
+#'   `strain_genomes` (whichever are available).
 #' @export
 add_strains <- function(project.l){
   config.l <- project.l$config
   keys.v <- c("instrain_sharing", "instrain_sharing_counts", "instrain_genome_info", "instrain_excluded", "tracs_distances",
-              "tracs_clusters", "strain_reference_genomes")
+              "tracs_clusters", "strain_reference_genomes", "strain_samples")
   found.v <- keys.v[vapply(keys.v, function(k) has_output(config.l, k), logical(1))]
   if (!any(c("instrain_sharing", "instrain_genome_info", "tracs_distances") %in% found.v)) return(project.l)
-  metadata.df <- project.l$metadata
+  labels.l <- config.l$comparison$dataset_labels
+  lookup.df <- data.frame(Sample_ID = project.l$metadata$Sample_ID, Dataset = labels.l$study, stringsAsFactors = FALSE)
+  comparison.df <- project.l$comparison$metadata
+  if (!is.null(comparison.df)){
+    lookup.df <- rbind(lookup.df, data.frame(Sample_ID = comparison.df$Sample_ID, Dataset = labels.l$comparison,
+                                             stringsAsFactors = FALSE))
+  }
+  # Comparison samples (--strain_include_comparison_reads) can only be linked to the comparison metadata
+  left_out.v <- character()
+  if ("strain_samples" %in% found.v){
+    cohorts.df <- read_tsv_fast(locate_output(config.l, "strain_samples"), colClasses = "character")
+    require_columns(cohorts.df, c("sample", "cohort"), "Strain comparison samples")
+    if (is.null(comparison.df)) left_out.v <- cohorts.df$sample[cohorts.df$cohort == "comparison"]
+  }
+  if (length(left_out.v) > 0){
+    cli::cli_inform(c("!" = "Strain comparison: {length(left_out.v)} comparison sample{?s} left out",
+                      "i" = paste("Set {.field comparison: metadata} in {.file config.yml} and run {.fn add_comparison}",
+                                  "before {.fn add_strains} to include them")))
+  }
+  kept.f <- function(names.v) is.na(resolve_sample_ids(names.v, left_out.v))
+  # Study names are checked against the study metadata as for any other output; comparison names resolve to the comparison
+  # metadata
+  link.f <- function(names.v, source.s){
+    names.v <- unique(as.character(names.v[kept.f(names.v)]))
+    comparison.v <- resolve_sample_ids(names.v, comparison.df$Sample_ID %||% character())
+    comparison.v <- comparison.v[!is.na(comparison.v)]
+    c(link_samples(setdiff(names.v, names(comparison.v)), project.l$metadata, source.s), comparison.v)
+  }
+  dataset.f <- function(sample_ids.v) lookup.df$Dataset[match(sample_ids.v, lookup.df$Sample_ID)]
+
   genomes.df <- dplyr::bind_rows(project.l$tables$bin_summary, project.l$tables$reference_genomes)
   annotate.f <- function(input.df){
     rows.v <- match(input.df$Genome, genomes.df$Bin_ID)
@@ -76,12 +112,21 @@ add_strains <- function(project.l){
     input.df
   }
   link_pairs.f <- function(pairs.df, source.s){
-    map.v <- link_samples(c(pairs.df$Sample_a, pairs.df$Sample_b), metadata.df, source.s)
+    pairs.df <- pairs.df[kept.f(pairs.df$Sample_a) & kept.f(pairs.df$Sample_b), , drop = FALSE]
+    map.v <- link.f(c(pairs.df$Sample_a, pairs.df$Sample_b), source.s)
     pairs.df$Sample_ID_a <- unname(map.v[pairs.df$Sample_a])
     pairs.df$Sample_ID_b <- unname(map.v[pairs.df$Sample_b])
-    first.v <- c("Genome", "Short_ID", "Label", "Phylum", "Sample_ID_a", "Sample_ID_b")
+    pairs.df$Dataset_a <- dataset.f(pairs.df$Sample_ID_a)
+    pairs.df$Dataset_b <- dataset.f(pairs.df$Sample_ID_b)
+    first.v <- c("Genome", "Short_ID", "Label", "Phylum", "Sample_ID_a", "Sample_ID_b", "Dataset_a", "Dataset_b")
     pairs.df <- annotate.f(pairs.df)
     pairs.df[, c(first.v, setdiff(names(pairs.df), c(first.v, "Sample_a", "Sample_b"))), drop = FALSE]
+  }
+  link_table.f <- function(input.df, column.s, source.s){
+    input.df <- input.df[kept.f(input.df[[column.s]]), , drop = FALSE]
+    sample_ids.v <- unname(link.f(input.df[[column.s]], source.s)[as.character(input.df[[column.s]])])
+    data.frame(Sample_ID = sample_ids.v, Dataset = dataset.f(sample_ids.v), input.df[setdiff(names(input.df), column.s)],
+               check.names = FALSE, stringsAsFactors = FALSE)
   }
   strains.l <- list()
   if ("instrain_sharing" %in% found.v){
@@ -92,17 +137,19 @@ add_strains <- function(project.l){
     counts.df <- read_tsv_fast(locate_output(config.l, "instrain_sharing_counts"),
                                colClasses = list(character = c("sample_a", "sample_b")))
     require_columns(counts.df, c("sample_a", "sample_b", "n_genomes_compared", "n_same_strain"), "inStrain sharing counts")
-    map.v <- link_samples(c(counts.df$sample_a, counts.df$sample_b), metadata.df, "inStrain sharing counts")
+    counts.df <- counts.df[kept.f(counts.df$sample_a) & kept.f(counts.df$sample_b), , drop = FALSE]
+    map.v <- link.f(c(counts.df$sample_a, counts.df$sample_b), "inStrain sharing counts")
     strains.l$instrain_counts <- data.frame(Sample_ID_a = unname(map.v[counts.df$sample_a]),
                                             Sample_ID_b = unname(map.v[counts.df$sample_b]),
+                                            Dataset_a = dataset.f(unname(map.v[counts.df$sample_a])),
+                                            Dataset_b = dataset.f(unname(map.v[counts.df$sample_b])),
                                             Genomes_compared = counts.df$n_genomes_compared,
                                             Same_strain = counts.df$n_same_strain, stringsAsFactors = FALSE)
   }
   if ("instrain_genome_info" %in% found.v){
     info.df <- read_instrain_genome_info(locate_output(config.l, "instrain_genome_info"))
-    info.df <- link_table_samples(info.df, "Sample", metadata.df, "inStrain genome profiles")
+    info.df <- link_table.f(info.df, "Sample", "inStrain genome profiles")
     names(info.df)[names(info.df) == "genome"] <- "Genome"
-    info.df$Sample <- NULL
     strains.l$instrain_genomes <- annotate.f(info.df)
   }
   if ("instrain_excluded" %in% found.v){
@@ -115,10 +162,7 @@ add_strains <- function(project.l){
   if ("tracs_clusters" %in% found.v){
     clusters.df <- utils::read.csv(locate_output(config.l, "tracs_clusters"), stringsAsFactors = FALSE,
                                    colClasses = c(sample = "character"))
-    if (nrow(clusters.df) > 0){
-      strains.l$tracs_clusters <- link_table_samples(clusters.df, "sample", metadata.df, "TRACS strain clusters")
-      strains.l$tracs_clusters$sample <- NULL
-    }
+    if (nrow(clusters.df) > 0) strains.l$tracs_clusters <- link_table.f(clusters.df, "sample", "TRACS strain clusters")
   }
   if ("strain_reference_genomes" %in% found.v){
     strain_genomes.df <- read_tsv_fast(locate_output(config.l, "strain_reference_genomes"),
@@ -126,11 +170,19 @@ add_strains <- function(project.l){
     names(strain_genomes.df)[names(strain_genomes.df) == "genome"] <- "Genome"
     strains.l$strain_genomes <- annotate.f(strain_genomes.df)
   }
+  samples.v <- unique(c(strains.l$instrain_sharing$Sample_ID_a, strains.l$instrain_sharing$Sample_ID_b,
+                        strains.l$instrain_genomes$Sample_ID, strains.l$tracs_distances$Sample_ID_a,
+                        strains.l$tracs_distances$Sample_ID_b))
+  strains.l$samples <- lookup.df[lookup.df$Sample_ID %in% samples.v, , drop = FALSE]
+  rownames(strains.l$samples) <- NULL
   project.l$tables$strains <- strains.l
   if (!is.null(strains.l$instrain_sharing)){
     sharing.df <- strains.l$instrain_sharing # nolint: object_usage_linter. Used in cli glue.
+    # nolint next: object_usage_linter. Used in cli glue.
+    datasets.v <- table(factor(strains.l$samples$Dataset, levels = c(labels.l$study, labels.l$comparison)))
     cli::cli_inform(paste("Strain sharing: {length(unique(sharing.df$Genome))} genomes, {nrow(sharing.df)} sample pairs",
-                          "compared, {sum(sharing.df$Same_strain)} with the same strain"))
+                          "compared, {sum(sharing.df$Same_strain)} with the same strain",
+                          "({datasets.v[[1]]} {names(datasets.v)[1]} and {datasets.v[[2]]} {names(datasets.v)[2]} samples)"))
   }
   project.l
 }
@@ -149,16 +201,20 @@ add_strains <- function(project.l){
 #' @param group Metadata column.
 #' @param permutations Number of permutations.
 #' @param seed Random seed.
-#' @return List with `value`, `pairs` (the pairs used, with `Group_a`, `Group_b` and `Pair_type`),
-#'   `summary` (one row per pair type: pairs, samples and the mean, i.e. percent sharing a strain
-#'   for a logical value), `group_pairs` (the same per pair of groups) and `test` (within minus
-#'   between, permutation p value).
+#' @param test Run the permutation test (default `TRUE`); `FALSE` only summarises, e.g. across datasets,
+#'   where the groups of one dataset are never mixed with the other's.
+#' @return List with `value`, `group_levels`, `pairs` (the pairs used, with `Group_a`, `Group_b` and
+#'   `Pair_type`), `summary` (one row per pair type: pairs, samples and the mean, i.e. percent sharing
+#'   a strain for a logical value), `group_pairs` (the same per pair of groups, `Group_1` and
+#'   `Group_2` in the order of the group's levels) and `test` (within minus between, permutation p
+#'   value; `NULL` with `test = FALSE`).
 #' @export
-compare_pairs_by_group <- function(pairs.df, value, metadata.df, group, permutations = 999, seed = 1234){
+compare_pairs_by_group <- function(pairs.df, value, metadata.df, group, permutations = 999, seed = 1234, test = TRUE){
   require_columns(pairs.df, c("Sample_ID_a", "Sample_ID_b", value), "Sample pairs")
   require_columns(metadata.df, c("Sample_ID", group), "Metadata")
   groups.v <- stats::setNames(as.character(metadata.df[[group]]), metadata.df$Sample_ID)
   groups.v <- groups.v[!is.na(groups.v)]
+  levels.v <- if (is.factor(metadata.df[[group]])) levels(metadata.df[[group]]) else sort(unique(groups.v))
   pairs.df <- pairs.df[pairs.df$Sample_ID_a %in% names(groups.v) & pairs.df$Sample_ID_b %in% names(groups.v) &
                          !is.na(pairs.df[[value]]), , drop = FALSE]
   if (nrow(pairs.df) == 0) cli::cli_abort("No sample pairs with {.field {value}} among the analysis samples")
@@ -183,16 +239,22 @@ compare_pairs_by_group <- function(pairs.df, value, metadata.df, group, permutat
     }))
   }
   summary.df <- summarise.f(split(pairs.df, factor(pairs.df$Pair_type, levels = c("Within group", "Between groups"))))
-  group_pair.v <- ifelse(pairs.df$Group_a <= pairs.df$Group_b, paste(pairs.df$Group_a, "-", pairs.df$Group_b),
-                         paste(pairs.df$Group_b, "-", pairs.df$Group_a))
-  group_pairs.df <- summarise.f(split(pairs.df, group_pair.v))
+  first.v <- match(pairs.df$Group_a, levels.v) <= match(pairs.df$Group_b, levels.v)
+  group_1.v <- ifelse(first.v, pairs.df$Group_a, pairs.df$Group_b)
+  group_2.v <- ifelse(first.v, pairs.df$Group_b, pairs.df$Group_a)
+  group_pair.v <- paste(group_1.v, "-", group_2.v)
+  pair_levels.v <- unique(group_pair.v[order(match(group_1.v, levels.v), match(group_2.v, levels.v))])
+  group_pairs.df <- summarise.f(split(pairs.df, factor(group_pair.v, levels = pair_levels.v)))
+  pair_rows.v <- match(group_pairs.df$Pairs_of, group_pair.v)
+  group_pairs.df <- data.frame(Pairs_of = group_pairs.df$Pairs_of, Group_1 = group_1.v[pair_rows.v],
+                               Group_2 = group_2.v[pair_rows.v], group_pairs.df[-1], stringsAsFactors = FALSE)
   if (scale.n == 100){
     names(summary.df)[names(summary.df) == "Mean"] <- names(group_pairs.df)[names(group_pairs.df) == "Mean"] <- "Percent"
     summary.df$Median <- group_pairs.df$Median <- NULL
   }
 
   test.df <- NULL
-  if (length(unique(pairs.df$Pair_type)) == 2){
+  if (test && length(unique(pairs.df$Pair_type)) == 2){
     observed.n <- statistic.f(pairs.df$Pair_type)
     set.seed(seed)
     permuted.v <- vapply(seq_len(permutations), function(i){
@@ -205,7 +267,8 @@ compare_pairs_by_group <- function(pairs.df, value, metadata.df, group, permutat
                           Permutations = length(permuted.v), Pairs = nrow(pairs.df),
                           Samples = length(unique(c(pairs.df$Sample_ID_a, pairs.df$Sample_ID_b))), stringsAsFactors = FALSE)
   }
-  list(value = value, pairs = pairs.df, summary = summary.df, group_pairs = group_pairs.df, test = test.df)
+  list(value = value, group_levels = intersect(levels.v, c(pairs.df$Group_a, pairs.df$Group_b)), pairs = pairs.df,
+       summary = summary.df, group_pairs = group_pairs.df, test = test.df)
 }
 
 #' Plot sample pairs within and between groups
@@ -258,6 +321,155 @@ plot_pairs_by_group <- function(comparison.l, colours.v = NULL, y_label = NULL, 
   with_size(pairs.gg, 6 + 1.6 * length(levels.v), 11)
 }
 
+#' Plot sample pairs for every pair of groups
+#'
+#' A group by group matrix: the percent of sample pairs sharing a strain (logical value) or the
+#' median distance (numeric value) for pairs from each pair of groups, with the number of pairs.
+#' Suits many groups, e.g. study and comparison groups together, where [plot_pairs_by_group()]
+#' would pool every between-group pair.
+#'
+#' @param comparison.l Result of [compare_pairs_by_group()].
+#' @param fill_label Legend title; defaults to the percent sharing a strain or the median of the value.
+#' @param colours Colour ramp from low to high; light to dark blue for sharing, dark to light (closest
+#'   darkest) for distances by default.
+#' @param datasets.v Optional named vector giving each group's dataset (e.g. from
+#'   [combined_metadata()]); groups are then split into one block per dataset.
+#' @return A ggplot.
+#' @export
+plot_group_pair_matrix <- function(comparison.l, fill_label = NULL, colours = NULL, datasets.v = NULL){
+  pairs.df <- comparison.l$group_pairs
+  shared.b <- "Percent" %in% names(pairs.df)
+  value.s <- if (shared.b) "Percent" else "Median"
+  levels.v <- comparison.l$group_levels %||% unique(c(pairs.df$Group_1, pairs.df$Group_2))
+  # Both halves of the symmetric matrix
+  mirrored.df <- pairs.df[pairs.df$Group_1 != pairs.df$Group_2, , drop = FALSE]
+  mirrored.df[c("Group_1", "Group_2")] <- mirrored.df[c("Group_2", "Group_1")]
+  plot.df <- rbind(pairs.df, mirrored.df)
+  plot.df$Value <- plot.df[[value.s]]
+  plot.df$Text <- paste0(if (shared.b) paste0(formatC(plot.df$Value, format = "f", digits = 1), "%") else
+    formatC(signif(plot.df$Value, 3), format = "d", big.mark = ","), "\nn = ",
+    formatC(plot.df$Pairs, format = "d", big.mark = ","))
+  plot.df$Group_1 <- factor(plot.df$Group_1, levels = levels.v)
+  plot.df$Group_2 <- factor(plot.df$Group_2, levels = rev(levels.v))
+  colours <- colours %||% if (shared.b) c("#F7FBFF", "#6BAED6", "#08306B") else c("#08306B", "#6BAED6", "#F7FBFF")
+  limits.v <- if (shared.b) c(0, max(plot.df$Value, 1, na.rm = TRUE)) else range(plot.df$Value, na.rm = TRUE)
+  dark.v <- (plot.df$Value - limits.v[1]) / max(diff(limits.v), 1e-12)
+  plot.df$Text_colour <- ifelse(if (shared.b) dark.v > 0.55 else dark.v < 0.45, "white", "grey10")
+  if (!is.null(datasets.v)){
+    datasets.v <- datasets.v[levels.v]
+    plot.df$Dataset_1 <- factor(datasets.v[as.character(plot.df$Group_1)], levels = unique(datasets.v))
+    plot.df$Dataset_2 <- factor(datasets.v[as.character(plot.df$Group_2)], levels = unique(datasets.v))
+  }
+  matrix.gg <- ggplot2::ggplot(plot.df, ggplot2::aes(x = .data$Group_1, y = .data$Group_2, fill = .data$Value)) +
+    ggplot2::geom_tile(colour = "white", linewidth = 0.6) +
+    ggplot2::geom_text(ggplot2::aes(label = .data$Text, colour = .data$Text_colour), size = 2.3, lineheight = 0.9) +
+    ggplot2::scale_colour_identity() +
+    ggplot2::scale_fill_gradientn(colours = colours, limits = limits.v,
+                                  name = fill_label %||% if (shared.b) "Pairs sharing\na strain (%)" else
+                                    paste("Median", tolower(variable_label(comparison.l$value)))) +
+    ggplot2::scale_x_discrete(expand = c(0, 0)) + ggplot2::scale_y_discrete(expand = c(0, 0)) +
+    ggplot2::labs(x = NULL, y = NULL) + theme_gmaio() +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1), panel.grid = ggplot2::element_blank())
+  # Free scales with free space keep the tiles square in each block, as coord_equal() does without blocks
+  matrix.gg <- if (is.null(datasets.v)) matrix.gg + ggplot2::coord_equal() else {
+    matrix.gg + ggplot2::facet_grid(Dataset_2 ~ Dataset_1, scales = "free", space = "free") +
+      ggplot2::theme(strip.background = ggplot2::element_rect(fill = "grey92", colour = NA))
+  }
+  side.n <- 3.5 + 1.15 * length(levels.v)
+  with_size(matrix.gg, side.n + 3, side.n)
+}
+
+#' Sample pairs from different datasets
+#'
+#' Pairs between a study sample and a comparison sample (strain comparison with
+#' `--strain_include_comparison_reads`), with the study sample first and both samples' labels
+#' and groups.
+#'
+#' @param pairs.df Pairs with `Sample_ID_a` and `Sample_ID_b`, e.g. `instrain_sharing` or
+#'   `tracs_distances` from `project.l$tables$strains`.
+#' @param metadata.df [combined_metadata()]; pairs with a sample not in it are dropped.
+#' @return The pairs whose samples are in different datasets, with `Sample_ID_a` (the study
+#'   sample), `Sample_label_a`, `Group_a`, `Sample_ID_b`, `Sample_label_b`, `Group_b` (groups are
+#'   `Comparison_group`) and the other columns; no rows when there are none.
+#' @export
+cross_dataset_pairs <- function(pairs.df, metadata.df){
+  require_columns(pairs.df, c("Sample_ID_a", "Sample_ID_b"), "Sample pairs")
+  require_columns(metadata.df, c("Sample_ID", "Sample_label", "Dataset", "Comparison_group"), "Combined metadata")
+  dataset.v <- stats::setNames(as.character(metadata.df$Dataset), metadata.df$Sample_ID)
+  study.s <- levels(factor(metadata.df$Dataset))[1]
+  pairs.df <- pairs.df[pairs.df$Sample_ID_a %in% names(dataset.v) & pairs.df$Sample_ID_b %in% names(dataset.v), , drop = FALSE]
+  pairs.df <- pairs.df[dataset.v[pairs.df$Sample_ID_a] != dataset.v[pairs.df$Sample_ID_b], , drop = FALSE]
+  swap.v <- dataset.v[pairs.df$Sample_ID_a] != study.s
+  pairs.df[swap.v, c("Sample_ID_a", "Sample_ID_b")] <- pairs.df[swap.v, c("Sample_ID_b", "Sample_ID_a")]
+  pairs.df$Dataset_a <- pairs.df$Dataset_b <- NULL
+  label.v <- stats::setNames(metadata.df$Sample_label, metadata.df$Sample_ID)
+  group.v <- stats::setNames(as.character(metadata.df$Comparison_group), metadata.df$Sample_ID)
+  front.df <- data.frame(Sample_ID_a = pairs.df$Sample_ID_a, Sample_label_a = unname(label.v[pairs.df$Sample_ID_a]),
+                         Group_a = unname(group.v[pairs.df$Sample_ID_a]), Sample_ID_b = pairs.df$Sample_ID_b,
+                         Sample_label_b = unname(label.v[pairs.df$Sample_ID_b]), Group_b = unname(group.v[pairs.df$Sample_ID_b]),
+                         stringsAsFactors = FALSE)
+  first.v <- intersect(c("Genome", "Short_ID", "Label", "Phylum"), names(pairs.df))
+  rest.v <- setdiff(names(pairs.df), c(first.v, "Sample_ID_a", "Sample_ID_b"))
+  out.df <- cbind(pairs.df[first.v], front.df, pairs.df[rest.v])
+  rownames(out.df) <- NULL
+  out.df
+}
+
+#' Strain sharing per genome and pair of datasets
+#'
+#' For each genome, the sample pairs inStrain compared and those with the same strain, within the
+#' study, between study and comparison samples and within the comparison samples.
+#'
+#' @param sharing.df `project.l$tables$strains$instrain_sharing`.
+#' @param genomes.df Optional `project.l$tables$strains$strain_genomes`, for the genome's `origin`
+#'   (`mag` or `reference`).
+#' @param datasets.v Dataset labels, study first (`comparison$dataset_labels`); defaults to those in `sharing.df`.
+#' @param sample_ids.v Samples to count pairs of, e.g. the analysis samples without excluded ones
+#'   ([combined_metadata()] or [analysis_metadata()] `Sample_ID`); all by default.
+#' @return Data frame with one row per genome: `Genome`, `Short_ID`, `Label`, `Phylum`, `Origin`,
+#'   then `Pairs_<datasets>` and `Same_strain_<datasets>` for each pair of datasets, ordered by the
+#'   most pairs with the same strain between datasets.
+#' @export
+strain_sharing_by_genome <- function(sharing.df, genomes.df = NULL, datasets.v = NULL, sample_ids.v = NULL){
+  require_columns(sharing.df, c("Genome", "Sample_ID_a", "Sample_ID_b", "Dataset_a", "Dataset_b", "Same_strain"),
+                  "inStrain strain sharing")
+  if (!is.null(sample_ids.v)){
+    sharing.df <- sharing.df[sharing.df$Sample_ID_a %in% sample_ids.v & sharing.df$Sample_ID_b %in% sample_ids.v, , drop = FALSE]
+  }
+  datasets.v <- datasets.v %||% unique(c(sharing.df$Dataset_a, sharing.df$Dataset_b))
+  first.v <- match(sharing.df$Dataset_a, datasets.v) <= match(sharing.df$Dataset_b, datasets.v)
+  dataset_1.v <- ifelse(first.v, sharing.df$Dataset_a, sharing.df$Dataset_b)
+  dataset_2.v <- ifelse(first.v, sharing.df$Dataset_b, sharing.df$Dataset_a)
+  pair.v <- ifelse(dataset_1.v == dataset_2.v, dataset_1.v, paste(dataset_1.v, "-", dataset_2.v))
+  # Within the study, study with comparison, within the comparison
+  combos.m <- which(upper.tri(diag(length(datasets.v)), diag = TRUE), arr.ind = TRUE)
+  pair_levels.v <- ifelse(combos.m[, "row"] == combos.m[, "col"], datasets.v[combos.m[, "row"]],
+                          paste(datasets.v[combos.m[, "row"]], "-", datasets.v[combos.m[, "col"]]))
+  pair_levels.v <- intersect(pair_levels.v, pair.v)
+  genome_ids.v <- unique(sharing.df$Genome)
+  rows.v <- match(genome_ids.v, sharing.df$Genome)
+  out.df <- data.frame(Genome = genome_ids.v, stringsAsFactors = FALSE)
+  for (column.s in intersect(c("Short_ID", "Label", "Phylum"), names(sharing.df))){
+    out.df[[column.s]] <- sharing.df[[column.s]][rows.v]
+  }
+  if (!is.null(genomes.df) && "origin" %in% names(genomes.df)){
+    out.df$Origin <- genomes.df$origin[match(genome_ids.v, genomes.df$Genome)]
+  }
+  genome.f <- factor(sharing.df$Genome, levels = genome_ids.v)
+  for (pair.s in pair_levels.v){
+    in_pair.v <- pair.v == pair.s
+    out.df[[paste0("Pairs_", pair.s)]] <- as.vector(table(genome.f[in_pair.v]))
+    out.df[[paste0("Same_strain_", pair.s)]] <- as.vector(tapply(sharing.df$Same_strain[in_pair.v], genome.f[in_pair.v], sum,
+                                                                 default = 0))
+  }
+  between.v <- pair_levels.v[grepl(" - ", pair_levels.v, fixed = TRUE)]
+  between.n <- rowSums(out.df[paste0("Same_strain_", between.v)])
+  within.n <- if (length(pair_levels.v) > 0) out.df[[paste0("Same_strain_", pair_levels.v[1])]] else 0
+  out.df <- out.df[order(-between.n, -within.n, out.df$Short_ID %||% out.df$Genome), , drop = FALSE]
+  rownames(out.df) <- NULL
+  out.df
+}
+
 #' Sample by sample matrix of strain sharing
 #'
 #' @param pairs.df Pairs with `Sample_ID_a`, `Sample_ID_b` and the `value` column, e.g.
@@ -289,15 +501,16 @@ strain_sharing_matrix <- function(pairs.df, value, sample_ids.v = NULL, diagonal
 #' @param genomes.df `project.l$tables$strains$instrain_genomes`.
 #' @param min_breadth Minimum `breadth_minCov` (share of the genome covered at inStrain's minimum
 #'   coverage) for a genome to count in a sample.
-#' @return Data frame with `Sample_ID`, `Genomes_profiled`, `Median_nucleotide_diversity`,
-#'   `Median_SNVs_per_Mb` (SNVs within the sample's population per Mb of genome) and `Median_coverage`.
+#' @return Data frame with `Sample_ID`, `Dataset` (when `genomes.df` has it), `Genomes_profiled`,
+#'   `Median_nucleotide_diversity`, `Median_SNVs_per_Mb` (SNVs within the sample's population per Mb
+#'   of genome) and `Median_coverage`.
 #' @export
 instrain_sample_summary <- function(genomes.df, min_breadth = 0.5){
   require_columns(genomes.df, c("Sample_ID", "Genome", "nucl_diversity", "breadth_minCov", "coverage"),
                   "inStrain genome profiles")
   kept.df <- genomes.df[!is.na(genomes.df$breadth_minCov) & genomes.df$breadth_minCov >= min_breadth, , drop = FALSE]
   samples.v <- unique(genomes.df$Sample_ID)
-  do.call(rbind, lapply(samples.v, function(sample.s){
+  summary.df <- do.call(rbind, lapply(samples.v, function(sample.s){
     rows.df <- kept.df[kept.df$Sample_ID == sample.s, , drop = FALSE]
     median.f <- function(x) if (length(x) == 0 || all(is.na(x))) NA_real_ else stats::median(x, na.rm = TRUE)
     data.frame(Sample_ID = sample.s, Genomes_profiled = nrow(rows.df),
@@ -307,6 +520,12 @@ instrain_sample_summary <- function(genomes.df, min_breadth = 0.5){
                } else NA_real_,
                Median_coverage = median.f(rows.df$coverage), stringsAsFactors = FALSE)
   }))
+  if ("Dataset" %in% names(genomes.df)){
+    summary.df <- data.frame(Sample_ID = summary.df$Sample_ID,
+                             Dataset = genomes.df$Dataset[match(summary.df$Sample_ID, genomes.df$Sample_ID)],
+                             summary.df[-1], stringsAsFactors = FALSE)
+  }
+  summary.df
 }
 
 #' Plot a sample by sample strain sharing matrix
@@ -318,24 +537,34 @@ instrain_sample_summary <- function(genomes.df, min_breadth = 0.5){
 #' @param type `"count"` (default; genomes with a shared strain, from `instrain_counts`) or `"popani"`
 #'   (popANI in percent for one genome; inStrain calls the same strain at >= 99.999%).
 #' @param title Optional title above the matrix (e.g. the genome label).
-#' @param show_values Print values in the cells; by default for `"count"` only.
+#' @param show_values Print values in the cells; by default for `"count"` with up to 50 samples.
+#' @param annotations Metadata columns annotating the samples; defaults to `group` (e.g.
+#'   `c("Dataset", "Comparison_group")` with [combined_metadata()]).
+#' @param cell_size Cell size in centimetres; by default 0.45, smaller for more than 60 samples so
+#'   the matrix stays within about 28 cm (blocks are then named by the annotation legend only).
 #' @return A ComplexHeatmap `Heatmap`.
 #' @export
 plot_strain_sharing_matrix <- function(values.m, metadata.df, palettes.l = list(), group = NULL, type = c("count", "popani"),
-                                       title = NULL, show_values = type == "count"){
+                                       title = NULL, show_values = type == "count" && nrow(values.m) <= 50,
+                                       annotations = group, cell_size = min(0.45, 28 / nrow(values.m))){
   type <- match.arg(type)
+  names_size.n <- min(7, cell_size * 28.35 * 0.85)
+  # Small cells leave no room for group names over the blocks; the annotation legend names them
+  block_titles.b <- cell_size >= 0.3
   if (type == "count"){
     breaks.v <- unique(pmin(c(0, 1, 2, 5, 10), max(values.m, 1, na.rm = TRUE)))
-    plot_genome_matrix(values.m, metadata.df, palettes.l, annotation_variables = group, type = "distance", breaks = breaks.v,
-                       colours = grDevices::hcl.colors(length(breaks.v), "Purples", rev = TRUE),
+    plot_genome_matrix(values.m, metadata.df, palettes.l, annotation_variables = annotations, type = "distance",
+                       breaks = breaks.v, colours = grDevices::hcl.colors(length(breaks.v), "Purples", rev = TRUE),
                        legend_title = "Genomes with\na shared strain", split_by = group, cluster = FALSE,
-                       show_values = show_values, hide_zero_values = TRUE, column_title = title)
+                       show_values = show_values, hide_zero_values = TRUE, column_title = title, cell_size = cell_size,
+                       names_size = names_size.n, block_titles = block_titles.b)
   } else {
-    plot_genome_matrix(values.m, metadata.df, palettes.l, annotation_variables = group, type = "ani",
+    plot_genome_matrix(values.m, metadata.df, palettes.l, annotation_variables = annotations, type = "ani",
                        breaks = c(99, 99.9, 99.99, 99.999, 100),
                        colours = c("#F7F7F7", "#C6DBEF", "#6BAED6", "#2171B5", "#08306B"),
                        legend_title = "popANI (%)", split_by = group, cluster = FALSE, show_values = show_values,
-                       column_title = title,
+                       column_title = title, cell_size = cell_size, names_size = names_size.n,
+                       block_titles = block_titles.b,
                        legend_param = list(at = c(99, 99.9, 99.99, 99.999, 100), color_bar = "discrete",
                                            labels = c("<= 99", "99.9", "99.99", "99.999 (same strain)", "100")))
   }

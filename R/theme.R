@@ -177,6 +177,12 @@ integer_breaks <- function(limits){
 
 # Blocks of genomes by a metadata column, with references and unassigned genomes last
 split_factor <- function(values.v){
+  # A factor keeps its level order (e.g. study groups before comparison groups)
+  if (is.factor(values.v)){
+    levels.v <- intersect(levels(values.v), as.character(values.v))
+    values.v <- ifelse(is.na(values.v), "Unassigned", as.character(values.v))
+    return(factor(values.v, levels = c(levels.v, intersect("Unassigned", values.v))))
+  }
   values.v <- ifelse(is.na(values.v), "Unassigned", as.character(values.v))
   levels.v <- sort(unique(values.v))
   # Numbered levels such as sequence types in numeric order (ST10 before ST131)

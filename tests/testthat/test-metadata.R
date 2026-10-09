@@ -2,6 +2,7 @@ test_that("resolve_sample_ids matches exact names and longest prefixes on bounda
   ids.v <- c("S1", "S10", "S1_extra")
   resolved.v <- resolve_sample_ids(c("S1", "S10_R1", "S1.clean_1.fastq.gz", "S1_extra.metabat.2", "S100", "S1___NODE_1"), ids.v)
   expect_equal(unname(resolved.v), c("S1", "S10", "S1", "S1_extra", NA, "S1"))
+  expect_equal(resolve_sample_ids(c("S1", "S2"), character()), c(S1 = NA_character_, S2 = NA_character_))
 })
 
 test_that("link_samples errors on unknown and colliding names", {

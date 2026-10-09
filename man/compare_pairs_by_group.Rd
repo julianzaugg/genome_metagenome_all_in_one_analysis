@@ -10,7 +10,8 @@ compare_pairs_by_group(
   metadata.df,
   group,
   permutations = 999,
-  seed = 1234
+  seed = 1234,
+  test = TRUE
 )
 }
 \arguments{
@@ -25,12 +26,16 @@ compare_pairs_by_group(
 \item{permutations}{Number of permutations.}
 
 \item{seed}{Random seed.}
+
+\item{test}{Run the permutation test (default \code{TRUE}); \code{FALSE} only summarises, e.g. across datasets,
+where the groups of one dataset are never mixed with the other's.}
 }
 \value{
-List with \code{value}, \code{pairs} (the pairs used, with \code{Group_a}, \code{Group_b} and \code{Pair_type}),
-\code{summary} (one row per pair type: pairs, samples and the mean, i.e. percent sharing a strain
-for a logical value), \code{group_pairs} (the same per pair of groups) and \code{test} (within minus
-between, permutation p value).
+List with \code{value}, \code{group_levels}, \code{pairs} (the pairs used, with \code{Group_a}, \code{Group_b} and
+\code{Pair_type}), \code{summary} (one row per pair type: pairs, samples and the mean, i.e. percent sharing
+a strain for a logical value), \code{group_pairs} (the same per pair of groups, \code{Group_1} and
+\code{Group_2} in the order of the group's levels) and \code{test} (within minus between, permutation p
+value; \code{NULL} with \code{test = FALSE}).
 }
 \description{
 For strain sharing (logical, e.g. inStrain \code{Same_strain}) or SNP distances (numeric, e.g.

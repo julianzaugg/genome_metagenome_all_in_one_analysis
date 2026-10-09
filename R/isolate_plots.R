@@ -51,6 +51,8 @@ ani_matrix <- function(ani.df, genomes.v = NULL, floor_value = 75){
 #' @param cell_size Cell size in centimetres.
 #' @param names_size Font size of genome labels.
 #' @param row_title,column_title Axis titles.
+#' @param block_titles Label the blocks of `split_by` (default `TRUE`); `FALSE` leaves them to the
+#'   annotation legend, e.g. when blocks are too narrow for their names.
 #' @param annotation_names Show annotation names beside the column annotations.
 #' @param hide_zero_values Leave cells with zero empty when values are shown.
 #' @param legend_param Settings for the value legend, passed to `heatmap_legend_param` of
@@ -62,7 +64,7 @@ plot_genome_matrix <- function(values.m, genomes.df, palettes.l = list(), annota
                                split_by = NULL, cluster = TRUE, show_dend = TRUE, label_by = "Sample_label",
                                show_values = nrow(values.m) <= 25, value_digits = 1, value_size = NULL, cell_size = 0.45,
                                names_size = 7, row_title = NULL, column_title = NULL, annotation_names = TRUE,
-                               hide_zero_values = FALSE, legend_param = list()){
+                               hide_zero_values = FALSE, legend_param = list(), block_titles = TRUE){
   type <- match.arg(type)
   genomes.df <- genomes.df[match(rownames(values.m), genomes.df$Sample_ID), , drop = FALSE]
   require_columns(genomes.df, c(label_by, split_by, annotation_variables), "Genome metadata")
@@ -109,7 +111,8 @@ plot_genome_matrix <- function(values.m, genomes.df, palettes.l = list(), annota
       clustering_method_rows = "average", clustering_method_columns = "average",
       show_row_dend = show_dend && !isFALSE(cluster), show_column_dend = show_dend && !isFALSE(cluster),
       row_split = split.v, column_split = split.v, cluster_row_slices = FALSE, cluster_column_slices = FALSE,
-      row_title = row_title %||% character(0), column_title = column_title %||% character(0),
+      row_title = if (block_titles || is.null(split.v)) row_title %||% character(0) else row_title,
+      column_title = if (block_titles || is.null(split.v)) column_title %||% character(0) else column_title,
       row_title_gp = grid::gpar(fontsize = 8, fontface = "bold"), column_title_gp = grid::gpar(fontsize = 8, fontface = "bold"),
       top_annotation = annotation.l$top, left_annotation = annotation.l$left, cell_fun = cell_fun,
       row_names_gp = grid::gpar(fontsize = names_size), column_names_gp = grid::gpar(fontsize = names_size),

@@ -31,8 +31,8 @@ processed_test_project <- function(env = parent.frame()){
   project.l <- suppressMessages(add_genomespot(project.l))
   project.l <- suppressMessages(add_mobile_elements(project.l))
   project.l <- suppressMessages(add_marker_tree(project.l))
-  project.l <- suppressMessages(add_strains(project.l))
   project.l <- suppressMessages(add_comparison(project.l, min_annotated_fraction = 0.5))
+  project.l <- suppressMessages(add_strains(project.l))
   suppressMessages(add_palettes(project.l))
 }
 

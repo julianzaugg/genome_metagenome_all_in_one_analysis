@@ -430,3 +430,57 @@ write_tsv(data.frame(sample = rep(paste0(comparison.df$Sample_ID, "_R1"), each =
             as.vector(coverage.m) > 0, ],
           "29_comparison_reads", "singlem", "metagenome.condensed.tsv")
 cat("MAG, strain and comparison examples written to", root.s, "\n")
+
+# ---- Metagenome example: comparison samples in the strain comparison ----------------------------------------
+# As with --strain_include_comparison_reads: the 16 comparison mice were profiled by inStrain and TRACS too. Mice of
+# one facility often share strains, mice of different facilities rarely, and a few study mice carry a Facility_A
+# strain. A separate seed keeps the data above unchanged.
+set.seed(2029)
+read_example <- function(...) utils::read.delim(file.path(results.s, ...), check.names = FALSE, stringsAsFactors = FALSE,
+                                                colClasses = "character")
+facility.v <- stats::setNames(comparison.df$Facility, comparison.df$Sample_ID)
+all_samples.v <- c(samples.v, comparison.df$Sample_ID)
+write_tsv(data.frame(sample = all_samples.v, cohort = rep(c("main", "comparison"), c(length(samples.v), nrow(comparison.df)))),
+          "26_strain_reference", "strain_samples.tsv")
+pairs.df <- data.frame(t(utils::combn(all_samples.v, 2)), stringsAsFactors = FALSE)
+names(pairs.df) <- c("sample_a", "sample_b")
+pairs.df <- pairs.df[pairs.df$sample_b %in% comparison.df$Sample_ID, , drop = FALSE]
+new_sharing.df <- do.call(rbind, lapply(strain_mags.v, function(mag.s){
+  compared.df <- pairs.df[stats::runif(nrow(pairs.df)) < 0.5, , drop = FALSE]
+  facility_a.v <- facility.v[compared.df$sample_a]
+  same_facility.v <- !is.na(facility_a.v) & facility_a.v == facility.v[compared.df$sample_b]
+  study_to_a.v <- is.na(facility_a.v) & facility.v[compared.df$sample_b] == "Facility_A" & mag.s == strain_mags.v[1]
+  same_strain.v <- stats::runif(nrow(compared.df)) < ifelse(same_facility.v, 0.4, ifelse(study_to_a.v, 0.15, 0.01))
+  popani.v <- ifelse(same_strain.v, stats::runif(nrow(compared.df), 0.999991, 1), stats::runif(nrow(compared.df), 0.9985, 0.99998))
+  data.frame(genome = mag.s, sample_a = paste0(compared.df$sample_a, ".bam"), sample_b = paste0(compared.df$sample_b, ".bam"),
+             popANI = round(popani.v, 7), conANI = round(popani.v - 1e-5, 7), percent_genome_compared = "",
+             coverage_overlap = round(stats::runif(nrow(compared.df), 0.5, 1), 3), cluster_a = "1_1", cluster_b = "1_2",
+             same_strain = ifelse(popani.v >= 0.99999, "TRUE", "FALSE"))
+}))
+sharing.df <- rbind(read_example("27_instrain", "summary", "strain_sharing_summary.tsv"), new_sharing.df)
+write_tsv(sharing.df, "27_instrain", "summary", "strain_sharing_summary.tsv")
+counts.df <- stats::aggregate(sharing.df$same_strain == "TRUE", list(sample_a = sharing.df$sample_a, sample_b = sharing.df$sample_b),
+                              function(x) c(length(x), sum(x)))
+write_tsv(data.frame(sample_a = counts.df$sample_a, sample_b = counts.df$sample_b, n_genomes_compared = counts.df$x[, 1],
+                     n_same_strain = counts.df$x[, 2]),
+          "27_instrain", "summary", "strain_sharing_counts.tsv")
+for (sample.s in comparison.df$Sample_ID){
+  write_tsv(data.frame(genome = mags.v, coverage = round(stats::runif(10, 3, 60), 2), breadth = round(stats::runif(10, 0.7, 1), 3),
+                       nucl_diversity = round(stats::rlnorm(10, log(0.0014), 0.3), 6), length = 3e6,
+                       breadth_minCov = round(stats::runif(10, 0.2, 0.98), 3),
+                       popANI_reference = round(stats::runif(10, 0.997, 0.9999), 6), SNV_count = stats::rpois(10, 0.0014 * 3e6)),
+            "27_instrain", "profiles", paste0(sample.s, ".IS"), "output", paste0(sample.s, ".IS_genome_info.tsv"))
+}
+new_tracs.df <- data.frame(sampleA = sub("\\.bam$", "", new_sharing.df$sample_a), sampleB = sub("\\.bam$", "", new_sharing.df$sample_b),
+                           `date difference` = NA, check.names = FALSE)
+new_tracs.df$`SNP distance` <- ifelse(new_sharing.df$same_strain == "TRUE", stats::rpois(nrow(new_tracs.df), 3),
+                                      stats::rpois(nrow(new_tracs.df), 400))
+new_tracs.df$`transmission distance` <- NA
+new_tracs.df$`expected K` <- NA
+new_tracs.df$`filtered SNP distance` <- round(new_tracs.df$`SNP distance` * stats::runif(nrow(new_tracs.df), 0.6, 0.9))
+new_tracs.df$`sites considered` <- round(stats::runif(nrow(new_tracs.df), 1e6, 2.5e6))
+new_tracs.df$`MSA file` <- new_sharing.df$genome
+tracs_path.s <- file.path(results.s, "28_tracs", "transmission_distances.csv")
+tracs.df <- utils::read.csv(tracs_path.s, check.names = FALSE, stringsAsFactors = FALSE)
+utils::write.csv(rbind(tracs.df, new_tracs.df), tracs_path.s, row.names = FALSE, na = "NA")
+cat("Comparison samples added to the strain examples in", root.s, "\n")

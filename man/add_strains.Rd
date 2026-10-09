@@ -10,14 +10,22 @@ add_strains(project.l)
 \item{project.l}{A \code{gm_project}.}
 }
 \value{
-Updated \code{gm_project} with a \code{project.l$tables$strains} list: \code{instrain_sharing},
-\code{instrain_counts}, \code{instrain_genomes}, \code{instrain_excluded}, \code{tracs_distances},
-\code{tracs_clusters} and \code{strain_genomes} (whichever are available).
+Updated \code{gm_project} with a \code{project.l$tables$strains} list: \code{samples} (\code{Sample_ID} and
+\code{Dataset} of every sample in the results), \code{instrain_sharing}, \code{instrain_counts},
+\code{instrain_genomes}, \code{instrain_excluded}, \code{tracs_distances}, \code{tracs_clusters} and
+\code{strain_genomes} (whichever are available).
 }
 \description{
 Reads the pipeline's strain comparison outputs (\code{--run_instrain}, \code{--run_tracs}): inStrain
 strain sharing between samples (popANI; the same strain at >= 99.999\%), inStrain per-sample
 genome profiles (coverage, breadth, nucleotide diversity) and TRACS SNP distances between
-samples. Sample names are linked to the metadata and genomes to the bin summary.
-Run after \code{\link[=add_mags]{add_mags()}}.
+samples. Sample names are linked to the metadata and genomes to the bin summary and reference
+genomes (\verb{--strain_genome_source hq_ref_representatives} or \code{references}).
+}
+\details{
+With \code{--strain_include_comparison_reads}, comparison samples are in the same tables; they are
+linked to the comparison metadata, so run \code{\link[=add_comparison]{add_comparison()}} first. Without comparison
+metadata they are left out, with a message. Every table gets the \code{Dataset} of each sample (the
+\code{comparison$dataset_labels}).
+Run after \code{\link[=add_mags]{add_mags()}} and \code{\link[=add_comparison]{add_comparison()}}.
 }

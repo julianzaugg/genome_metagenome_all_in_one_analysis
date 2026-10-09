@@ -211,8 +211,8 @@ example_project <- function(path = tempfile("gmaio_example_"), mode = c("metagen
       project.l <- add_sylph(project.l)
       project.l <- add_singlem(project.l)
       project.l <- add_mags(project.l)
-      project.l <- add_strains(project.l)
       project.l <- add_comparison(project.l)
+      project.l <- add_strains(project.l)
     } else {
       project.l <- add_isolate_genomes(project.l)
       project.l <- add_comparisons(project.l)

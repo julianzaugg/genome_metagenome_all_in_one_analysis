@@ -434,3 +434,63 @@ utils::write.table(data.frame(Gene_ID = expanded_genes.v, matrix(round(rexp(40 *
                                                                  dimnames = list(NULL, comparison.v)), check.names = FALSE),
                    file.path(root.s, "comparison_rpkm.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
 cat("Reference, strain and comparison fixtures written to", root.s, "\n")
+
+# ---- Metagenome: strain comparison with a reference genome and comparison reads ---------------------------
+# As with --strain_genome_source hq_ref_representatives --strain_include_comparison_reads: the reference GCA_000123.1
+# is in the strain set (S1_isolate_ref is dropped on its CheckM2 contamination), and comparison samples C1 and C2 were
+# profiled and compared with the study samples; C1 carries S1's strain of S1.metabat2.1. A separate seed keeps the
+# fixtures above unchanged.
+set.seed(11)
+read_fixture <- function(...) utils::read.delim(file.path(results.s, ...), check.names = FALSE, stringsAsFactors = FALSE,
+                                                colClasses = "character")
+strain_genomes.df <- read_fixture("26_strain_reference", "strain_reference_genomes.tsv")
+strain_genomes.df$origin <- "mag"
+strain_genomes.df <- rbind(strain_genomes.df,
+                           data.frame(genome = references.v[2:1], completeness = c("97.5", "99.1"), contamination = c("1.2", "6.4"),
+                                      source = "reference_checkm2", status = c("kept", "dropped"),
+                                      reason = c("passed", "below_thresholds"), origin = "reference"))
+write_tsv(strain_genomes.df, "26_strain_reference", "strain_reference_genomes.tsv")
+strain_samples.v <- c(samples.v, "C1", "C2")
+write_tsv(data.frame(sample = strain_samples.v, cohort = rep(c("main", "comparison"), c(length(samples.v), 2))),
+          "26_strain_reference", "strain_samples.tsv")
+
+sharing.df <- read_fixture("27_instrain", "summary", "strain_sharing_summary.tsv")
+new_pairs.df <- data.frame(t(utils::combn(strain_samples.v, 2)), stringsAsFactors = FALSE)
+names(new_pairs.df) <- c("sample_a", "sample_b")
+comparison_pairs.df <- new_pairs.df[new_pairs.df$sample_b %in% c("C1", "C2"), , drop = FALSE]
+new_sharing.df <- do.call(rbind, lapply(c(strain_genomes.v, references.v[2]), function(genome.s){
+  pairs.df <- if (genome.s == references.v[2]) new_pairs.df else comparison_pairs.df
+  popani.v <- round(runif(nrow(pairs.df), 0.9990, 0.99998), 7)
+  popani.v[genome.s == strain_genomes.v[1] & pairs.df$sample_a == "S1" & pairs.df$sample_b == "C1"] <- 0.999997
+  data.frame(genome = genome.s, sample_a = paste0(pairs.df$sample_a, ".bam"), sample_b = paste0(pairs.df$sample_b, ".bam"),
+             popANI = popani.v, conANI = popani.v - 0.0001, percent_genome_compared = "",
+             coverage_overlap = round(runif(nrow(pairs.df)), 3), cluster_a = "1_1", cluster_b = "1_2",
+             same_strain = ifelse(popani.v >= 0.99999, "TRUE", "FALSE"))
+}))
+sharing.df <- rbind(sharing.df, new_sharing.df)
+write_tsv(sharing.df, "27_instrain", "summary", "strain_sharing_summary.tsv")
+counts.df <- stats::aggregate(sharing.df$same_strain == "TRUE", list(sample_a = sharing.df$sample_a, sample_b = sharing.df$sample_b),
+                              function(x) c(length(x), sum(x)))
+write_tsv(data.frame(sample_a = counts.df$sample_a, sample_b = counts.df$sample_b, n_genomes_compared = counts.df$x[, 1],
+                     n_same_strain = counts.df$x[, 2]),
+          "27_instrain", "summary", "strain_sharing_counts.tsv")
+for (sample.s in c("C1", "C2")){
+  write_tsv(data.frame(genome = c(hq.v, references.v[2]), coverage = round(runif(5, 2, 40), 2), breadth = round(runif(5, 0.6, 1), 3),
+                       nucl_diversity = round(runif(5, 0.0005, 0.01), 5), length = 2.5e6,
+                       breadth_minCov = round(runif(5, 0.3, 0.98), 3), popANI_reference = round(runif(5, 0.995, 0.9999), 5),
+                       SNV_count = rpois(5, 200)),
+            "27_instrain", "profiles", paste0(sample.s, ".IS"), "output", paste0(sample.s, ".IS_genome_info.tsv"))
+}
+tracs.df <- utils::read.csv(file.path(results.s, "28_tracs", "transmission_distances.csv"), check.names = FALSE,
+                            stringsAsFactors = FALSE, colClasses = c(sampleA = "character", sampleB = "character"))
+new_tracs.df <- data.frame(sampleA = comparison_pairs.df$sample_a, sampleB = comparison_pairs.df$sample_b, `date difference` = NA,
+                           `SNP distance` = rpois(nrow(comparison_pairs.df), 60), `transmission distance` = NA, `expected K` = NA,
+                           check.names = FALSE)
+new_tracs.df$`filtered SNP distance` <- pmax(0, new_tracs.df$`SNP distance` - rpois(nrow(new_tracs.df), 10))
+new_tracs.df$`sites considered` <- round(runif(nrow(new_tracs.df), 5e5, 2e6))
+new_tracs.df$`MSA file` <- strain_genomes.v[1]
+utils::write.csv(rbind(tracs.df, new_tracs.df), file.path(results.s, "28_tracs", "transmission_distances.csv"), row.names = FALSE,
+                 na = "NA")
+utils::write.csv(data.frame(sample = strain_samples.v, cluster = c(0, 0, 1, 2, 2, 3, 0, 4)),
+                 file.path(results.s, "28_tracs", "strain_clusters.csv"), row.names = FALSE)
+cat("Strain comparison with a reference genome and comparison reads written to", root.s, "\n")

@@ -137,3 +137,9 @@ test_that("barchart sizes leave room for legends and keep strip heights", {
   expect_gt(attr(bottom.gg, "gm_size")[["height"]], attr(right.gg, "gm_size")[["height"]])
   expect_equal(bottom.gg$patches$layout$heights, c(7, 0.4))
 })
+
+test_that("blocks follow a factor's level order and sort other values", {
+  expect_equal(levels(split_factor(factor(c("Wild", "Control", NA), levels = c("Control", "Treated", "Wild")))),
+               c("Control", "Wild", "Unassigned"))
+  expect_equal(levels(split_factor(c("ST131", "Reference", "ST10"))), c("ST10", "ST131", "Reference"))
+})

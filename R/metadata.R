@@ -117,6 +117,7 @@ order_samples <- function(metadata.df, sample_order.v){
 #' @export
 resolve_sample_ids <- function(observed.v, sample_ids.v){
   observed.v <- as.character(observed.v)
+  if (length(sample_ids.v) == 0) return(stats::setNames(rep(NA_character_, length(observed.v)), observed.v))
   unique_observed.v <- unique(observed.v)
   ids_by_length.v <- sample_ids.v[order(-nchar(sample_ids.v))]
 
