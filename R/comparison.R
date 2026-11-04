@@ -30,6 +30,15 @@ read_comparison_metadata <- function(config.l){
     require_columns(metadata.df, group.s, "Comparison metadata")
     values.v <- as.character(metadata.df[[group.s]])
     values.v[is.na(values.v) | values.v == ""] <- "Unknown"
+    recode.v <- unlist(comparison.l$group_recode)
+    if (length(recode.v) > 0){
+      unused.v <- setdiff(names(recode.v), values.v)
+      if (length(unused.v) > 0) cli::cli_abort("{.field comparison$group_recode} names no comparison group: {.val {unused.v}}")
+      renamed.v <- values.v %in% names(recode.v)
+      metadata.df[[paste0(group.s, "_original")]] <- as.character(metadata.df[[group.s]])
+      values.v[renamed.v] <- unname(recode.v[values.v[renamed.v]])
+      metadata.df[[group.s]] <- values.v
+    }
     metadata.df$Comparison_group <- values.v
   }
   rownames(metadata.df) <- metadata.df$Sample_ID
@@ -110,7 +119,8 @@ add_comparison <- function(project.l, min_annotated_fraction = 0.9){
     metadata.df$Sample_label[repeated.v] <- paste0(metadata.df$Sample_label[repeated.v], " (", repeated_ids.v, ")")
   }
   # A comparison group named like a study group (e.g. the same site) stays a separate group
-  study_groups.v <- if (!is.null(primary_group(project.l))) unique(as.character(project.l$metadata[[primary_group(project.l)]]))
+  focal.df <- project.l$metadata[!(project.l$metadata$Comparison_member %in% TRUE), , drop = FALSE]
+  study_groups.v <- if (!is.null(primary_group(project.l))) unique(as.character(focal.df[[primary_group(project.l)]]))
   clash.v <- metadata.df$Comparison_group %in% study_groups.v
   if (any(clash.v)){
     renamed.v <- paste0(metadata.df$Comparison_group[clash.v], " (", config.l$comparison$dataset_labels$comparison, ")")
@@ -226,23 +236,33 @@ merge_profiles <- function(profiles.l, source = NULL){
 
 #' Metadata of study and comparison samples together
 #'
+#' Study samples that config `comparison: study_samples` moves to the comparison set (`Comparison_member`)
+#' join the comparison samples: their `Dataset` is the comparison label and their `Comparison_group` the
+#' configured `group`, so they pool with comparison samples of that group name. Samples are ordered by
+#' dataset and group, so each group is one block.
+#'
 #' @param project.l A `gm_project` with comparison samples ([add_comparison()]).
 #' @param include_excluded Keep samples excluded from analyses (`Excluded`: config `exclude_column` or
 #'   `exclude_samples`); default `FALSE`.
 #' @return Data frame with `Sample_ID`, `Sample_label`, `Excluded`, `Dataset` (the
 #'   `comparison$dataset_labels`), `Comparison_group` (the study's primary group variable for study
 #'   samples, `comparison$group_variable` for comparison samples, as a factor with the study levels
-#'   first) and the study group variable and comparison group variable columns.
+#'   first, or in the order of `comparison$group_order`) and the study group variable and comparison group
+#'   variable columns.
 #' @export
 combined_metadata <- function(project.l, include_excluded = FALSE){
   comparison.l <- project.l$comparison
   if (is.null(comparison.l)) cli::cli_abort("No comparison samples in the project; see {.fn add_comparison}")
   labels.l <- project.l$config$comparison$dataset_labels
-  study.df <- project.l$metadata
+  all_study.df <- project.l$metadata
+  member.v <- all_study.df$Comparison_member %in% TRUE
+  member_group.s <- project.l$config$comparison$study_samples$group
+  study.df <- all_study.df[!member.v, , drop = FALSE]
+  moved.df <- all_study.df[member.v, , drop = FALSE]
   group.s <- primary_group(project.l)
   study_group.v <- if (is.null(group.s)) rep(labels.l$study, nrow(study.df)) else as.character(study.df[[group.s]])
   study_group.v[is.na(study_group.v)] <- "Unknown"
-  study_levels.v <- if (!is.null(group.s) && is.factor(study.df[[group.s]])) levels(study.df[[group.s]]) else
+  study_levels.v <- if (!is.null(group.s) && is.factor(study.df[[group.s]])) levels(droplevels(study.df[[group.s]])) else
     sort(unique(study_group.v))
   study_levels.v <- unique(c(study_levels.v, study_group.v))
   core.v <- c("Sample_ID", "Sample_label", "Excluded")
@@ -260,10 +280,27 @@ combined_metadata <- function(project.l, include_excluded = FALSE){
     comparison_part.df[[comparison_group.s]] <- as.character(comparison.df[[comparison_group.s]])
     study_part.df[[comparison_group.s]] <- NA_character_
   }
+  if (nrow(moved.df) > 0){
+    moved_part.df <- data.frame(moved.df[, core.v], Dataset = labels.l$comparison, Comparison_group = member_group.s,
+                                stringsAsFactors = FALSE)
+    if (!is.null(group.s)) moved_part.df[[group.s]] <- as.character(moved.df[[group.s]])
+    if (!is.null(comparison_group.s) && !identical(group.s, comparison_group.s)){
+      moved_part.df[[comparison_group.s]] <- member_group.s
+    }
+    comparison_part.df <- rbind(comparison_part.df, moved_part.df[, names(comparison_part.df), drop = FALSE])
+  }
   combined.df <- rbind(study_part.df, comparison_part.df)
   combined.df$Dataset <- factor(combined.df$Dataset, levels = c(labels.l$study, labels.l$comparison))
-  combined.df$Comparison_group <- factor(combined.df$Comparison_group,
-                                         levels = unique(c(study_levels.v, sort(unique(comparison.df$Comparison_group)))))
+  group_levels.v <- unique(c(study_levels.v, sort(unique(comparison_part.df$Comparison_group))))
+  order.v <- project.l$config$comparison$group_order
+  unknown.v <- setdiff(order.v, group_levels.v)
+  if (length(unknown.v) > 0){
+    cli::cli_abort(c("{.field comparison$group_order} names no group: {.val {unknown.v}}",
+                     "i" = "Groups: {.val {group_levels.v}}"))
+  }
+  group_levels.v <- unique(c(order.v, group_levels.v))
+  combined.df$Comparison_group <- factor(combined.df$Comparison_group, levels = group_levels.v)
+  combined.df <- combined.df[order(combined.df$Dataset, combined.df$Comparison_group), , drop = FALSE]
   if (!include_excluded) combined.df <- combined.df[!combined.df$Excluded, , drop = FALSE]
   rownames(combined.df) <- combined.df$Sample_ID
   combined.df
@@ -306,7 +343,7 @@ combined_profile <- function(project.l, name, include_excluded = FALSE, renormal
     cli::cli_abort(c("No comparison profile {.val {name}}", "i" = "Available: {.val {combined_profile_names(project.l)}}"))
   }
   study.p <- get_profile(project.l, study_profile_name(project.l, name), include_excluded = include_excluded,
-                         renormalise = renormalise)
+                         renormalise = renormalise, include_comparison_members = TRUE)
   metadata.df <- combined_metadata(project.l, include_excluded = include_excluded)
   comparison.p <- subset_samples(comparison.p, intersect(metadata.df$Sample_ID, profile_samples(comparison.p)),
                                  renormalise = renormalise && comparison.p$value_type == "relative_abundance")
@@ -354,24 +391,38 @@ mag_detection <- function(project.l, set = "derep_bins", min_covered_fraction = 
   detection.df
 }
 
-#' Distances from each study sample to each sample group
+#' Distances from samples to each sample group
 #'
-#' For every study sample, the mean distance to the other samples of each `Comparison_group`
-#' (its own group included, without itself). Shows whether study samples are closer to each
-#' other or to particular comparison groups.
+#' For every sample measured from, the mean distance to the other samples of each `Comparison_group`
+#' (its own group included, without itself). Shows whether samples are closer to each other or to
+#' particular groups, e.g. how far each comparison population lies from each focal population.
 #'
 #' @param distance.d A `dist` or symmetric matrix over the samples, e.g. `ordination$distance`.
 #' @param metadata.df [combined_metadata()].
-#' @param dataset Dataset label of the samples to measure from; defaults to the study.
+#' @param dataset Dataset label of the samples to measure from; defaults to the study. `NULL` measures from
+#'   all samples. Ignored when `from_groups` is given.
+#' @param from_groups Measure from the samples of these `Comparison_group`s instead of a dataset.
+#' @param to_groups Measure to these groups only, in this order (default every group).
 #' @return Data frame with `Sample_ID`, `From_group`, `To_group`, `Mean_distance` and `N` (samples in the group).
 #' @export
-comparison_distances <- function(distance.d, metadata.df, dataset = levels(metadata.df$Dataset)[1]){
+comparison_distances <- function(distance.d, metadata.df, dataset = levels(metadata.df$Dataset)[1], from_groups = NULL,
+                                 to_groups = NULL){
   distance.m <- as.matrix(distance.d)
   samples.v <- intersect(metadata.df$Sample_ID, rownames(distance.m))
   distance.m <- distance.m[samples.v, samples.v, drop = FALSE]
   metadata.df <- metadata.df[samples.v, , drop = FALSE]
-  from.v <- samples.v[metadata.df$Dataset == dataset]
-  groups.v <- levels(droplevels(metadata.df$Comparison_group))
+  present.v <- levels(droplevels(metadata.df$Comparison_group))
+  from.v <- if (!is.null(from_groups)){
+    unknown.v <- setdiff(from_groups, present.v)
+    if (length(unknown.v) > 0) cli::cli_abort("{.arg from_groups} names no group with samples: {.val {unknown.v}}")
+    samples.v[metadata.df$Comparison_group %in% from_groups]
+  } else if (!is.null(dataset)) samples.v[metadata.df$Dataset == dataset] else samples.v
+  groups.v <- present.v
+  if (!is.null(to_groups)){
+    unknown.v <- setdiff(to_groups, present.v)
+    if (length(unknown.v) > 0) cli::cli_abort("{.arg to_groups} names no group with samples: {.val {unknown.v}}")
+    groups.v <- to_groups
+  }
   rows.l <- lapply(from.v, function(sample.s){
     do.call(rbind, lapply(groups.v, function(group.s){
       targets.v <- setdiff(samples.v[metadata.df$Comparison_group == group.s], sample.s)
@@ -382,26 +433,39 @@ comparison_distances <- function(distance.d, metadata.df, dataset = levels(metad
     }))
   })
   distances.df <- do.call(rbind, rows.l)
-  distances.df$From_group <- factor(distances.df$From_group, levels = groups.v)
+  from_levels.v <- intersect(present.v, unique(distances.df$From_group))
+  distances.df$From_group <- factor(distances.df$From_group, levels = from_levels.v)
   distances.df$To_group <- factor(distances.df$To_group, levels = groups.v)
   distances.df
 }
 
-#' Plot distances from study samples to each sample group
+#' Plot distances from samples to each sample group
 #'
-#' One panel per study group; each point is a study sample's mean distance to a group's samples.
-#' Points from the same sample are not independent, so no tests are drawn; use the PERMANOVA
-#' results for inference.
+#' Each point is a sample's mean distance to a group's samples. With `panel = "from"` (default) there is
+#' one panel per group measured from and the x axis shows the groups measured to; with `panel = "to"`
+#' one panel per group measured to (e.g. each focal population) and the x axis shows the groups the
+#' samples come from. Points from the same sample are not independent, so no tests are drawn; use the
+#' PERMANOVA results for inference.
 #'
 #' @param distances.df Result of [comparison_distances()].
-#' @param colours.v Named colours for the groups (`project.l$palettes$Comparison_group`); generated when `NULL` (default).
+#' @param colours.v Named colours for the groups on the x axis (`project.l$palettes$Comparison_group`);
+#'   generated when `NULL` (default).
 #' @param y_label Y axis title, e.g. the distance used.
+#' @param panel `"from"` (default) or `"to"`, see above.
+#' @param x_label X axis title; defaults to "To samples of" or "Samples of".
 #' @return A ggplot.
 #' @export
-plot_comparison_distances <- function(distances.df, colours.v = NULL, y_label = "Mean distance"){
-  long.df <- data.frame(Panel = paste("From", distances.df$From_group), Group = distances.df$To_group,
-                        Value = distances.df$Mean_distance, stringsAsFactors = FALSE)
-  long.df$Panel <- factor(long.df$Panel, levels = paste("From", levels(droplevels(distances.df$From_group))))
+plot_comparison_distances <- function(distances.df, colours.v = NULL, y_label = "Mean distance", panel = c("from", "to"),
+                                      x_label = NULL){
+  panel <- match.arg(panel)
+  by_from.b <- panel == "from"
+  panel_groups.f <- if (by_from.b) distances.df$From_group else distances.df$To_group
+  x_groups.f <- if (by_from.b) distances.df$To_group else distances.df$From_group
+  prefix.s <- if (by_from.b) "From" else "Distance to"
+  long.df <- data.frame(Panel = paste(prefix.s, panel_groups.f), Group = x_groups.f, Value = distances.df$Mean_distance,
+                        stringsAsFactors = FALSE)
+  long.df$Panel <- factor(long.df$Panel, levels = paste(prefix.s, levels(droplevels(panel_groups.f))))
   plot_group_boxplots(long.df, by = "Panel", group = "Group", colours.v = colours.v, show_test = FALSE, brackets = FALSE,
-                      x_label = "To samples of", y_label = y_label, free_y = FALSE)$plot
+                      x_label = x_label %||% if (by_from.b) "To samples of" else "Samples of", y_label = y_label,
+                      free_y = FALSE)$plot
 }

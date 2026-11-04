@@ -4,17 +4,24 @@
 \alias{analysis_metadata}
 \title{Metadata for analyses, with excluded samples removed}
 \usage{
-analysis_metadata(project.l, include_excluded = FALSE)
+analysis_metadata(
+  project.l,
+  include_excluded = FALSE,
+  include_comparison_members = FALSE
+)
 }
 \arguments{
 \item{project.l}{A \code{gm_project}.}
 
 \item{include_excluded}{Keep samples excluded from analyses (\code{Excluded}: config \code{exclude_column} or
 \code{exclude_samples}); default \code{FALSE}.}
+
+\item{include_comparison_members}{Keep study samples moved to the comparison set; default \code{FALSE}.}
 }
 \value{
 Data frame.
 }
 \description{
-Metadata for analyses, with excluded samples removed
+Study samples that config \code{comparison: study_samples} moves to the comparison set are left out as
+well (they are in \code{\link[=combined_metadata]{combined_metadata()}}), and group levels no sample has any more are dropped.
 }

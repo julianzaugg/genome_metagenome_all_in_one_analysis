@@ -87,9 +87,10 @@ singlem_otu_diversity <- function(otus.df, rarefy_depth = NULL, seed = 1234){
 #' Prokaryotic sequencing depth per sample
 #'
 #' SingleM's estimate of the bacterial and archaeal bases in each sample (pipeline
-#' `metagenome.prokaryotic_fraction.tsv`), after read QC and host removal. Taxonomic profilers
-#' can only detect a genome from the reads of prokaryotes, so this is the depth that limits
-#' their detection, more than the total read count.
+#' `metagenome.prokaryotic_fraction.tsv`). SingleM and sylph run on the raw reads, before QC and
+#' host removal, so the fraction is relative to all raw bases, host included: a sample with much host DNA
+#' has a low fraction. Taxonomic profilers can only detect a genome from the reads of prokaryotes, so
+#' this is the depth that limits their detection, more than the total read count.
 #'
 #' @param project.l A `gm_project`.
 #' @param include_comparison Add the comparison samples (default `FALSE`).

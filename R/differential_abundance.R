@@ -379,7 +379,10 @@ wrap_labels <- function(labels.v, width){
 #' @param not_called_colour Track colour where a method did not call the feature.
 #' @param conflict_colour Track colour for features whose methods call the same contrast in opposite directions.
 #' @param ... Options passed to [plot_heatmap()], overriding the defaults set here
-#'   (`column_split = group`, `row_split = "Higher_in"`).
+#'   (`column_split = group`, `row_split = "Higher_in"`). The feature column `Higher_in_order` (the
+#'   group's position in the factor level order of `group`) lets rows be ordered like the columns, e.g.
+#'   `cluster_rows = FALSE, order_rows_by = c("Higher_in_order", "Phylum", "Family")`; `row_labels` can name
+#'   any feature column.
 #' @return A `Heatmap`, or `NULL` when fewer than two features pass.
 #' @export
 plot_da_heatmap <- function(profile, consensus.df, metadata.df, group, palettes.l = list(), min_methods = 1,
@@ -400,6 +403,10 @@ plot_da_heatmap <- function(profile, consensus.df, metadata.df, group, palettes.
   features.df <- subset.p$features
   best.df <- shown.df[match(features.df$Feature_ID, shown.df$Feature_ID), , drop = FALSE]
   features.df$Higher_in <- best.df$Enriched_in
+  # Position of the row's group among the groups (factor level order), so rows can be ordered like the columns
+  levels.v <- if (is.factor(metadata.df[[group]])) levels(droplevels(metadata.df[[group]])) else
+    sort(unique(as.character(metadata.df[[group]])))
+  features.df$Higher_in_order <- match(features.df$Higher_in, unique(c(levels.v, features.df$Higher_in)))
   effect_columns.v <- da_effect_columns()[methods]
   effect_columns.v <- effect_columns.v[effect_columns.v %in% names(consensus.df)]
   effect_columns.v <- effect_columns.v[vapply(effect_columns.v, function(x) any(!is.na(consensus.df[[x]])), logical(1))]

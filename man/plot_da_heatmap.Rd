@@ -44,7 +44,10 @@ plot_da_heatmap(
 \item{conflict_colour}{Track colour for features whose methods call the same contrast in opposite directions.}
 
 \item{...}{Options passed to \code{\link[=plot_heatmap]{plot_heatmap()}}, overriding the defaults set here
-(\code{column_split = group}, \code{row_split = "Higher_in"}).}
+(\code{column_split = group}, \code{row_split = "Higher_in"}). The feature column \code{Higher_in_order} (the
+group's position in the factor level order of \code{group}) lets rows be ordered like the columns, e.g.
+\verb{cluster_rows = FALSE, order_rows_by = c("Higher_in_order", "Phylum", "Family")}; \code{row_labels} can name
+any feature column.}
 }
 \value{
 A \code{Heatmap}, or \code{NULL} when fewer than two features pass.

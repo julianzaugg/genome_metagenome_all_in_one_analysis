@@ -133,6 +133,14 @@ rarefied.df <- gmaio::alpha_diversity(singlem_genus.p, rarefy_depth = 700,
 head(rarefied.df)
 ```
 
+`rarefy_profile()` returns the rarefied counts themselves, for ordinations and distances at the same depth.
+Aggregate to a rank first and use the same `depth` and `seed` as `alpha_diversity()` to get the counts its measures use.
+
+```{r singlem-rarefy-profile}
+rarefied.p <- gmaio::rarefy_profile(singlem_genus.p, depth = 700)
+colSums(rarefied.p$values)
+```
+
 `singlem_otu_diversity()` measures the marker gene sequences themselves (OTUs), rarefied the same way, with no reference database: taxa missing from GTDB count too.
 Each organism has one sequence per marker gene, so richness is given per marker gene (averaged over them), which approximates the number of distinct populations.
 
@@ -264,6 +272,7 @@ show_plot(diversity.l$plot)
 | `point_size`, `point_alpha`, `jitter_width` | Points | 1.8, 1, 0.12 |
 | `ncol` | Panel columns | up to 4 |
 | `free_y` | A y axis per panel | `TRUE` |
+| `zoom_outliers` | Zoom each panel to its box and whisker range; far outliers become labelled triangles at the edge (tests use all data) | `FALSE` |
 | `x_label`, `y_label` | Axis titles | none |
 | `x_text_angle` | Group label angle | 30 |
 | `base_size`, `legend_position` | Font size (pt) and legend position | 9, right |

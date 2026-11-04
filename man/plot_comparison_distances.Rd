@@ -2,26 +2,35 @@
 % Please edit documentation in R/comparison.R
 \name{plot_comparison_distances}
 \alias{plot_comparison_distances}
-\title{Plot distances from study samples to each sample group}
+\title{Plot distances from samples to each sample group}
 \usage{
 plot_comparison_distances(
   distances.df,
   colours.v = NULL,
-  y_label = "Mean distance"
+  y_label = "Mean distance",
+  panel = c("from", "to"),
+  x_label = NULL
 )
 }
 \arguments{
 \item{distances.df}{Result of \code{\link[=comparison_distances]{comparison_distances()}}.}
 
-\item{colours.v}{Named colours for the groups (\code{project.l$palettes$Comparison_group}); generated when \code{NULL} (default).}
+\item{colours.v}{Named colours for the groups on the x axis (\code{project.l$palettes$Comparison_group});
+generated when \code{NULL} (default).}
 
 \item{y_label}{Y axis title, e.g. the distance used.}
+
+\item{panel}{\code{"from"} (default) or \code{"to"}, see above.}
+
+\item{x_label}{X axis title; defaults to "To samples of" or "Samples of".}
 }
 \value{
 A ggplot.
 }
 \description{
-One panel per study group; each point is a study sample's mean distance to a group's samples.
-Points from the same sample are not independent, so no tests are drawn; use the PERMANOVA
-results for inference.
+Each point is a sample's mean distance to a group's samples. With \code{panel = "from"} (default) there is
+one panel per group measured from and the x axis shows the groups measured to; with \code{panel = "to"}
+one panel per group measured to (e.g. each focal population) and the x axis shows the groups the
+samples come from. Points from the same sample are not independent, so no tests are drawn; use the
+PERMANOVA results for inference.
 }

@@ -37,7 +37,13 @@ config_defaults <- function(){
         exclude_samples = character()
       ),
       group_variable = NULL,
-      dataset_labels = list(study = "This study", comparison = "Comparison")
+      dataset_labels = list(study = "This study", comparison = "Comparison"),
+      # Study samples to treat as comparison samples: `samples` (IDs) and/or `column` with `values`, put in `group`
+      study_samples = list(column = NULL, values = character(), samples = character(), group = NULL),
+      # Rename comparison groups (named list, old name = new name); several old names may share a new name
+      group_recode = list(),
+      # Order of the comparison groups in figures (those not listed follow)
+      group_order = character()
     ),
     outputs = list(
       tables = "Result_tables",
@@ -78,7 +84,8 @@ read_config <- function(path = "config.yml", check_paths = TRUE){
 config_vector_fields <- function(){
   list(c("metadata", "exclude_samples"), c("metadata", "sample_order"), c("metadata", "colour_variables"),
        c("analysis", "group_variables"), c("analysis", "covariates"), c("analysis", "ranks"),
-       c("comparison", "metadata", "exclude_samples"))
+       c("comparison", "metadata", "exclude_samples"), c("comparison", "study_samples", "values"),
+       c("comparison", "study_samples", "samples"), c("comparison", "group_order"))
 }
 
 validate_config <- function(config.l, check_paths = TRUE){
@@ -122,6 +129,23 @@ validate_config <- function(config.l, check_paths = TRUE){
   labels.l <- config.l$comparison$dataset_labels
   if (length(labels.l$study) != 1 || length(labels.l$comparison) != 1 || identical(labels.l$study, labels.l$comparison)){
     cli::cli_abort("{.field comparison$dataset_labels} needs two different labels, {.field study} and {.field comparison}")
+  }
+  selection.l <- config.l$comparison$study_samples
+  if (!is.null(selection.l$group)){
+    if (length(selection.l$group) != 1 || !nzchar(selection.l$group)){
+      cli::cli_abort("{.field comparison$study_samples$group} must be a single group name")
+    }
+    if (is.null(selection.l$column) && length(selection.l$samples) == 0){
+      cli::cli_abort("{.field comparison$study_samples} needs {.field samples} and/or {.field column} with {.field values}")
+    }
+    if (!is.null(selection.l$column) && length(selection.l$values) == 0){
+      cli::cli_abort("{.field comparison$study_samples$column} needs {.field values}")
+    }
+  }
+  recode.l <- config.l$comparison$group_recode
+  if (length(recode.l) > 0 && (is.null(names(recode.l)) || any(!nzchar(names(recode.l))) ||
+                               !all(vapply(recode.l, function(x) length(x) == 1, logical(1))))){
+    cli::cli_abort("{.field comparison$group_recode} must map each old group name to one new name")
   }
   unknown.v <- setdiff(names(config.l$files), pipeline_registry()$key)
   if (length(unknown.v) > 0){

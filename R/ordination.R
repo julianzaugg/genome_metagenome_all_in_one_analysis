@@ -11,6 +11,8 @@
 #' @param binary Use presence/absence for the PCoA distance (default `FALSE`).
 #' @param detection Percent of the sample total above which a feature counts as present
 #'   when `binary = TRUE` (default `0`, any non-zero value).
+#' @param exclude_unresolved Leave out features not resolved at the profile's rank before ordinating
+#'   (see [unresolved_features()]); default `FALSE`.
 #' @param scaling PCA score scaling (see [vegan::scores.rda()]): `1` preserves distances between
 #'   samples (default), `2` correlations between features, `3` (`"symmetric"`) is a compromise.
 #'   Only affects the plotted scores and loadings, not the distances used for statistics.
@@ -19,9 +21,12 @@
 #'   `distance` (a `dist` object for PERMANOVA/PERMDISP).
 #' @export
 run_ordination <- function(profile, method = c("pca_rclr", "pcoa"), distance = "bray", binary = FALSE, detection = 0,
-                           scaling = 1){
+                           scaling = 1, exclude_unresolved = FALSE){
   method <- match.arg(method)
   check_profile(profile)
+  if (exclude_unresolved){
+    profile <- subset_features(profile, names(which(!unresolved_features(profile))))
+  }
   warn_within_sample(profile, "An ordination")
   values.m <- profile$values
   values.m <- values.m[rowSums(values.m != 0) > 0, , drop = FALSE]

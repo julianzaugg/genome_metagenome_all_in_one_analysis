@@ -25,20 +25,9 @@
 #' @export
 alpha_diversity <- function(profile, rarefy_depth = NULL, seed = 1234, evenness = FALSE, exclude_unresolved = FALSE){
   check_profile(profile)
+  if (!is.null(rarefy_depth)) profile <- rarefy_profile(profile, rarefy_depth, seed)
   samples.m <- t(profile$values)
   is_count.b <- profile$value_type == "read_count" && all(samples.m == round(samples.m))
-  if (!is.null(rarefy_depth)){
-    if (!is_count.b) cli::cli_abort("Rarefying needs integer read counts, not {.val {profile$value_type}}")
-    low.v <- rownames(samples.m)[rowSums(samples.m) < rarefy_depth]
-    if (length(low.v) > 0){
-      cli::cli_inform(c("!" = "Dropping {length(low.v)} sample{?s} below {rarefy_depth} reads: {.val {low.v}}"))
-    }
-    samples.m <- samples.m[rowSums(samples.m) >= rarefy_depth, , drop = FALSE]
-    set.seed(seed)
-    samples.m <- withCallingHandlers(vegan::rrarefy(samples.m, rarefy_depth), warning = function(w){
-      if (grepl("smallest count", conditionMessage(w))) invokeRestart("muffleWarning")
-    })
-  }
   if (exclude_unresolved) samples.m <- samples.m[, !unresolved_features(profile)[colnames(samples.m)], drop = FALSE]
   richness.v <- rowSums(samples.m > 0)
   shannon.v <- vegan::diversity(samples.m, index = "shannon")
@@ -47,6 +36,40 @@ alpha_diversity <- function(profile, rarefy_depth = NULL, seed = 1234, evenness 
   if (evenness) diversity.df$Pielou <- ifelse(richness.v > 1, shannon.v / log(richness.v), NA_real_)
   if (is_count.b) diversity.df$Chao1 <- vegan::estimateR(samples.m)["S.chao1", ]
   diversity.df
+}
+
+#' Rarefy a read count profile
+#'
+#' Subsamples every sample to the same number of reads without replacement ([vegan::rrarefy()]),
+#' so richness, presence/absence and composition no longer follow sequencing depth. Samples with
+#' fewer reads than `depth` are dropped, with a message; features left with no reads are removed.
+#' [alpha_diversity()] with `rarefy_depth` rarefies the same way, so a profile rarefied here with the
+#' same `depth` and `seed` gives the same counts as the diversity measures use; aggregate to a rank
+#' ([aggregate_profile()]) before rarefying to match them.
+#'
+#' @param profile A `gm_profile` of integer read counts (`value_type` `"read_count"`).
+#' @param depth Number of reads per sample.
+#' @param seed Random seed.
+#' @return A `gm_profile` of rarefied counts.
+#' @export
+rarefy_profile <- function(profile, depth, seed = 1234){
+  check_profile(profile)
+  samples.m <- t(profile$values)
+  if (profile$value_type != "read_count" || any(samples.m != round(samples.m))){
+    cli::cli_abort("Rarefying needs integer read counts, not {.val {profile$value_type}}")
+  }
+  low.v <- rownames(samples.m)[rowSums(samples.m) < depth]
+  if (length(low.v) > 0){
+    cli::cli_inform(c("!" = "Dropping {length(low.v)} sample{?s} below {depth} reads: {.val {low.v}}"))
+  }
+  samples.m <- samples.m[rowSums(samples.m) >= depth, , drop = FALSE]
+  if (nrow(samples.m) == 0) cli::cli_abort("No sample has {depth} reads")
+  set.seed(seed)
+  samples.m <- withCallingHandlers(vegan::rrarefy(samples.m, depth), warning = function(w){
+    if (grepl("smallest count", conditionMessage(w))) invokeRestart("muffleWarning")
+  })
+  values.m <- t(samples.m)
+  update_profile(profile, values.m[rowSums(values.m) > 0, , drop = FALSE])
 }
 
 #' Features not resolved at a profile's rank

@@ -21,11 +21,32 @@ read_metadata <- function(config.l){
   unknown.v <- setdiff(md.l$exclude_samples, metadata.df$Sample_ID)
   if (length(unknown.v) > 0) cli::cli_abort("{.field exclude_samples} not in metadata: {.val {unknown.v}}")
   metadata.df$Excluded[metadata.df$Sample_ID %in% md.l$exclude_samples] <- TRUE
+  metadata.df$Comparison_member <- comparison_member_flags(metadata.df, config.l)
 
   metadata.df <- set_group_levels(metadata.df, config.l)
   metadata.df <- order_samples(metadata.df, md.l$sample_order)
   rownames(metadata.df) <- metadata.df$Sample_ID
   metadata.df
+}
+
+# Study samples that config `comparison: study_samples` assigns to the comparison set
+comparison_member_flags <- function(metadata.df, config.l){
+  selection.l <- config.l$comparison$study_samples
+  member.v <- rep(FALSE, nrow(metadata.df))
+  if (is.null(selection.l$group)) return(member.v)
+  unknown.v <- setdiff(selection.l$samples, metadata.df$Sample_ID)
+  if (length(unknown.v) > 0) cli::cli_abort("{.field comparison$study_samples$samples} not in metadata: {.val {unknown.v}}")
+  member.v <- member.v | metadata.df$Sample_ID %in% selection.l$samples
+  if (!is.null(selection.l$column)){
+    require_columns(metadata.df, selection.l$column, "Metadata")
+    matched.v <- as.character(metadata.df[[selection.l$column]]) %in% selection.l$values
+    if (!any(matched.v)){
+      cli::cli_abort(paste("{.field comparison$study_samples$values} {.val {selection.l$values}} match no sample in",
+                           "{.field {selection.l$column}}"))
+    }
+    member.v <- member.v | matched.v
+  }
+  member.v
 }
 
 # Read a sample table, with Sample_ID taken from id_col.s and Sample_label from label_col.s (default: the ID)
@@ -166,10 +187,14 @@ link_samples <- function(observed.v, metadata.df, source){
 #' @param metadata.df Metadata from [read_metadata()].
 #' @param include_excluded Keep samples excluded from analyses (`Excluded`: config `exclude_column` or
 #'   `exclude_samples`); default `FALSE`.
+#' @param include_comparison_members Keep study samples that config `comparison: study_samples` moves to the
+#'   comparison set (`Comparison_member`); default `FALSE`.
 #' @return Character vector in metadata order.
 #' @export
-analysis_samples <- function(metadata.df, include_excluded = FALSE){
-  keep.v <- include_excluded | !metadata.df$Excluded
+analysis_samples <- function(metadata.df, include_excluded = FALSE, include_comparison_members = FALSE){
+  member.v <- if ("Comparison_member" %in% names(metadata.df)) metadata.df$Comparison_member %in% TRUE else
+    rep(FALSE, nrow(metadata.df))
+  keep.v <- (include_excluded | !metadata.df$Excluded) & (include_comparison_members | !member.v)
   metadata.df$Sample_ID[keep.v]
 }
 

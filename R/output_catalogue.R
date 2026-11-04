@@ -106,7 +106,7 @@ output_entries <- function(){
   list(
     output_entry("Metadata_and_read_stats.xlsx", "^Metadata_and_read_stats\\.xlsx$", "metagenome, isolate", "code/main.R",
       "The metadata as linked to the pipeline samples, read counts through QC and host removal, how many reads map to each genome set, and the pipeline run parameters.",
-      c(Metadata = "Metadata with the Sample_ID, Sample_label and Excluded columns gmaio adds.",
+      c(Metadata = "Metadata with the Sample_ID, Sample_label, Excluded and Comparison_member (study samples treated as comparison samples) columns gmaio adds.",
         Read_stats = "Reads (and, for long reads, bases) through each QC step, and the share mapped to each genome set.",
         Read_stats_full = "The pipeline read statistics report, unchanged.",
         Column_descriptions = "What each Read_stats and Read_stats_full column means.",

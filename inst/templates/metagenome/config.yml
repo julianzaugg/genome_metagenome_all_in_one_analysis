@@ -50,6 +50,13 @@ comparison:
     exclude_samples: []
   group_variable: null             # comparison metadata column to group comparison samples by
   dataset_labels: {study: This study, comparison: Comparison}
+  # Study samples to treat as comparison samples (e.g. a population that is not a focus of the study), pooled with the
+  # comparison samples of the same group name; give `samples` (IDs) and/or `column` with `values`
+  study_samples: {column: null, values: [], samples: [], group: null}
+  # Rename or merge comparison groups, e.g. {North Coast: Mid-North Coast, Port Macquarie: Mid-North Coast}
+  group_recode: {}
+  # Order of the groups in figures; groups not listed follow
+  group_order: []
 
 outputs:
   tables: Result_tables

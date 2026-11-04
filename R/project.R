@@ -38,7 +38,10 @@ start_project <- function(config.l){
   metadata.df <- read_metadata(config.l)
   run_params.l <- read_run_params(config.l)
   check_pipeline_mode(config.l, run_params.l)
-  cli::cli_inform("Metadata: {nrow(metadata.df)} samples ({sum(metadata.df$Excluded)} excluded from analyses)")
+  moved.n <- sum(metadata.df$Comparison_member & !metadata.df$Excluded)
+  moved.s <- if (moved.n > 0) paste0(", ", moved.n, " treated as comparison samples") else ""
+  cli::cli_inform(paste0("Metadata: ", nrow(metadata.df), " samples (", sum(metadata.df$Excluded), " excluded from analyses",
+                         moved.s, ")"))
 
   read_stats.df <- NULL
   if (has_output(config.l, "read_stats")){
@@ -126,14 +129,19 @@ refresh_palettes <- function(project.l){
 
 #' Metadata for analyses, with excluded samples removed
 #'
+#' Study samples that config `comparison: study_samples` moves to the comparison set are left out as
+#' well (they are in [combined_metadata()]), and group levels no sample has any more are dropped.
+#'
 #' @param project.l A `gm_project`.
 #' @param include_excluded Keep samples excluded from analyses (`Excluded`: config `exclude_column` or
 #'   `exclude_samples`); default `FALSE`.
+#' @param include_comparison_members Keep study samples moved to the comparison set; default `FALSE`.
 #' @return Data frame.
 #' @export
-analysis_metadata <- function(project.l, include_excluded = FALSE){
+analysis_metadata <- function(project.l, include_excluded = FALSE, include_comparison_members = FALSE){
   metadata.df <- project.l$metadata
-  metadata.df[analysis_samples(metadata.df, include_excluded), , drop = FALSE]
+  samples.v <- analysis_samples(metadata.df, include_excluded, include_comparison_members)
+  droplevels(metadata.df[samples.v, , drop = FALSE])
 }
 
 #' Get a profile restricted to analysis samples
@@ -144,12 +152,15 @@ analysis_metadata <- function(project.l, include_excluded = FALSE){
 #'   `exclude_samples`); default `FALSE`.
 #' @param renormalise Rescale each sample of a relative abundance profile to sum to 100 after removing
 #'   samples (default `TRUE`); other value types are not changed.
+#' @param include_comparison_members Keep study samples moved to the comparison set by config
+#'   `comparison: study_samples`; default `FALSE`.
 #' @return `gm_profile`.
 #' @export
-get_profile <- function(project.l, name, include_excluded = FALSE, renormalise = TRUE){
+get_profile <- function(project.l, name, include_excluded = FALSE, renormalise = TRUE, include_comparison_members = FALSE){
   profile <- project.l$profiles[[name]]
   if (is.null(profile)) cli::cli_abort(c("No profile {.val {name}}", "i" = "Available: {.val {names(project.l$profiles)}}"))
-  samples.v <- intersect(analysis_samples(project.l$metadata, include_excluded), profile_samples(profile))
+  samples.v <- intersect(analysis_samples(project.l$metadata, include_excluded, include_comparison_members),
+                         profile_samples(profile))
   subset_samples(profile, samples.v, renormalise = renormalise && profile$value_type == "relative_abundance")
 }
 

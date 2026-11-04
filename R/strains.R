@@ -74,7 +74,9 @@ add_strains <- function(project.l){
   found.v <- keys.v[vapply(keys.v, function(k) has_output(config.l, k), logical(1))]
   if (!any(c("instrain_sharing", "instrain_genome_info", "tracs_distances") %in% found.v)) return(project.l)
   labels.l <- config.l$comparison$dataset_labels
-  lookup.df <- data.frame(Sample_ID = project.l$metadata$Sample_ID, Dataset = labels.l$study, stringsAsFactors = FALSE)
+  lookup.df <- data.frame(Sample_ID = project.l$metadata$Sample_ID,
+                          Dataset = ifelse(project.l$metadata$Comparison_member %in% TRUE, labels.l$comparison, labels.l$study),
+                          stringsAsFactors = FALSE)
   comparison.df <- project.l$comparison$metadata
   if (!is.null(comparison.df)){
     lookup.df <- rbind(lookup.df, data.frame(Sample_ID = comparison.df$Sample_ID, Dataset = labels.l$comparison,

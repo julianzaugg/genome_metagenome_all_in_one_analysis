@@ -143,3 +143,26 @@ test_that("blocks follow a factor's level order and sort other values", {
                c("Control", "Wild", "Unassigned"))
   expect_equal(levels(split_factor(c("ST131", "Reference", "ST10"))), c("ST10", "ST131", "Reference"))
 })
+
+test_that("zoom_outliers moves far outliers to the panel edge and labels them", {
+  set.seed(3)
+  long.df <- data.frame(Panel = "Urea", Group = rep(c("A", "B"), each = 12), Value = c(rnorm(11, 10, 1), 500, rnorm(12, 11, 1)))
+  plain.l <- plot_group_boxplots(long.df, "Panel", "Group")
+  zoom.l <- plot_group_boxplots(long.df, "Panel", "Group", zoom_outliers = TRUE)
+  zoom.data <- zoom_boxplot_data(transform(long.df, Panel = factor(Panel), Group = factor(Group)), "Panel", "Group")
+  expect_equal(sum(zoom.data$points$Clamped), 1)
+  expect_equal(zoom.data$points$True_value[zoom.data$points$Clamped], 500)
+  expect_lt(max(zoom.data$points$Value), 20)
+  expect_equal(zoom.data$labels$label, "500")
+  # tests use the full data, so they are identical
+  expect_equal(zoom.l$tests, plain.l$tests)
+  built.gg <- ggplot2::ggplot_build(zoom.l$plot)
+  expect_lt(max(built.gg$layout$panel_params[[1]]$y.range), 100)
+  expect_gt(max(ggplot2::ggplot_build(plain.l$plot)$layout$panel_params[[1]]$y.range), 400)
+  expect_s3_class(zoom.l$plot, "ggplot")
+  # panels without far outliers are unchanged
+  none.df <- transform(long.df, Value = seq(9, 11, length.out = 24))
+  none.data <- zoom_boxplot_data(transform(none.df, Panel = factor(Panel), Group = factor(Group)), "Panel", "Group")
+  expect_false(any(none.data$points$Clamped))
+  expect_equal(nrow(none.data$labels), 0)
+})

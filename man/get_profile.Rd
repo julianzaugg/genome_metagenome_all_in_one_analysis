@@ -4,7 +4,13 @@
 \alias{get_profile}
 \title{Get a profile restricted to analysis samples}
 \usage{
-get_profile(project.l, name, include_excluded = FALSE, renormalise = TRUE)
+get_profile(
+  project.l,
+  name,
+  include_excluded = FALSE,
+  renormalise = TRUE,
+  include_comparison_members = FALSE
+)
 }
 \arguments{
 \item{project.l}{A \code{gm_project}.}
@@ -16,6 +22,9 @@ get_profile(project.l, name, include_excluded = FALSE, renormalise = TRUE)
 
 \item{renormalise}{Rescale each sample of a relative abundance profile to sum to 100 after removing
 samples (default \code{TRUE}); other value types are not changed.}
+
+\item{include_comparison_members}{Keep study samples moved to the comparison set by config
+\code{comparison: study_samples}; default \code{FALSE}.}
 }
 \value{
 \code{gm_profile}.
