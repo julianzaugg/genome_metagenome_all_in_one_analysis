@@ -2,12 +2,14 @@
 % Please edit documentation in R/comparison.R
 \name{comparison_distances}
 \alias{comparison_distances}
-\title{Distances from each study sample to each sample group}
+\title{Distances from samples to each sample group}
 \usage{
 comparison_distances(
   distance.d,
   metadata.df,
-  dataset = levels(metadata.df$Dataset)[1]
+  dataset = levels(metadata.df$Dataset)[1],
+  from_groups = NULL,
+  to_groups = NULL
 )
 }
 \arguments{
@@ -15,13 +17,18 @@ comparison_distances(
 
 \item{metadata.df}{\code{\link[=combined_metadata]{combined_metadata()}}.}
 
-\item{dataset}{Dataset label of the samples to measure from; defaults to the study.}
+\item{dataset}{Dataset label of the samples to measure from; defaults to the study. \code{NULL} measures from
+all samples. Ignored when \code{from_groups} is given.}
+
+\item{from_groups}{Measure from the samples of these \code{Comparison_group}s instead of a dataset.}
+
+\item{to_groups}{Measure to these groups only, in this order (default every group).}
 }
 \value{
 Data frame with \code{Sample_ID}, \code{From_group}, \code{To_group}, \code{Mean_distance} and \code{N} (samples in the group).
 }
 \description{
-For every study sample, the mean distance to the other samples of each \code{Comparison_group}
-(its own group included, without itself). Shows whether study samples are closer to each
-other or to particular comparison groups.
+For every sample measured from, the mean distance to the other samples of each \code{Comparison_group}
+(its own group included, without itself). Shows whether samples are closer to each other or to
+particular groups, e.g. how far each comparison population lies from each focal population.
 }

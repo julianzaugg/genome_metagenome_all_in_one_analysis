@@ -56,6 +56,9 @@ pca$variance
 head(pca$sites, 3)
 ```
 
+`exclude_unresolved = TRUE` leaves out features not resolved at the profile's rank (see `unresolved_features()`) before ordinating.
+For read counts, `rarefy_profile()` first gives every sample the same depth, so Jaccard and Bray-Curtis do not follow sequencing depth.
+
 The result holds the sample scores (`sites`), PCA feature loadings (`loadings`), the percentage of variance per axis (`variance`) and the distance matrix (`distance`).
 For PCA, `scaling = 1` (default) preserves distances between samples, while `scaling = "symmetric"` spreads samples and loadings more evenly for biplots.
 `ordinate_distance()` makes the same object from a distance matrix you already have, such as ANI or SNP distances.

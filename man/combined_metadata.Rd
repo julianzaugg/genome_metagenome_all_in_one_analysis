@@ -16,8 +16,12 @@ combined_metadata(project.l, include_excluded = FALSE)
 Data frame with \code{Sample_ID}, \code{Sample_label}, \code{Excluded}, \code{Dataset} (the
 \code{comparison$dataset_labels}), \code{Comparison_group} (the study's primary group variable for study
 samples, \code{comparison$group_variable} for comparison samples, as a factor with the study levels
-first) and the study group variable and comparison group variable columns.
+first, or in the order of \code{comparison$group_order}) and the study group variable and comparison group
+variable columns.
 }
 \description{
-Metadata of study and comparison samples together
+Study samples that config \code{comparison: study_samples} moves to the comparison set (\code{Comparison_member})
+join the comparison samples: their \code{Dataset} is the comparison label and their \code{Comparison_group} the
+configured \code{group}, so they pool with comparison samples of that group name. Samples are ordered by
+dataset and group, so each group is one block.
 }

@@ -242,7 +242,8 @@ report_overview <- function(project.l){
     values.l$`High-quality bins` <- sum(bins.df$High_quality %in% TRUE)
   }
   if (!is.null(project.l$tables$reference_genomes)) values.l$`Reference genomes` <- nrow(project.l$tables$reference_genomes)
-  if (!is.null(project.l$comparison)) values.l$`Comparison samples` <- nrow(project.l$comparison$metadata)
+  if (!is.null(project.l$comparison)) values.l$`Comparison samples` <- nrow(project.l$comparison$metadata) +
+    sum(metadata.df$Comparison_member %in% TRUE & !(metadata.df$Excluded %in% TRUE))
   tables.l <- list()
   for (group.s in project.l$config$analysis$group_variables){
     if (!group.s %in% names(analysed.df)) next

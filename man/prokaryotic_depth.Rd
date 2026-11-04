@@ -16,7 +16,8 @@ Named numeric vector of bases, named by \code{Sample_ID}.
 }
 \description{
 SingleM's estimate of the bacterial and archaeal bases in each sample (pipeline
-\code{metagenome.prokaryotic_fraction.tsv}), after read QC and host removal. Taxonomic profilers
-can only detect a genome from the reads of prokaryotes, so this is the depth that limits
-their detection, more than the total read count.
+\code{metagenome.prokaryotic_fraction.tsv}). SingleM and sylph run on the raw reads, before QC and
+host removal, so the fraction is relative to all raw bases, host included: a sample with much host DNA
+has a low fraction. Taxonomic profilers can only detect a genome from the reads of prokaryotes, so
+this is the depth that limits their detection, more than the total read count.
 }

@@ -4,13 +4,20 @@
 \alias{analysis_samples}
 \title{Sample IDs to use in analyses}
 \usage{
-analysis_samples(metadata.df, include_excluded = FALSE)
+analysis_samples(
+  metadata.df,
+  include_excluded = FALSE,
+  include_comparison_members = FALSE
+)
 }
 \arguments{
 \item{metadata.df}{Metadata from \code{\link[=read_metadata]{read_metadata()}}.}
 
 \item{include_excluded}{Keep samples excluded from analyses (\code{Excluded}: config \code{exclude_column} or
 \code{exclude_samples}); default \code{FALSE}.}
+
+\item{include_comparison_members}{Keep study samples that config \code{comparison: study_samples} moves to the
+comparison set (\code{Comparison_member}); default \code{FALSE}.}
 }
 \value{
 Character vector in metadata order.

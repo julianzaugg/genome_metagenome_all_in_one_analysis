@@ -108,3 +108,27 @@ test_that("long panel titles wrap to the panel width", {
   expect_true(grepl("\n", strips.v[1]))
   expect_equal(unname(strips.v[2]), "Urease")
 })
+
+test_that("rarefy_profile gives the counts alpha_diversity uses, drops shallow samples and excludes unresolved features", {
+  project.l <- processed_test_project()
+  genus.p <- aggregate_profile(get_profile(project.l, "singlem_read_count"), rank = "genus")
+  depth.n <- 400
+  rarefied.p <- suppressMessages(rarefy_profile(genus.p, depth.n, seed = 7))
+  expect_true(all(colSums(rarefied.p$values) == depth.n))
+  expect_true(all(rowSums(rarefied.p$values) > 0))
+  expect_equal(rarefied.p$feature_level, "genus")
+  diversity.df <- suppressMessages(alpha_diversity(genus.p, rarefy_depth = depth.n, seed = 7))
+  expect_equal(unname(colSums(rarefied.p$values > 0)),
+               diversity.df$Richness[match(colnames(rarefied.p$values), diversity.df$Sample_ID)])
+  expect_equal(suppressMessages(rarefy_profile(genus.p, depth.n, seed = 7))$values, rarefied.p$values)
+  expect_message(rarefy_profile(genus.p, max(colSums(genus.p$values)), seed = 7), "Dropping")
+  expect_error(suppressMessages(rarefy_profile(genus.p, max(colSums(genus.p$values)) + 1)), "No sample")
+  expect_error(rarefy_profile(get_profile(project.l, "sylph_taxonomic"), 10), "integer read counts")
+
+  ordination.l <- run_ordination(rarefied.p, "pcoa", distance = "jaccard", binary = TRUE, detection = 10)
+  expect_equal(ordination.l$distance_label, "Jaccard (presence/absence)")
+  resolved.l <- suppressMessages(run_ordination(rarefied.p, "pcoa", distance = "bray", exclude_unresolved = TRUE))
+  all.l <- suppressMessages(run_ordination(rarefied.p, "pcoa", distance = "bray"))
+  expect_true(any(unresolved_features(rarefied.p)))
+  expect_false(isTRUE(all.equal(as.numeric(resolved.l$distance), as.numeric(all.l$distance))))
+})

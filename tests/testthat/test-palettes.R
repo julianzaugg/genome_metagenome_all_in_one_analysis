@@ -62,3 +62,20 @@ test_that("colours too close within one figure are replaced, most important firs
                                          method = "cie2000"))
   expect_gt(min(steps.v), 15)
 })
+
+test_that("taxa added to a saved palette get colours even when the saved palette uses the first colours", {
+  saved.v <- stats::setNames(qualitative_palette(120), paste0("t", 1:120))
+  values.v <- paste0("t", 1:150)
+  colours.v <- assign_colours(values.v, existing.v = saved.v)
+  expect_false(anyNA(colours.v))
+  expect_equal(colours.v[names(saved.v)], saved.v)
+  expect_equal(anyDuplicated(colours.v), 0L)
+  # A saved palette with missing colours (written by an earlier version) does not overwrite new colours
+  taxa.df <- data.frame(Label = paste0("g", 1:40), Phylum = rep(c("p__A", "p__B"), 20), Abundance = seq(40, 1))
+  first.v <- assign_taxa_colours(taxa.df, NULL, NULL)
+  broken_taxa.v <- first.v
+  broken_taxa.v[c("g3", "g4")] <- NA
+  repaired.v <- assign_taxa_colours(taxa.df, broken_taxa.v, NULL)
+  expect_false(anyNA(repaired.v))
+  expect_equal(repaired.v[setdiff(names(first.v), c("g3", "g4"))], first.v[setdiff(names(first.v), c("g3", "g4"))])
+})

@@ -132,6 +132,10 @@ significance_stars <- function(p.v){
 #' @param x_label,y_label Axis titles; none by default.
 #' @param ncol Number of panel columns; `NULL` (default) uses up to 4.
 #' @param free_y Give every panel its own y axis.
+#' @param zoom_outliers Zoom each panel's axis to the box and whisker range: points far above or below it
+#'   (more than 25% of the whisker range beyond the longest whisker of the panel) are drawn as triangles at
+#'   the edge of the panel and labelled with their value. Boxes, whiskers and all tests use the full data.
+#'   Default `FALSE`.
 #' @param x_text_angle Angle of the group labels.
 #' @param base_size Base font size, in points.
 #' @param legend_position Legend position when `shape_by` is used.
@@ -142,7 +146,7 @@ plot_group_boxplots <- function(long.df, by, group, colours.v = NULL, pairwise_t
                                 bracket_label = c("stars", "p"), bracket_size = 8, shape_by = NULL, shapes = NULL,
                                 box_width = 0.6, box_alpha = 0.5, point_size = 1.8, point_alpha = 1, jitter_width = 0.12,
                                 panel_labels = NULL, x_label = NULL, y_label = NULL, ncol = NULL, free_y = TRUE,
-                                x_text_angle = 30, base_size = 9, legend_position = "right"){
+                                zoom_outliers = FALSE, x_text_angle = 30, base_size = 9, legend_position = "right"){
   pairwise_test <- match.arg(pairwise_test)
   bracket_label <- match.arg(bracket_label)
   require_columns(long.df, c(by, group, "Value", shape_by), "Boxplot data")
@@ -154,22 +158,41 @@ plot_group_boxplots <- function(long.df, by, group, colours.v = NULL, pairwise_t
   colours.v <- colours.v %||% assign_colours(long.df[[group]])
 
   # Brackets and the test label sit above the data of each panel, stacked in steps of 10-14% of its range
-  annotations.l <- group_boxplot_annotations(long.df, by, group, tests.df, if (brackets) pairwise.df, bracket_alpha,
-                                             bracket_label)
-  point_aes <- if (is.null(shape_by)) ggplot2::aes(fill = .data[[group]]) else
-    ggplot2::aes(fill = .data[[group]], shape = .data[[shape_by]])
-  boxplot.gg <- ggplot2::ggplot(long.df, ggplot2::aes(x = .data[[group]], y = .data$Value)) +
+  zoom.l <- if (zoom_outliers) zoom_boxplot_data(long.df, by, group, shape_by) else NULL
+  plot.df <- zoom.l$points %||% long.df
+  annotations.l <- group_boxplot_annotations(zoom.l$annotation %||% long.df, by, group, tests.df, if (brackets) pairwise.df,
+                                             bracket_alpha, bracket_label)
+  point_aes <- if (!is.null(shape_by)) ggplot2::aes(fill = .data[[group]], shape = .data[[shape_by]]) else
+    if (!is.null(zoom.l)) ggplot2::aes(fill = .data[[group]], shape = .data$Clamped) else ggplot2::aes(fill = .data[[group]])
+  boxplot.gg <- ggplot2::ggplot(plot.df, ggplot2::aes(x = .data[[group]], y = .data$Value))
+  boxplot.gg <- boxplot.gg + if (is.null(zoom.l)){
     ggplot2::geom_boxplot(ggplot2::aes(fill = .data[[group]]), outlier.shape = NA, width = box_width, alpha = box_alpha,
-                          linewidth = 0.3) +
+                          linewidth = 0.3)
+  } else {
+    # Box statistics come from the full data, since the plotted values of far outliers are moved to the panel edge
+    ggplot2::geom_boxplot(data = zoom.l$boxes, ggplot2::aes(x = .data[[group]], ymin = .data$ymin, lower = .data$lower,
+                                                           middle = .data$middle, upper = .data$upper, ymax = .data$ymax,
+                                                           fill = .data[[group]]),
+                          stat = "identity", inherit.aes = FALSE, width = box_width, alpha = box_alpha, linewidth = 0.3)
+  }
+  boxplot.gg <- boxplot.gg +
     do.call(ggplot2::geom_point, c(list(mapping = point_aes, size = point_size, alpha = point_alpha, colour = "grey15",
                                         stroke = 0.3, position = ggplot2::position_jitter(width = jitter_width, height = 0,
                                                                                           seed = 1)),
-                                   if (is.null(shape_by)) list(shape = 21))) +
+                                   if (is.null(shape_by) && is.null(zoom.l)) list(shape = 21))) +
+    (if (is.null(shape_by) && !is.null(zoom.l)){
+      ggplot2::scale_shape_manual(values = c(`FALSE` = 21, `TRUE` = 24), guide = "none")
+    }) +
     ggplot2::scale_fill_manual(values = colours.v, guide = "none") +
     ggplot2::labs(x = x_label, y = y_label) +
     theme_gmaio(base_size = base_size, legend_position = legend_position) +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = x_text_angle, hjust = if (x_text_angle == 0) 0.5 else 1,
                                                        vjust = if (x_text_angle == 90) 0.5 else 1))
+  if (!is.null(zoom.l) && nrow(zoom.l$labels) > 0){
+    boxplot.gg <- boxplot.gg +
+      ggplot2::geom_text(data = zoom.l$labels, ggplot2::aes(x = .data[[group]], y = .data$y, label = .data$label),
+                         inherit.aes = FALSE, vjust = -0.5, size = (base_size - 2) / ggplot2::.pt, colour = "grey10")
+  }
   if (!is.null(shape_by)){
     shapes.v <- shapes %||% stats::setNames(rep_len(c(21, 24, 22, 23, 25), nlevels(as.factor(long.df[[shape_by]]))),
                                             levels(as.factor(long.df[[shape_by]])))
@@ -200,7 +223,7 @@ plot_group_boxplots <- function(long.df, by, group, colours.v = NULL, pairwise_t
   boxplot.gg <- boxplot.gg +
     ggplot2::geom_blank(data = annotations.l$limits, ggplot2::aes(y = .data$y), inherit.aes = FALSE) +
     ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0.05, 0.04)),
-                                breaks = data_breaks(long.df, by, annotations.l$limits, free_y)) +
+                                breaks = data_breaks(plot.df, by, annotations.l$limits, free_y)) +
     ggplot2::facet_wrap(stats::as.formula(paste("~", by)), scales = if (free_y) "free_y" else "fixed", ncol = n_columns.n,
                         labeller = ggplot2::as_labeller(function(x){
                           labels.v <- ifelse(x %in% names(panel_labels), panel_labels[x], x)
@@ -213,6 +236,64 @@ plot_group_boxplots <- function(long.df, by, group, colours.v = NULL, pairwise_t
   width.n <- n_columns.n * panel_width.n + if (is.null(shape_by)) 1 else 3
   list(plot = with_size(boxplot.gg, width.n, 8 * ceiling(n_panels.n / n_columns.n) + 1),
        tests = tests.df, pairwise = pairwise.df)
+}
+
+# Axis zoom for plot_group_boxplots(zoom_outliers = TRUE): per panel, the box statistics of every group (as ggplot2
+# computes them), the longest whisker range, and the points beyond 25% of that range moved to the panel edge
+zoom_boxplot_data <- function(long.df, by, group, shape_by = NULL, coef = 1.5){
+  points.l <- list()
+  boxes.l <- list()
+  labels.l <- list()
+  annotation.l <- list()
+  for (panel.s in levels(long.df[[by]])){
+    panel.df <- long.df[long.df[[by]] == panel.s, , drop = FALSE]
+    stats.l <- lapply(split(panel.df$Value, panel.df[[group]]), function(v){
+      if (length(v) == 0) return(NULL)
+      stats.v <- as.numeric(stats::quantile(v, c(0, 0.25, 0.5, 0.75, 1)))
+      fence.n <- coef * (stats.v[4] - stats.v[2])
+      inside.v <- v[v >= stats.v[2] - fence.n & v <= stats.v[4] + fence.n]
+      stats.v[c(1, 5)] <- range(c(stats.v[2:4], inside.v))
+      stats.v
+    })
+    stats.l <- Filter(Negate(is.null), stats.l)
+    boxes.df <- data.frame(Group = names(stats.l), do.call(rbind, stats.l), row.names = NULL)
+    names(boxes.df) <- c(group, "ymin", "lower", "middle", "upper", "ymax")
+    boxes.df[[group]] <- factor(boxes.df[[group]], levels = levels(long.df[[group]]))
+    boxes.df[[by]] <- factor(panel.s, levels = levels(long.df[[by]]))
+    low.n <- min(boxes.df$ymin)
+    high.n <- max(boxes.df$ymax)
+    span.n <- max(high.n - low.n, abs(high.n) * 0.1, 1e-9)
+    upper.n <- high.n + 0.25 * span.n
+    lower.n <- low.n - 0.25 * span.n
+    value.v <- panel.df$Value
+    over.v <- value.v > upper.n
+    under.v <- value.v < lower.n
+    panel.df$Clamped <- over.v | under.v
+    panel.df$True_value <- value.v
+    panel.df$Value <- pmin(pmax(value.v, lower.n), upper.n)
+    annotation.df <- panel.df
+    # Room for the labels of clamped points above the panel edge
+    annotation.df$Value[over.v] <- upper.n + 0.25 * span.n
+    clamped.df <- panel.df[panel.df$Clamped, , drop = FALSE]
+    if (nrow(clamped.df) > 0){
+      clamped.df$Side <- ifelse(clamped.df$True_value > upper.n, "up", "down")
+      labels.df <- do.call(rbind, lapply(split(clamped.df, list(clamped.df[[group]], clamped.df$Side), drop = TRUE), function(x){
+        values.v <- x$True_value
+        label.s <- if (length(values.v) <= 2) paste(format(signif(values.v, 3), trim = TRUE), collapse = ", ") else
+          paste0(length(values.v), " (", if (x$Side[1] == "up") "max " else "min ",
+                 format(signif(if (x$Side[1] == "up") max(values.v) else min(values.v), 3), trim = TRUE), ")")
+        data.frame(x[1, c(by, group), drop = FALSE], y = x$Value[1], label = label.s, row.names = NULL)
+      }))
+      labels.l[[length(labels.l) + 1]] <- labels.df
+    }
+    points.l[[length(points.l) + 1]] <- panel.df
+    annotation.l[[length(annotation.l) + 1]] <- annotation.df
+    boxes.l[[length(boxes.l) + 1]] <- boxes.df
+  }
+  labels.df <- if (length(labels.l) > 0) do.call(rbind, labels.l) else
+    stats::setNames(data.frame(factor(character()), factor(character()), numeric(), character()), c(by, group, "y", "label"))
+  list(points = do.call(rbind, points.l), annotation = do.call(rbind, annotation.l), boxes = do.call(rbind, boxes.l),
+       labels = labels.df)
 }
 
 # A breaks function for panels whose range runs above the data (annotation space): it finds the panel from the

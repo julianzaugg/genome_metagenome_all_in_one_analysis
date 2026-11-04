@@ -98,6 +98,12 @@ test_that("the DA heatmap shows each method's call as a track", {
   expect_setequal(heatmap.ht@left_annotation@anno_list$MaAsLin3@color_mapping@levels, c("Treated", "Not called"))
   expect_null(plot_da_heatmap(profile, consensus.df[1, ], metadata.df, "Treatment"))
   expect_null(plot_da_consensus(consensus.df, methods = "sPLS-DA", min_methods = 1))
+
+  # Rows ordered like the columns' group levels, not alphabetically
+  metadata.df$Treatment <- factor(metadata.df$Treatment, levels = c("Treated", "Control"))
+  ordered.ht <- plot_da_heatmap(profile, consensus.df, metadata.df, "Treatment", cluster_rows = FALSE,
+                                order_rows_by = c("Higher_in_order", "label"))
+  expect_equal(rownames(ordered.ht@matrix), c("f1", "f3", "f2"))
 })
 
 test_that("a feature higher in several groups than the reference is not a conflict", {

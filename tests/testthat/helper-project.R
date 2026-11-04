@@ -20,8 +20,8 @@ make_test_project <- function(..., env = parent.frame()){
   read_config(file.path(project_dir.s, "config.yml"))
 }
 
-processed_test_project <- function(env = parent.frame()){
-  config.l <- make_test_project(env = env)
+processed_test_project <- function(env = parent.frame(), ...){
+  config.l <- make_test_project(..., env = env)
   project.l <- suppressMessages(start_project(config.l))
   project.l <- suppressMessages(add_sylph(project.l))
   project.l <- suppressMessages(add_singlem(project.l))

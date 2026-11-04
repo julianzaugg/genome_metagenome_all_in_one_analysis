@@ -45,6 +45,22 @@ comparison:
 The metadata can list more samples than were sequenced; only those in the pipeline outputs are used, and a comparison sample missing from it is an error.
 `main.R` loads them with `add_comparison()`, after the MAGs and gene catalogue functions.
 
+Three more settings shape the groups:
+
+```yaml
+comparison:
+  study_samples: {column: Location, values: [Gunnedah], group: Gunnedah}
+  group_recode: {North Coast: Mid-North Coast, Port Macquarie: Mid-North Coast}
+  group_order: [Mid-North Coast, Gunnedah]
+```
+
+- `study_samples` treats some of the study's own samples (by `samples`, a list of IDs, and/or a `column` with `values`) as comparison samples of the group `group`, for example a population that is not a focus of the study.
+  They are pooled with comparison samples of the same group name, take the comparison dataset label, and leave the study-only analyses (`analysis_metadata()`, `get_profile()`); `combined_metadata()` and `combined_profile()` include them.
+  No pipeline rerun is needed: study and comparison reads were mapped to the same genomes and gene catalogue.
+  Profiles that exist only for the study (HQ MAG sets, Nonpareil) have no values for them.
+- `group_recode` renames comparison groups, and several old names can share one new name (the original is kept in `<group_variable>_original`).
+- `group_order` puts groups first in this order in figures; `combined_metadata()` also sorts the samples by dataset and group, so each group is one block.
+
 ## Combined metadata and profiles
 
 `combined_metadata()` stacks the two sets of samples.
@@ -93,6 +109,8 @@ gmaio::run_pairwise_permanova(ordination$distance, metadata.df, "Comparison_grou
 ## Distances to each group
 
 `comparison_distances()` measures, for every study sample, how far it is from each group separately.
+With `dataset = "<comparison label>"` or `from_groups` it measures from other samples instead, and `to_groups` restricts the groups measured to.
+`plot_comparison_distances(panel = "to")` then draws one panel per group measured to (for example each focal population), with a box per group the samples come from.
 It takes the sample's distance (in the ordination's distance, here robust Aitchison) to every sample of one group and averages them, then does the same for the next group, and so on.
 For the sample's own group, the sample itself is left out.
 So each study sample gives one value per group: its mean distance to the other samples of its own Location, and its mean distance to the samples of each other Location and of each comparison group.

@@ -111,9 +111,12 @@ assign_colours <- function(values.v, existing.v = NULL, fixed.v = NULL, avoid.v 
       spread.v <- setdiff(toupper(qualitative_palette(length(levels.v) + length(avoid.v))), toupper(c(colours.v, avoid.v)))
       if (length(spread.v) >= length(remaining.v)) candidates.v <- spread.v
     }
-    if (length(candidates.v) < length(remaining.v)){
-      candidates.v <- c(candidates.v, qualitative_palette(length(remaining.v) + 30))
-      candidates.v <- setdiff(unique(toupper(candidates.v)), toupper(colours.v))
+    # A saved palette can already use the first colours of the sequence (taxa added in a later run): extend the sequence
+    # until enough unused colours remain
+    size.n <- length(levels.v)
+    while (length(candidates.v) < length(remaining.v)){
+      size.n <- 2 * size.n + 30
+      candidates.v <- setdiff(unique(toupper(qualitative_palette(size.n))), toupper(colours.v))
     }
     colours.v[remaining.v] <- candidates.v[seq_along(remaining.v)]
   }
@@ -165,8 +168,10 @@ assign_taxa_colours <- function(taxa.df, existing.v = NULL, fixed.v = NULL, sche
     colours.v <- c(colours.v, stats::setNames(shade_colours(base.s, length(labels.v)), labels.v))
   }
   for (source.v in list(existing.v, fixed.v)){
+    source.v <- unlist(source.v)
+    source.v <- source.v[!is.na(source.v)]
     shared.v <- intersect(names(source.v), names(colours.v))
-    colours.v[shared.v] <- unlist(source.v)[shared.v]
+    colours.v[shared.v] <- source.v[shared.v]
   }
   colours.v
 }

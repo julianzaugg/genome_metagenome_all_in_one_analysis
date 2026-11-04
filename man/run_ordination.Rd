@@ -10,7 +10,8 @@ run_ordination(
   distance = "bray",
   binary = FALSE,
   detection = 0,
-  scaling = 1
+  scaling = 1,
+  exclude_unresolved = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,9 @@ when \code{binary = TRUE} (default \code{0}, any non-zero value).}
 \item{scaling}{PCA score scaling (see \code{\link[vegan:scores.rda]{vegan::scores.rda()}}): \code{1} preserves distances between
 samples (default), \code{2} correlations between features, \code{3} (\code{"symmetric"}) is a compromise.
 Only affects the plotted scores and loadings, not the distances used for statistics.}
+
+\item{exclude_unresolved}{Leave out features not resolved at the profile's rank before ordinating
+(see \code{\link[=unresolved_features]{unresolved_features()}}); default \code{FALSE}.}
 }
 \value{
 A \code{gm_ordination} list: \code{method}, \code{distance_label}, \code{sites} (scores with \code{Sample_ID}),

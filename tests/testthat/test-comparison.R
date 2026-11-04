@@ -92,3 +92,76 @@ test_that("merge_profiles joins samples and refuses mismatches", {
   expect_error(merge_profiles(list(a.p, a.p)), "share")
   expect_error(merge_profiles(list(a.p, as_relative_abundance(b.p))), "value types")
 })
+
+test_that("study samples can be moved to the comparison set and groups recoded and ordered", {
+  project.l <- processed_test_project(comparison = list(
+    study_samples = list(column = "Treatment", values = list("Treated"), group = "Wild"),
+    group_recode = list(Captive = "Zoo"), group_order = list("Wild", "Zoo")))
+  expect_equal(analysis_metadata(project.l)$Sample_ID, c("S1", "S2", "S3"))
+  expect_equal(levels(analysis_metadata(project.l)$Treatment), "Control")
+  expect_equal(analysis_metadata(project.l, include_comparison_members = TRUE)$Sample_ID, c("S1", "S2", "S3", "S10", "S11"))
+  expect_equal(project.l$comparison$metadata["C1", "Comparison_group"], "Zoo")
+  expect_equal(project.l$comparison$metadata["C1", "Group_original"], "Captive")
+
+  metadata.df <- combined_metadata(project.l)
+  expect_equal(metadata.df$Sample_ID, c("S1", "S2", "S3", "C3", "C4", "S10", "S11", "C1", "C2"))
+  expect_equal(as.character(metadata.df[c("S10", "C3", "C1", "S1"), "Dataset"]),
+               c("Comparison", "Comparison", "Comparison", "This study"))
+  expect_equal(levels(metadata.df$Comparison_group), c("Wild", "Zoo", "Control"))
+  expect_equal(as.character(metadata.df["S10", "Comparison_group"]), "Wild")
+  expect_equal(metadata.df["S10", "Treatment"], "Treated")
+  expect_equal(metadata.df["S10", "Group"], "Wild")
+
+  sylph.p <- combined_profile(project.l, "sylph_taxonomic")
+  expect_equal(profile_samples(sylph.p), metadata.df$Sample_ID)
+  study.p <- get_profile(project.l, "sylph_taxonomic", include_comparison_members = TRUE)
+  expect_equal(sylph.p$values[rownames(study.p$values), "S10"], study.p$values[, "S10"])
+  expect_false("S10" %in% profile_samples(get_profile(project.l, "sylph_taxonomic")))
+  expect_equal(project.l$tables$strains$samples$Dataset[match("S10", project.l$tables$strains$samples$Sample_ID)], "Comparison")
+})
+
+test_that("a moved study group does not clash with a comparison group of the same name", {
+  project.l <- processed_test_project(comparison = list(study_samples = list(column = "Treatment", values = list("Control"),
+                                                                              group = "Control")))
+  metadata.df <- combined_metadata(project.l)
+  expect_false(any(grepl("(Comparison)", levels(metadata.df$Comparison_group), fixed = TRUE)))
+  expect_equal(as.character(metadata.df[c("S1", "S10"), "Comparison_group"]), c("Control", "Treated"))
+})
+
+test_that("comparison_member settings are validated", {
+  expect_error(make_test_project(comparison = list(study_samples = list(group = "Wild"))), "needs")
+  expect_error(suppressMessages(start_project(make_test_project(comparison = list(
+    study_samples = list(column = "Treatment", values = list("Nothing"), group = "Wild"))))), "match no sample")
+  expect_error(suppressMessages(start_project(make_test_project(comparison = list(
+    study_samples = list(samples = list("S99"), group = "Wild"))))), "not in metadata")
+  config.l <- make_test_project(comparison = list(group_recode = list(Nowhere = "Zoo")))
+  project.l <- suppressMessages(add_mags(start_project(config.l)))
+  expect_error(suppressMessages(add_comparison(project.l, min_annotated_fraction = 0.5)), "names no comparison group")
+  config.l <- make_test_project(comparison = list(group_order = list("Nowhere")))
+  project.l <- suppressMessages(add_comparison(add_mags(start_project(config.l)), min_annotated_fraction = 0.5))
+  expect_error(combined_metadata(project.l), "names no group")
+})
+
+test_that("distances can be measured from chosen groups to chosen groups, with a panel per target group", {
+  project.l <- processed_test_project()
+  profile <- aggregate_profile(combined_profile(project.l, "sylph_taxonomic"), rank = "genus")
+  ordination <- run_ordination(profile, method = "pcoa", distance = "bray")
+  metadata.df <- combined_metadata(project.l)
+  distances.df <- comparison_distances(ordination$distance, metadata.df, dataset = "Comparison",
+                                       to_groups = c("Treated", "Control"))
+  expect_setequal(distances.df$Sample_ID, c("C1", "C2", "C3", "C4"))
+  expect_equal(levels(distances.df$To_group), c("Treated", "Control"))
+  expect_equal(levels(distances.df$From_group), c("Captive", "Wild"))
+  expect_equal(nrow(distances.df), 4 * 2)
+  by_group.df <- comparison_distances(ordination$distance, metadata.df, from_groups = "Wild", to_groups = "Control")
+  expect_equal(by_group.df$Sample_ID, c("C3", "C4"))
+  expect_equal(by_group.df$Mean_distance[1], mean(as.matrix(ordination$distance)["C3", c("S1", "S2", "S3")]))
+  expect_equal(nrow(comparison_distances(ordination$distance, metadata.df, dataset = NULL)), 9 * 4 - 1 * 0 - 0)
+  expect_error(comparison_distances(ordination$distance, metadata.df, to_groups = "Nowhere"), "names no group")
+  expect_error(comparison_distances(ordination$distance, metadata.df, from_groups = "Nowhere"), "names no group")
+  plot.gg <- plot_comparison_distances(distances.df, project.l$palettes$Comparison_group, panel = "to")
+  expect_s3_class(plot.gg, "ggplot")
+  expect_equal(levels(plot.gg$data$Panel), c("Distance to Treated", "Distance to Control"))
+  expect_equal(levels(plot.gg$data$Group), c("Captive", "Wild"))
+  expect_equal(plot.gg$labels$x, "Samples of")
+})

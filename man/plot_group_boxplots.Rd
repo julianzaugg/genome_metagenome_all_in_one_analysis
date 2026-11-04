@@ -28,6 +28,7 @@ plot_group_boxplots(
   y_label = NULL,
   ncol = NULL,
   free_y = TRUE,
+  zoom_outliers = FALSE,
   x_text_angle = 30,
   base_size = 9,
   legend_position = "right"
@@ -76,6 +77,11 @@ keep their \code{by} value.}
 \item{ncol}{Number of panel columns; \code{NULL} (default) uses up to 4.}
 
 \item{free_y}{Give every panel its own y axis.}
+
+\item{zoom_outliers}{Zoom each panel's axis to the box and whisker range: points far above or below it
+(more than 25\% of the whisker range beyond the longest whisker of the panel) are drawn as triangles at
+the edge of the panel and labelled with their value. Boxes, whiskers and all tests use the full data.
+Default \code{FALSE}.}
 
 \item{x_text_angle}{Angle of the group labels.}
 
