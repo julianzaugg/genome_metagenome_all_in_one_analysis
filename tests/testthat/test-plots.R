@@ -177,3 +177,17 @@ test_that("PDF figures use the Cairo package device and embed fonts", {
   bytes.v <- readBin(path.s, "raw", file.size(path.s))
   expect_true(grepl("/FontFile", rawToChar(bytes.v[bytes.v != as.raw(0)]), fixed = TRUE, useBytes = TRUE))
 })
+
+test_that("boxplot figures grow with the number of pairwise brackets so labels fit", {
+  set.seed(1)
+  groups.v <- LETTERS[1:8]
+  long.df <- do.call(rbind, lapply(seq_along(groups.v), function(i){
+    data.frame(Group = groups.v[i], Panel = "p", Sample_ID = paste0(groups.v[i], 1:10),
+               Sample_label = paste0(groups.v[i], 1:10), Value = stats::rnorm(10, 10 * i, 1))
+  }))
+  long.df$Group <- factor(long.df$Group, levels = groups.v)
+  with_brackets.l <- plot_group_boxplots(long.df, "Panel", "Group", brackets = TRUE)
+  without_brackets.l <- plot_group_boxplots(long.df, "Panel", "Group", brackets = FALSE)
+  expect_gt(attr(with_brackets.l$plot, "gm_size")[["height"]], attr(without_brackets.l$plot, "gm_size")[["height"]])
+  expect_identical(with_brackets.l$pairwise, without_brackets.l$pairwise)
+})

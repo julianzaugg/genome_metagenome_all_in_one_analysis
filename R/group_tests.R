@@ -234,7 +234,10 @@ plot_group_boxplots <- function(long.df, by, group, colours.v = NULL, pairwise_t
                           }, character(1))
                         }))
   width.n <- n_columns.n * panel_width.n + if (is.null(shape_by)) 1 else 3
-  list(plot = with_size(boxplot.gg, width.n, 8 * ceiling(n_panels.n / n_columns.n) + 1),
+  # Each bracket row is 10% of the panel's data range; with many brackets the rows get too thin for their labels, so
+  # panels grow until a row is at least 0.36 cm (a panel plotting area is about 4.8 cm at the base height of 8 cm)
+  extra_height.n <- max(0, 3.6 * (1.3 + 0.1 * annotations.l$max_brackets) - 4.8)
+  list(plot = with_size(boxplot.gg, width.n, (8 + extra_height.n) * ceiling(n_panels.n / n_columns.n) + 1),
        tests = tests.df, pairwise = pairwise.df)
 }
 
@@ -313,7 +316,7 @@ data_breaks <- function(long.df, by, limits.df, free_y){
     high.n <- ranges.df$High[row.n]
     if (high.n <= limits[1]) return(scales::extended_breaks()(limits))
     # About five breaks over a full panel, fewer when the data fill only part of it, so labels do not crowd
-    n_breaks.n <- max(2, round(5 * (high.n - limits[1]) / diff(limits)))
+    n_breaks.n <- max(3, round(5 * (high.n - limits[1]) / diff(limits)))
     breaks.v <- scales::extended_breaks(n = n_breaks.n)(c(limits[1], high.n))
     breaks.v[breaks.v <= high.n + 0.25 * diff(range(breaks.v)) / max(length(breaks.v) - 1, 1)]
   }
@@ -365,5 +368,6 @@ group_boxplot_annotations <- function(long.df, by, group, tests.df, pairwise.df,
     x.df
   }
   list(brackets = as_panel_df(brackets.l, c("x", "xend", "y", "yend")), labels = as_panel_df(labels.l, c("x", "y", "label")),
-       tests = as_panel_df(test_labels.l, c("y", "label")), limits = as_panel_df(limits.l, "y"))
+       tests = as_panel_df(test_labels.l, c("y", "label")), limits = as_panel_df(limits.l, "y"),
+       max_brackets = max(0, table(factor(unlist(lapply(brackets.l, function(b) as.character(b$Panel[1])))))))
 }
