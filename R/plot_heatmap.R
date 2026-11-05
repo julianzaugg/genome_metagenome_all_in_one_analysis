@@ -212,6 +212,11 @@ plot_heatmap <- function(profile, metadata.df, palettes.l = list(), transform = 
 #' @export
 draw_heatmap <- function(heatmap.ht, ...){
   args.l <- utils::modifyList(attr(heatmap.ht, "gm_draw") %||% list(), list(...))
+  # Space between the row labels and the legends (ComplexHeatmap's default of 2 mm lets long labels touch them)
+  previous.l <- list(HEATMAP_LEGEND_PADDING = ComplexHeatmap::ht_opt$HEATMAP_LEGEND_PADDING,
+                     ANNOTATION_LEGEND_PADDING = ComplexHeatmap::ht_opt$ANNOTATION_LEGEND_PADDING)
+  ComplexHeatmap::ht_opt(HEATMAP_LEGEND_PADDING = grid::unit(8, "mm"), ANNOTATION_LEGEND_PADDING = grid::unit(8, "mm"))
+  on.exit(do.call(ComplexHeatmap::ht_opt, previous.l), add = TRUE)
   invisible(do.call(ComplexHeatmap::draw, c(list(heatmap.ht), args.l)))
 }
 
@@ -335,7 +340,7 @@ heatmap_column_annotation <- function(metadata.df, variables.v, palettes.l, anno
   ComplexHeatmap::HeatmapAnnotation(
     df = annotation.df, col = colours.l, which = "column", show_annotation_name = TRUE,
     annotation_label = vapply(variables.v, variable_label, character(1)),
-    annotation_name_side = if (side == "top") "left" else "right",
+    annotation_name_side = if (side == "top") "left" else "right", annotation_name_offset = grid::unit(2.5, "mm"),
     annotation_name_gp = grid::gpar(fontsize = annotation_name_size), simple_anno_size = grid::unit(annotation_size, "cm"),
     na_col = special_colours()[["Missing"]],
     annotation_legend_param = annotation_legend_params(variables.v, colours.l, legend_param.l))
