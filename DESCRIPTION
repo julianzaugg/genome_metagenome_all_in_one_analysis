@@ -39,6 +39,7 @@ Imports:
     yaml
 Suggests:
     ape,
+    Cairo,
     ggtree,
     knitr,
     maaslin3,

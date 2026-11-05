@@ -200,16 +200,30 @@ facet_by_group <- function(variable){
 
 gm_cache <- new.env(parent = emptyenv())
 
-# cairo_pdf embeds fonts and Unicode properly but needs a working Cairo (not always present on macOS)
+# PDF device for figures. Preference order:
+# 1. Cairo::CairoPDF: embeds fonts and Unicode, and places glyphs at their exact advances.
+# 2. grDevices::cairo_pdf: also embeds fonts, but draws text through Pango, which rounds glyph positions to a
+#    coarse grid (visible as uneven letter spacing at small sizes), so it is only a fallback.
+# 3. grDevices::pdf: no Cairo needed, but fonts are not embedded and a hyphen is drawn as a minus sign.
 pdf_device <- function(){
-  if (is.null(gm_cache$cairo_works)){
-    probe.s <- tempfile(fileext = ".pdf")
-    gm_cache$cairo_works <- tryCatch({
-      grDevices::cairo_pdf(probe.s)
-      grDevices::dev.off()
-      TRUE
-    }, warning = function(w) FALSE, error = function(e) FALSE)
-    unlink(probe.s)
+  if (is.null(gm_cache$pdf_device)){
+    works.f <- function(device.f){
+      probe.s <- tempfile(fileext = ".pdf")
+      on.exit(unlink(probe.s))
+      tryCatch({
+        device.f(probe.s, width = 2, height = 2)
+        grDevices::dev.off()
+        file.exists(probe.s)
+      }, warning = function(w) FALSE, error = function(e) FALSE)
+    }
+    cairo_package.f <- function(filename, ...) Cairo::CairoPDF(file = filename, ...)
+    gm_cache$pdf_device <- if (requireNamespace("Cairo", quietly = TRUE) && works.f(cairo_package.f)){
+      cairo_package.f
+    } else if (works.f(grDevices::cairo_pdf)){
+      grDevices::cairo_pdf
+    } else {
+      grDevices::pdf
+    }
   }
-  if (gm_cache$cairo_works) grDevices::cairo_pdf else grDevices::pdf
+  gm_cache$pdf_device
 }
