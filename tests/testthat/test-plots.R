@@ -167,9 +167,13 @@ test_that("zoom_outliers moves far outliers to the panel edge and labels them", 
   expect_equal(nrow(none.data$labels), 0)
 })
 
-test_that("PDF figures use the Cairo package device and embed fonts", {
-  skip_if_not_installed("Cairo")
-  expect_true(any(grepl("CairoPDF", deparse(pdf_device()), fixed = TRUE)))
+test_that("PDF figures use Quartz on macOS, else the Cairo package device, and embed fonts", {
+  if (isTRUE(capabilities("aqua"))){
+    expect_true(any(grepl("quartz", deparse(pdf_device()), fixed = TRUE)))
+  } else {
+    skip_if_not_installed("Cairo")
+    expect_true(any(grepl("CairoPDF", deparse(pdf_device()), fixed = TRUE)))
+  }
   plot.gg <- ggplot2::ggplot(data.frame(x = "a", y = 1), ggplot2::aes(x, y)) +
     ggplot2::geom_col() + ggplot2::labs(title = "Mid-North Coast Murruh State Forest \u2265 1")
   path.s <- file.path(withr::local_tempdir(), "text.pdf")

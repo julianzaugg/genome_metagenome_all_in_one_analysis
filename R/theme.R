@@ -201,10 +201,14 @@ facet_by_group <- function(variable){
 gm_cache <- new.env(parent = emptyenv())
 
 # PDF device for figures. Preference order:
-# 1. Cairo::CairoPDF: embeds fonts and Unicode, and places glyphs at their exact advances.
-# 2. grDevices::cairo_pdf: also embeds fonts, but draws text through Pango, which rounds glyph positions to a
+# 1. grDevices::quartz (macOS): lays text out with Core Text, so right-aligned axis labels line up and keep their
+#    gap to the axis, letter spacing is even, a hyphen stays a hyphen, and fonts and Unicode are embedded.
+#    macOS draws Helvetica as Arial, which has the same widths.
+# 2. Cairo::CairoPDF: embeds fonts and Unicode, but draws text about 7% wider than standard Helvetica and places
+#    some right-aligned strings off their anchor (axis labels such as "0.6" shift into the axis).
+# 3. grDevices::cairo_pdf: also embeds fonts, but draws text through Pango, which rounds glyph positions to a
 #    coarse grid (visible as uneven letter spacing at small sizes), so it is only a fallback.
-# 3. grDevices::pdf: no Cairo needed, but fonts are not embedded and a hyphen is drawn as a minus sign.
+# 4. grDevices::pdf: no Cairo needed, but fonts are not embedded and a hyphen is drawn as a minus sign.
 pdf_device <- function(){
   if (is.null(gm_cache$pdf_device)){
     works.f <- function(device.f){
@@ -216,8 +220,13 @@ pdf_device <- function(){
         file.exists(probe.s)
       }, warning = function(w) FALSE, error = function(e) FALSE)
     }
+    quartz.f <- function(filename, width = 7, height = 7, ...){
+      grDevices::quartz(file = filename, type = "pdf", width = width, height = height, ...)
+    }
     cairo_package.f <- function(filename, ...) Cairo::CairoPDF(file = filename, ...)
-    gm_cache$pdf_device <- if (requireNamespace("Cairo", quietly = TRUE) && works.f(cairo_package.f)){
+    gm_cache$pdf_device <- if (isTRUE(capabilities("aqua")) && works.f(quartz.f)){
+      quartz.f
+    } else if (requireNamespace("Cairo", quietly = TRUE) && works.f(cairo_package.f)){
       cairo_package.f
     } else if (works.f(grDevices::cairo_pdf)){
       grDevices::cairo_pdf
