@@ -52,6 +52,15 @@ test_that("plot_heatmap options change the drawn heatmap", {
   save_plot(titled.ht, file.path(out.s, "heatmap.pdf"))
   expect_gt(file.size(file.path(out.s, "heatmap.pdf")), 1000)
   expect_error(plot_heatmap(genus.p, metadata.df, column_split = "Nope"), "Nope")
+
+  # A factor row_split column, with and without missing values, draws without warnings; missing values form "Unassigned"
+  factor.p <- genus.p
+  factor.p$features$Phylum <- factor(factor.p$features$Phylum)
+  expect_no_warning(factor.ht <- plot_heatmap(factor.p, metadata.df, row_split = "Phylum"))
+  factor.p$features$Phylum[1] <- NA
+  expect_no_warning(na.ht <- plot_heatmap(factor.p, metadata.df, row_split = "Phylum"))
+  expect_true("Unassigned" %in% levels(na.ht@matrix_param$row_split[[1]]))
+  expect_false(anyNA(na.ht@matrix_param$row_split[[1]]))
 })
 
 test_that("plot_ordination draws groups, loadings and fitted variables", {

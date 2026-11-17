@@ -153,7 +153,8 @@ plot_heatmap <- function(profile, metadata.df, palettes.l = list(), transform = 
     column_split.v <- if (!is.null(column_split)) droplevels(as.factor(metadata.df[[column_split]])) else NULL
     row_split.v <- NULL
     if (!is.null(row_split)){
-      row_split.v <- features.df[[row_split]]
+      # Character first: assigning a new level to a factor warns and leaves the NA in place
+      row_split.v <- as.character(features.df[[row_split]])
       row_split.v[is.na(row_split.v)] <- "Unassigned"
       row_split.v <- factor(row_split.v, levels = unique(row_split.v))
     }
