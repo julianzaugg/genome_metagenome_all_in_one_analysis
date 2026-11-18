@@ -138,7 +138,8 @@ permanova_caption <- function(permanova.df, permdisp.l = NULL){
   paste(caption.v, collapse = "; ")
 }
 
-# "p = 0.012", or "p < 0.001" below 0.001
-p_label <- function(p.v){
-  ifelse(is.na(p.v), "p = NA", ifelse(p.v < 0.001, "p < 0.001", paste("p =", formatC(p.v, format = "f", digits = 3))))
+# "p = 0.012", or "p < 0.001" below 0.001; `name` replaces "p" (e.g. "adj. p")
+p_label <- function(p.v, name = "p"){
+  ifelse(is.na(p.v), paste(name, "= NA"),
+         ifelse(p.v < 0.001, paste(name, "< 0.001"), paste(name, "=", formatC(p.v, format = "f", digits = 3))))
 }

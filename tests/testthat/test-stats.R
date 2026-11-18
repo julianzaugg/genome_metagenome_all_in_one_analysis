@@ -31,6 +31,16 @@ test_that("group_tests chooses Wilcoxon for two groups", {
   expect_lt(tests.df$P_value, 0.05)
 })
 
+test_that("group_tests labels the panel with the BH-adjusted p value", {
+  long.df <- data.frame(Metric = rep(c("m1", "m2", "m3"), each = 8), Group = rep(rep(c("a", "b"), each = 4), 3),
+                        Value = c(1:4, 11:14, 1:4, 5:8, c(2, 5, 1, 6), c(3, 4, 2, 7)))
+  tests.df <- group_tests(long.df, "Metric", "Group")
+  expect_true(all(tests.df$P_adjusted >= tests.df$P_value))
+  expect_equal(tests.df$Test_label, paste(tests.df$Test, p_label(tests.df$P_adjusted, "adj. p")))
+  expect_true(all(grepl("adj. p", tests.df$Test_label, fixed = TRUE)))
+  expect_equal(p_label(c(0.0004, 0.0123, NA), "adj. p"), c("adj. p < 0.001", "adj. p = 0.012", "adj. p = NA"))
+})
+
 test_that("pairwise PERMANOVA tests each pair of levels on its own samples", {
   set.seed(1)
   metadata.df <- data.frame(Sample_ID = paste0("S", 1:11), Group = rep(c("a", "b", "c"), c(4, 4, 3)))

@@ -49,7 +49,8 @@ for more than two groups.}
 \item{p_adjust_method}{Correction for the pairwise tests within each panel (default \code{"BH"},
 see \code{\link[stats:p.adjust]{stats::p.adjust()}}).}
 
-\item{show_test}{Print the panel test (Wilcoxon or Kruskal-Wallis p) above the boxes (default \code{TRUE}).}
+\item{show_test}{Print the panel test (Wilcoxon or Kruskal-Wallis, with its BH-adjusted p value across the
+panels) above the boxes (default \code{TRUE}).}
 
 \item{brackets}{Draw brackets between pairs with \code{P_adjusted < bracket_alpha} (default \code{TRUE};
 more than two groups only).}

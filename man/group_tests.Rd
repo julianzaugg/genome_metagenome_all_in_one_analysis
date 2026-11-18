@@ -15,7 +15,7 @@ group_tests(long.df, by, group)
 }
 \value{
 Data frame with the test used, statistic, p value, BH-adjusted p value (across the
-levels of \code{by}) and a label.
+levels of \code{by}) and a label (the test and its BH-adjusted p value, as printed on the panels).
 }
 \description{
 Wilcoxon rank-sum test for two groups, Kruskal-Wallis for more.
