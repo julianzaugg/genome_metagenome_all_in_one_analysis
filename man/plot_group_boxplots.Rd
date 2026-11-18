@@ -80,8 +80,9 @@ keep their \code{by} value.}
 \item{free_y}{Give every panel its own y axis.}
 
 \item{zoom_outliers}{Zoom each panel's axis to the box and whisker range: points far above or below it
-(more than 25\% of the whisker range beyond the longest whisker of the panel) are drawn as triangles at
-the edge of the panel and labelled with their value. Boxes, whiskers and all tests use the full data.
+(more than 25\% of the whisker range beyond the longest whisker of the panel) are drawn as triangles on a
+dashed line at the limit of the zoomed axis (no gridlines or ticks beyond it) and labelled with their value;
+a note under the figure says so. Boxes, whiskers and all tests use the full data.
 Default \code{FALSE}.}
 
 \item{x_text_angle}{Angle of the group labels.}

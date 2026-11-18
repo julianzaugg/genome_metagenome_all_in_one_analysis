@@ -134,8 +134,9 @@ significance_stars <- function(p.v){
 #' @param ncol Number of panel columns; `NULL` (default) uses up to 4.
 #' @param free_y Give every panel its own y axis.
 #' @param zoom_outliers Zoom each panel's axis to the box and whisker range: points far above or below it
-#'   (more than 25% of the whisker range beyond the longest whisker of the panel) are drawn as triangles at
-#'   the edge of the panel and labelled with their value. Boxes, whiskers and all tests use the full data.
+#'   (more than 25% of the whisker range beyond the longest whisker of the panel) are drawn as triangles on a
+#'   dashed line at the limit of the zoomed axis (no gridlines or ticks beyond it) and labelled with their value;
+#'   a note under the figure says so. Boxes, whiskers and all tests use the full data.
 #'   Default `FALSE`.
 #' @param x_text_angle Angle of the group labels.
 #' @param base_size Base font size, in points.
@@ -170,7 +171,7 @@ plot_group_boxplots <- function(long.df, by, group, colours.v = NULL, pairwise_t
     ggplot2::geom_boxplot(ggplot2::aes(fill = .data[[group]]), outlier.shape = NA, width = box_width, alpha = box_alpha,
                           linewidth = 0.3)
   } else {
-    # Box statistics come from the full data, since the plotted values of far outliers are moved to the panel edge
+    # Box statistics come from the full data, since the plotted values of far outliers are moved to the zoom limit
     ggplot2::geom_boxplot(data = zoom.l$boxes, ggplot2::aes(x = .data[[group]], ymin = .data$ymin, lower = .data$lower,
                                                            middle = .data$middle, upper = .data$upper, ymax = .data$ymax,
                                                            fill = .data[[group]]),
@@ -234,21 +235,40 @@ plot_group_boxplots <- function(long.df, by, group, colours.v = NULL, pairwise_t
                                   collapse = "\n")
                           }, character(1))
                         }))
+  # A dashed line marks each zoom limit that has points beyond it; the band beyond the line is blanked (no gridlines past
+  # the limit) and a note says what the triangles are
+  limit_note.b <- !is.null(zoom.l) && nrow(zoom.l$limits) > 0
+  if (limit_note.b){
+    beyond.df <- zoom.l$limits
+    beyond.df$From <- ifelse(beyond.df$Side == "up", beyond.df$y, -Inf)
+    beyond.df$To <- ifelse(beyond.df$Side == "up", Inf, beyond.df$y)
+    boxplot.gg$layers <- c(list(ggplot2::geom_rect(data = beyond.df, ggplot2::aes(ymin = .data$From, ymax = .data$To),
+                                                   xmin = -Inf, xmax = Inf, fill = "white", colour = NA, inherit.aes = FALSE),
+                                ggplot2::geom_hline(data = beyond.df, ggplot2::aes(yintercept = .data$y), linetype = "dashed",
+                                                    linewidth = 0.3, colour = "grey40", inherit.aes = FALSE)),
+                           boxplot.gg$layers)
+    boxplot.gg <- boxplot.gg +
+      ggplot2::labs(caption = "Triangles mark values beyond the dashed line (the axis limit); the number is the true value.") +
+      ggplot2::theme(plot.caption = ggplot2::element_text(hjust = 0, size = base_size - 1, colour = "grey25"))
+  }
   width.n <- n_columns.n * panel_width.n + if (is.null(shape_by)) 1 else 3
   # Each bracket row is 10% of the panel's data range; with many brackets the rows get too thin for their labels, so
   # panels grow until a row is at least 0.36 cm (a panel plotting area is about 4.8 cm at the base height of 8 cm)
   extra_height.n <- max(0, 3.6 * (1.3 + 0.1 * annotations.l$max_brackets) - 4.8)
-  list(plot = with_size(boxplot.gg, width.n, (8 + extra_height.n) * ceiling(n_panels.n / n_columns.n) + 1),
+  list(plot = with_size(boxplot.gg, width.n, (8 + extra_height.n) * ceiling(n_panels.n / n_columns.n) + 1 +
+                          if (limit_note.b) 0.5 else 0),
        tests = tests.df, pairwise = pairwise.df)
 }
 
 # Axis zoom for plot_group_boxplots(zoom_outliers = TRUE): per panel, the box statistics of every group (as ggplot2
-# computes them), the longest whisker range, and the points beyond 25% of that range moved to the panel edge
+# computes them), the longest whisker range, and the points beyond 25% of that range moved to the zoom limit (`limits`
+# holds the limits that have points beyond them)
 zoom_boxplot_data <- function(long.df, by, group, shape_by = NULL, coef = 1.5){
   points.l <- list()
   boxes.l <- list()
   labels.l <- list()
   annotation.l <- list()
+  limits.l <- list()
   for (panel.s in levels(long.df[[by]])){
     panel.df <- long.df[long.df[[by]] == panel.s, , drop = FALSE]
     stats.l <- lapply(split(panel.df$Value, panel.df[[group]]), function(v){
@@ -275,6 +295,13 @@ zoom_boxplot_data <- function(long.df, by, group, shape_by = NULL, coef = 1.5){
     panel.df$Clamped <- over.v | under.v
     panel.df$True_value <- value.v
     panel.df$Value <- pmin(pmax(value.v, lower.n), upper.n)
+    # The zoom limits that have points beyond them (a dashed line is drawn at each)
+    limit.df <- data.frame(y = c(if (any(over.v)) upper.n, if (any(under.v)) lower.n),
+                           Side = c(if (any(over.v)) "up", if (any(under.v)) "down"))
+    if (nrow(limit.df) > 0){
+      limit.df[[by]] <- factor(panel.s, levels = levels(long.df[[by]]))
+      limits.l[[length(limits.l) + 1]] <- limit.df
+    }
     annotation.df <- panel.df
     # Room for the labels of clamped points above the panel edge
     annotation.df$Value[over.v] <- upper.n + 0.25 * span.n
@@ -296,8 +323,10 @@ zoom_boxplot_data <- function(long.df, by, group, shape_by = NULL, coef = 1.5){
   }
   labels.df <- if (length(labels.l) > 0) do.call(rbind, labels.l) else
     stats::setNames(data.frame(factor(character()), factor(character()), numeric(), character()), c(by, group, "y", "label"))
+  limits.df <- if (length(limits.l) > 0) do.call(rbind, limits.l) else
+    stats::setNames(data.frame(numeric(), character(), factor(character())), c("y", "Side", by))
   list(points = do.call(rbind, points.l), annotation = do.call(rbind, annotation.l), boxes = do.call(rbind, boxes.l),
-       labels = labels.df)
+       labels = labels.df, limits = limits.df)
 }
 
 # A breaks function for panels whose range runs above the data (annotation space): it finds the panel from the
@@ -309,7 +338,10 @@ data_breaks <- function(long.df, by, limits.df, free_y){
     values.v <- long.df$Value[rows.v & !is.na(long.df$Value)]
     tops.v <- as.numeric(limits.df$y[if (free_y) limits.df[[by]] == panel.s else TRUE])
     if (length(values.v) == 0) return(NULL)
-    data.frame(Low = min(values.v), High = max(values.v), Top = max(c(values.v, tops.v)))
+    # Zoomed panels with points beyond the upper limit: no break above the dashed line
+    up.b <- "Clamped" %in% names(long.df) && any(long.df$Clamped[rows.v] & long.df$True_value[rows.v] > long.df$Value[rows.v],
+                                                 na.rm = TRUE)
+    data.frame(Low = min(values.v), High = max(values.v), Top = max(c(values.v, tops.v)), Up = up.b)
   }))
   function(limits){
     if (is.null(ranges.df) || any(!is.finite(limits))) return(scales::extended_breaks()(limits))
@@ -319,6 +351,7 @@ data_breaks <- function(long.df, by, limits.df, free_y){
     # About five breaks over a full panel, fewer when the data fill only part of it, so labels do not crowd
     n_breaks.n <- max(3, round(5 * (high.n - limits[1]) / diff(limits)))
     breaks.v <- scales::extended_breaks(n = n_breaks.n)(c(limits[1], high.n))
+    if (ranges.df$Up[row.n]) return(breaks.v[breaks.v <= high.n + 1e-9])
     breaks.v[breaks.v <= high.n + 0.25 * diff(range(breaks.v)) / max(length(breaks.v) - 1, 1)]
   }
 }
