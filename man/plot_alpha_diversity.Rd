@@ -33,7 +33,7 @@ sizes, means and medians, when more than two groups).
 }
 \description{
 One panel per measure with a box per group, the Wilcoxon (two groups) or Kruskal-Wallis
-p value, and with more than two groups brackets for the pairs that differ (Dunn's test,
+BH-adjusted p value (across the measures), and with more than two groups brackets for the pairs that differ (Dunn's test,
 BH adjusted within each measure). All figure options of \code{\link[=plot_group_boxplots]{plot_group_boxplots()}} can be
 passed, e.g. \code{bracket_label = "p"}, \code{shape_by = "Time"} or \code{panel_labels}; \code{show_test = FALSE}
 and \code{brackets = FALSE} leave the statistics off the figure (the test tables are still returned).

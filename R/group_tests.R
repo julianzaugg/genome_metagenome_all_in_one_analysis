@@ -6,7 +6,7 @@
 #' @param by Column defining separate tests (e.g. metric or feature).
 #' @param group Grouping column.
 #' @return Data frame with the test used, statistic, p value, BH-adjusted p value (across the
-#'   levels of `by`) and a label.
+#'   levels of `by`) and a label (the test and its BH-adjusted p value, as printed on the panels).
 #' @export
 group_tests <- function(long.df, by, group){
   tests.df <- do.call(rbind, lapply(split(long.df, long.df[[by]], drop = TRUE), function(x.df){
@@ -27,7 +27,7 @@ group_tests <- function(long.df, by, group){
   names(tests.df)[1] <- by
   tests.df[[by]] <- factor(tests.df[[by]], levels = levels(as.factor(long.df[[by]])))
   tests.df$P_adjusted <- stats::p.adjust(tests.df$P_value, method = "BH")
-  tests.df$Test_label <- paste(tests.df$Test, p_label(tests.df$P_value))
+  tests.df$Test_label <- paste(tests.df$Test, p_label(tests.df$P_adjusted, "adj. p"))
   tests.df
 }
 
@@ -116,7 +116,8 @@ significance_stars <- function(p.v){
 #'   for more than two groups.
 #' @param p_adjust_method Correction for the pairwise tests within each panel (default `"BH"`,
 #'   see [stats::p.adjust()]).
-#' @param show_test Print the panel test (Wilcoxon or Kruskal-Wallis p) above the boxes (default `TRUE`).
+#' @param show_test Print the panel test (Wilcoxon or Kruskal-Wallis, with its BH-adjusted p value across the
+#'   panels) above the boxes (default `TRUE`).
 #' @param brackets Draw brackets between pairs with `P_adjusted < bracket_alpha` (default `TRUE`;
 #'   more than two groups only).
 #' @param bracket_alpha Adjusted p value below which a pair gets a bracket (default `0.05`).

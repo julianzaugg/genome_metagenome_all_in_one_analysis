@@ -247,7 +247,7 @@ show_plot(diversity.l$plot)
 
 ### Leaving the statistics off the figure
 
-`show_test = FALSE` drops the panel test (Wilcoxon or Kruskal-Wallis p value) and `brackets = FALSE` the pairwise brackets.
+`show_test = FALSE` drops the panel test (Wilcoxon or Kruskal-Wallis, BH-adjusted p value across the panels) and `brackets = FALSE` the pairwise brackets.
 The tests are still run and returned (`diversity.l$tests`, `diversity.l$pairwise`), so the tables keep them.
 Every template script that draws boxplots by group has a `show_statistics.b` switch at the top that sets both: `diversity.R`, `comparison.R`, `strains.R`, `genomespot.R`, `nonpareil.R` and `mobile_elements.R`.
 The same two arguments work for every boxplot function built on `plot_group_boxplots()`, such as `plot_nonpareil_metrics()`, `plot_community_traits()` and `plot_instrain_diversity()`.
