@@ -75,6 +75,22 @@ test_that("comparison groups and labels that repeat the study's are kept apart",
   expect_equal(comparison.df["C2", "Sample_label"], "Mouse_1 (C2)")
 })
 
+test_that("excluded repeat libraries do not make the kept library's label repeat", {
+  metadata.df <- utils::read.csv(file.path(fixture_dir(), "comparison_metadata.csv"))
+  metadata.df$Site_name[metadata.df$Sample_ID %in% c("C1", "C2", "C3")] <- "Wild_1"
+  path.s <- withr::local_tempfile(fileext = ".csv")
+  utils::write.csv(metadata.df, path.s, row.names = FALSE)
+  config.l <- make_test_project(comparison = list(metadata = list(file = path.s, exclude_samples = list("C2", "C3"))))
+  project.l <- suppressMessages(add_mags(start_project(config.l)))
+  project.l <- suppressMessages(add_comparison(project.l, min_annotated_fraction = 0.5))
+  comparison.df <- project.l$comparison$metadata
+  expect_equal(comparison.df["C1", "Sample_label"], "Wild_1") # the kept library keeps its plain label
+  expect_equal(comparison.df["C2", "Sample_label"], "Wild_1 (C2)") # excluded libraries stay unique
+  expect_equal(comparison.df["C3", "Sample_label"], "Wild_1 (C3)")
+  expect_equal(anyDuplicated(comparison.df$Sample_label), 0)
+  expect_equal(combined_metadata(project.l)$Sample_label[combined_metadata(project.l)$Sample_ID == "C1"], "Wild_1")
+})
+
 test_that("without comparison metadata the comparison samples are skipped", {
   config.l <- make_test_project(comparison = list(metadata = list(file = NULL)))
   config.l$comparison$metadata$file <- NULL

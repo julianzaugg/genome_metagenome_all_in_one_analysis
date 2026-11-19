@@ -111,8 +111,14 @@ add_comparison <- function(project.l, min_annotated_fraction = 0.9){
   if (length(shared.v) > 0) cli::cli_abort("Comparison samples are also study samples: {.val {shared.v}}")
   metadata.df <- metadata.df[metadata.df$Sample_ID %in% resolved.v, , drop = FALSE]
   metadata.df <- metadata.df[order(metadata.df$Comparison_group, metadata.df$Sample_ID), , drop = FALSE]
-  repeated.v <- metadata.df$Sample_label %in% c(project.l$metadata$Sample_label,
-                                                metadata.df$Sample_label[duplicated(metadata.df$Sample_label)])
+  # A label repeats when another sample shares it. Excluded samples do not make a kept sample's label repeat (the kept
+  # library of a repeat set keeps its plain label), but an excluded sample sharing a label still gets its ID added.
+  active_labels.v <- metadata.df$Sample_label[!metadata.df$Excluded]
+  repeated.v <- ifelse(metadata.df$Excluded,
+                       metadata.df$Sample_label %in% c(project.l$metadata$Sample_label, active_labels.v) |
+                         duplicated(metadata.df$Sample_label) | duplicated(metadata.df$Sample_label, fromLast = TRUE),
+                       metadata.df$Sample_label %in% c(project.l$metadata$Sample_label,
+                                                       active_labels.v[duplicated(active_labels.v)]))
   if (any(repeated.v)){
     repeated_ids.v <- metadata.df$Sample_ID[repeated.v]
     cli::cli_inform(c("!" = "Comparison sample labels shared with another sample get the ID added: {.val {repeated_ids.v}}"))
