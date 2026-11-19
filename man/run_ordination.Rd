@@ -35,12 +35,19 @@ Only affects the plotted scores and loadings, not the distances used for statist
 }
 \value{
 A \code{gm_ordination} list: \code{method}, \code{distance_label}, \code{sites} (scores with \code{Sample_ID}),
-\code{loadings} (PCA feature scores with \code{Label}, else \code{NULL}), \code{variance} (percent per axis) and
+\code{loadings} (PCA feature scores with \code{Label}, else \code{NULL}), \code{variance} (percent per axis; for
+\code{"pca_rclr"} the share of the three-axis solution) and
 \code{distance} (a \code{dist} object for PERMANOVA/PERMDISP).
 }
 \description{
-\code{"pca_rclr"}: robust CLR transform (zeros kept as missing, see \code{\link[vegan:decostand]{vegan::decostand()}})
+\code{"pca_rclr"}: robust CLR transform (zeros treated as missing, see \code{\link[vegan:decostand]{vegan::decostand()}})
 then PCA; distances for statistics are Euclidean on the rclr values (robust Aitchison).
+The missing values are filled by matrix completion (\code{vegan::optspace()}), which by default
+is a rank-3 reconstruction (\code{ropt = 3}, as in gemelli, the reference implementation of
+robust Aitchison PCA). With vegan's default imputation (the only behaviour before vegan 2.7-8, now
+\code{impute = "all"}) this reconstruction replaces every value, not only the zeros.
+Consequently the PCA has only three axes, and the percentages in \code{variance} are shares of
+that three-axis solution, not of the total variance of the data (vegan issue 806).
 \code{"pcoa"}: principal coordinates of any \code{\link[vegan:vegdist]{vegan::vegdist()}} distance; with
 \code{binary = TRUE} values above \code{detection} count as present (e.g. Jaccard on presence).
 }

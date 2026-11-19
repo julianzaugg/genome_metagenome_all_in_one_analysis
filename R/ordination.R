@@ -1,7 +1,13 @@
 #' Ordinate a profile
 #'
-#' `"pca_rclr"`: robust CLR transform (zeros kept as missing, see [vegan::decostand()])
+#' `"pca_rclr"`: robust CLR transform (zeros treated as missing, see [vegan::decostand()])
 #' then PCA; distances for statistics are Euclidean on the rclr values (robust Aitchison).
+#' The missing values are filled by matrix completion (`vegan::optspace()`), which by default
+#' is a rank-3 reconstruction (`ropt = 3`, as in gemelli, the reference implementation of
+#' robust Aitchison PCA). With vegan's default imputation (the only behaviour before vegan 2.7-8, now
+#' `impute = "all"`) this reconstruction replaces every value, not only the zeros.
+#' Consequently the PCA has only three axes, and the percentages in `variance` are shares of
+#' that three-axis solution, not of the total variance of the data (vegan issue 806).
 #' `"pcoa"`: principal coordinates of any [vegan::vegdist()] distance; with
 #' `binary = TRUE` values above `detection` count as present (e.g. Jaccard on presence).
 #'
@@ -17,7 +23,8 @@
 #'   samples (default), `2` correlations between features, `3` (`"symmetric"`) is a compromise.
 #'   Only affects the plotted scores and loadings, not the distances used for statistics.
 #' @return A `gm_ordination` list: `method`, `distance_label`, `sites` (scores with `Sample_ID`),
-#'   `loadings` (PCA feature scores with `Label`, else `NULL`), `variance` (percent per axis) and
+#'   `loadings` (PCA feature scores with `Label`, else `NULL`), `variance` (percent per axis; for
+#'   `"pca_rclr"` the share of the three-axis solution) and
 #'   `distance` (a `dist` object for PERMANOVA/PERMDISP).
 #' @export
 run_ordination <- function(profile, method = c("pca_rclr", "pcoa"), distance = "bray", binary = FALSE, detection = 0,
